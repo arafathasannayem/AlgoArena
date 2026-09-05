@@ -10,6 +10,7 @@
 import { useRef } from 'react';
 import { type Mesh } from 'three';
 import { Html } from '@react-three/drei';
+import { useRaceStore } from '../state/raceStore';
 
 interface TileProps {
   x: number;
@@ -44,6 +45,7 @@ export function Tile({
   onClick,
 }: TileProps) {
   const meshRef = useRef<Mesh>(null);
+  const showResults = useRaceStore((s) => s.showResults);
   const isHighCost = cost !== undefined && cost > 1 && !isStart && !isGoal && !isWall;
 
   let color: string;
@@ -73,8 +75,13 @@ export function Tile({
       </mesh>
 
       {/* Path Cost Badge */}
-      {isHighCost && (
-        <Html center position={[x, 0.14, y]} style={{ pointerEvents: 'none' }}>
+      {isHighCost && !showResults && (
+        <Html
+          center
+          position={[x, 0.14, y]}
+          zIndexRange={[0, 5]}
+          style={{ pointerEvents: 'none' }}
+        >
           <span className="text-[9px] font-mono font-black text-amber-950 bg-amber-200/90 px-1 py-0.5 rounded shadow-sm border border-amber-600/30 select-none">
             {cost}
           </span>

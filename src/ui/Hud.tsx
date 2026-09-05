@@ -20,7 +20,7 @@ import { CameraControls } from './CameraControls';
 
 export function Hud() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden font-sans">
+    <div className="pointer-events-none fixed inset-0 z-30 overflow-hidden font-sans">
       {/* Interactive HUD panels with pointer-events-auto */}
       <div className="pointer-events-auto">
         <AgentPanel />

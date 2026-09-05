@@ -11,6 +11,7 @@
 import { Html } from '@react-three/drei';
 import type { Agent } from '../state/agentStore';
 import { ALGORITHMS } from '../algorithms';
+import { useRaceStore } from '../state/raceStore';
 
 interface SquareClusterIndicatorProps {
   x: number;
@@ -25,10 +26,16 @@ export function SquareClusterIndicator({
   lastEnteredAgents,
   onToggleOverlay,
 }: SquareClusterIndicatorProps) {
-  if (lastEnteredAgents.length === 0) return null;
+  const showResults = useRaceStore((s) => s.showResults);
+  if (lastEnteredAgents.length === 0 || showResults) return null;
 
   return (
-    <Html center position={[x, 1.35, y]} style={{ pointerEvents: 'auto' }}>
+    <Html
+      center
+      position={[x, 1.35, y]}
+      zIndexRange={[5, 10]}
+      style={{ pointerEvents: 'auto' }}
+    >
       <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900/90 border border-amber-400/40 text-amber-300 text-[10px] font-bold shadow-xl backdrop-blur-md whitespace-nowrap select-none transition-all hover:scale-105">
         <span className="text-[9px] uppercase tracking-wider text-amber-400/70 font-semibold">
           Last:

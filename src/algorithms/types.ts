@@ -69,6 +69,8 @@ export interface AlgorithmResult {
   path: Point[] | null;
   nodesExplored: number;
   timeMs: number;
+  /** Total traversal cost of the path. */
+  cost?: number;
 }
 
 // ── Generator & factory signatures ──────────────────────────────────────────

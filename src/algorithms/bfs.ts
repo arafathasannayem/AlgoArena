@@ -114,11 +114,18 @@ export function* breadthFirstSearch(
       const path = reconstructPath(cameFrom, current);
       yield { kind: 'path', path };
 
+      let cost = 0;
+      for (let i = 1; i < path.length; i++) {
+        const p = path[i]!;
+        cost += grid.costs?.get(`${p.x},${p.y}`) ?? 1;
+      }
+
       const result: AlgorithmResult = {
         status: 'success',
         path,
         nodesExplored,
         timeMs: performance.now() - t0,
+        cost,
       };
       yield { kind: 'done', result };
       return result;

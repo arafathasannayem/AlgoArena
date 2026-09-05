@@ -197,11 +197,13 @@ export function* aStarSearch(
       const path = reconstructPath(cameFrom, current);
       yield { kind: 'path', path };
 
+      const cost = gScore.get(currentKey) ?? 0;
       const result: AlgorithmResult = {
         status: 'success',
         path,
         nodesExplored,
         timeMs: performance.now() - t0,
+        cost,
       };
       yield { kind: 'done', result };
       return result;

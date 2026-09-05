@@ -14,10 +14,22 @@ import { useAgentStore } from '../state/agentStore';
 import { useGridStore } from '../state/gridStore';
 import { ALGORITHMS } from '../algorithms';
 import { Trophy, CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import type { Agent } from '../state/agentStore';
+
+function getAgentPathCost(agent: Agent, costs: Map<string, number>): number {
+  if (agent.result?.cost !== undefined) return agent.result.cost;
+  if (!agent.result?.path || agent.result.path.length < 2) return 0;
+  let sum = 0;
+  for (let i = 1; i < agent.result.path.length; i++) {
+    sum += costs.get(`${agent.result.path[i]!.x},${agent.result.path[i]!.y}`) ?? 1;
+  }
+  return sum;
+}
 
 export function Leaderboard() {
   const agents = useAgentStore((s) => s.agents);
   const goal = useGridStore((s) => s.goal);
+  const costs = useGridStore((s) => s.costs);
 
   // Sort agents primarily by goal reached / distance to goal
   const ranked = useMemo(() => {
@@ -29,7 +41,10 @@ export function Leaderboard() {
       if (!aDone && bDone) return 1;
 
       if (aDone && bDone) {
-        // Compare path length or time
+        // Compare path cost, then path length, then time
+        const aCost = getAgentPathCost(a, costs);
+        const bCost = getAgentPathCost(b, costs);
+        if (aCost !== bCost) return aCost - bCost;
         const aLen = a.result?.path?.length ?? Infinity;
         const bLen = b.result?.path?.length ?? Infinity;
         if (aLen !== bLen) return aLen - bLen;
@@ -44,7 +59,7 @@ export function Leaderboard() {
       // 3. Tie-break on nodes explored
       return a.visitedNodes.size - b.visitedNodes.size;
     });
-  }, [agents, goal]);
+  }, [agents, goal, costs]);
 
   if (agents.length === 0) return null;
 
@@ -96,7 +111,7 @@ export function Leaderboard() {
                 {agent.status === 'done' && agent.result?.status === 'success' && (
                   <span className="flex items-center gap-1 text-emerald-400 font-medium">
                     <CheckCircle2 size={12} />
-                    <span>Done ({agent.result.path?.length} steps)</span>
+                    <span>Done (Cost {getAgentPathCost(agent, costs)}, {agent.result.path?.length}s)</span>
                   </span>
                 )}
 

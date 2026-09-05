@@ -14,11 +14,24 @@
 
 import { useAgentStore } from '../state/agentStore';
 import { useRaceStore } from '../state/raceStore';
+import { useGridStore } from '../state/gridStore';
 import { ALGORITHMS } from '../algorithms';
-import { Trophy, Clock, Search, Navigation, X, RotateCcw, Award } from 'lucide-react';
+import { Trophy, Clock, Search, Navigation, X, RotateCcw, Award, Coins } from 'lucide-react';
+
+function getAgentPathCost(agent: ReturnType<typeof useAgentStore.getState>['agents'][0], costs: Map<string, number>): number {
+  if (agent.result?.cost !== undefined) return agent.result.cost;
+  if (!agent.result?.path || agent.result.path.length < 2) return 0;
+  let sum = 0;
+  for (let i = 1; i < agent.result.path.length; i++) {
+    const p = agent.result.path[i]!;
+    sum += costs.get(`${p.x},${p.y}`) ?? 1;
+  }
+  return sum;
+}
 
 export function ResultsDashboard() {
   const agents = useAgentStore((s) => s.agents);
+  const costs = useGridStore((s) => s.costs);
   const showResults = useRaceStore((s) => s.showResults);
   const dismissResults = useRaceStore((s) => s.dismissResults);
   const startRace = useRaceStore((s) => s.startRace);
@@ -29,22 +42,27 @@ export function ResultsDashboard() {
     return null;
   }
 
-  // Find the winning agent (successful agent with shortest path, then lowest time)
+  // Find the winning agent (lowest path cost, then shortest path, then lowest time)
   const successfulAgents = agents.filter((a) => a.result?.status === 'success');
   const bestAgent = successfulAgents.reduce<typeof agents[0] | null>((best, curr) => {
     if (!best) return curr;
-    const bestLen = best.result?.path?.length ?? Infinity;
-    const currLen = curr.result?.path?.length ?? Infinity;
-    if (currLen < bestLen) return curr;
-    if (currLen === bestLen) {
-      return (curr.result?.timeMs ?? Infinity) < (best.result?.timeMs ?? Infinity) ? curr : best;
+    const bestCost = getAgentPathCost(best, costs);
+    const currCost = getAgentPathCost(curr, costs);
+    if (currCost < bestCost) return curr;
+    if (currCost === bestCost) {
+      const bestLen = best.result?.path?.length ?? Infinity;
+      const currLen = curr.result?.path?.length ?? Infinity;
+      if (currLen < bestLen) return curr;
+      if (currLen === bestLen) {
+        return (curr.result?.timeMs ?? Infinity) < (best.result?.timeMs ?? Infinity) ? curr : best;
+      }
     }
     return best;
   }, null);
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900/90 border border-glass-border rounded-panel p-6 max-w-2xl w-full text-glass-text shadow-2xl flex flex-col gap-5">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div className="bg-slate-900/95 border border-glass-border rounded-panel p-6 max-w-2xl w-full text-glass-text shadow-2xl flex flex-col gap-5">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-glass-border pb-3">
           <div className="flex items-center gap-2">
@@ -70,9 +88,11 @@ export function ResultsDashboard() {
                 Optimal Path Winner
               </span>
               <p className="text-sm font-medium text-white">
-                {ALGORITHMS[bestAgent.algorithmKey]?.label ?? bestAgent.algorithmKey} found a path of{' '}
-                <span className="font-bold text-amber-300">{bestAgent.result?.path?.length}</span>{' '}
-                steps in{' '}
+                {ALGORITHMS[bestAgent.algorithmKey]?.label ?? bestAgent.algorithmKey} found an optimal path with{' '}
+                <span className="font-bold text-amber-300">
+                  Cost {getAgentPathCost(bestAgent, costs)}
+                </span>{' '}
+                ({bestAgent.result?.path ? `${bestAgent.result.path.length} steps` : ''}) in{' '}
                 <span className="font-bold text-amber-300">
                   {bestAgent.result?.timeMs.toFixed(1)}ms
                 </span>{' '}
@@ -101,7 +121,12 @@ export function ResultsDashboard() {
                 </th>
                 <th className="py-2 px-3">
                   <span className="flex items-center gap-1">
-                    <Navigation size={12} /> Path Length
+                    <Navigation size={12} /> Steps
+                  </span>
+                </th>
+                <th className="py-2 px-3">
+                  <span className="flex items-center gap-1 text-amber-300">
+                    <Coins size={12} className="text-amber-400" /> Path Cost
                   </span>
                 </th>
               </tr>
@@ -151,6 +176,9 @@ export function ResultsDashboard() {
                     </td>
                     <td className="py-2.5 px-3 tabular-nums font-medium text-white">
                       {result?.path ? `${result.path.length} steps` : '—'}
+                    </td>
+                    <td className="py-2.5 px-3 tabular-nums font-bold text-amber-300">
+                      {result?.status === 'success' ? getAgentPathCost(agent, costs) : '—'}
                     </td>
                   </tr>
                 );
