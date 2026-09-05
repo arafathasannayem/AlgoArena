@@ -2,12 +2,12 @@
  * App — Root component for Algorithm Arena.
  *
  * Layers the 3D diorama scene beneath floating glass HUD panels.
- * Phase 3: 3D isometric scene replaces the 2D grid view from Phase 2.
  */
 
 import { Diorama } from './scene/Diorama';
 import { ToolPalette } from './ui/ToolPalette';
 import { GridSizeControl } from './ui/GridSizeControl';
+import { AgentPanel } from './ui/AgentPanel';
 
 export function App() {
   return (
@@ -16,6 +16,7 @@ export function App() {
       <Diorama />
 
       {/* Floating glass HUD panels */}
+      <AgentPanel />
       <ToolPalette />
       <GridSizeControl />
     </div>

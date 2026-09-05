@@ -7,6 +7,7 @@
  * - Walls as raised 3D blocks with shadows
  * - Goal glow via emissive material + pulse animation
  * - Directional "sun" light + ambient fill + shadow mapping
+ * - Agents with low-poly animated pawns and customizable overlays
  *
  * @module scene/Diorama
  */
@@ -15,9 +16,14 @@ import { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera } from '@react-three/drei';
 import { useGridStore } from '../state/gridStore';
+import { useAgentStore } from '../state/agentStore';
 import { Tile } from './Tile';
 import { Wall } from './Wall';
 import { GoalGlow } from './GoalGlow';
+import { AgentPawn } from './AgentPawn';
+import { NodeOverlay } from './Node';
+import { PathTrail } from './PathTrail';
+import { HeuristicRay } from './HeuristicRay';
 
 /** Inner scene component — reads store and renders geometry. */
 function DioramaScene() {
@@ -27,6 +33,9 @@ function DioramaScene() {
   const start = useGridStore((s) => s.start);
   const goal = useGridStore((s) => s.goal);
   const applyTool = useGridStore((s) => s.applyTool);
+
+  const agents = useAgentStore((s) => s.agents);
+  const toggleOverlay = useAgentStore((s) => s.toggleOverlay);
 
   // Center the grid around the origin
   const offsetX = -(width - 1) / 2;
@@ -104,6 +113,35 @@ function DioramaScene() {
         {tiles}
         {wallBlocks}
         <GoalGlow x={goal.x} y={goal.y} />
+
+        {/* Agents & their overlays */}
+        {agents.map((agent) => (
+          <group key={agent.id}>
+            <AgentPawn
+              position={agent.position}
+              color={agent.color}
+              onClick={() => toggleOverlay(agent.id)}
+            />
+
+            {agent.showOverlay && (
+              <>
+                <NodeOverlay
+                  visitedNodes={agent.visitedNodes}
+                  frontierNodes={agent.frontierNodes}
+                  color={agent.color}
+                />
+                <PathTrail path={agent.currentPath} color={agent.color} />
+                {agent.heuristicTarget && (
+                  <HeuristicRay
+                    from={agent.position}
+                    to={agent.heuristicTarget}
+                    color={agent.color}
+                  />
+                )}
+              </>
+            )}
+          </group>
+        ))}
       </group>
     </>
   );
