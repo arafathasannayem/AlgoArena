@@ -3,7 +3,7 @@
  *
  * Appears once all agents reach `done` and the race is finished.
  * Displays a comparative summary table showing:
- * - Podium medals (🥇, 🥈, 🥉)
+ * - Ranked standings (#1, #2, #3)
  * - Algorithm name & color
  * - Status (success / failed / trapped)
  * - Execution Time (ms)
@@ -98,7 +98,7 @@ export function ResultsDashboard() {
 
   const handleCopySummary = async () => {
     const lines = [
-      '🏆 Algorithm Arena — Match Results',
+      'Algorithm Arena — Race Results',
       '---------------------------------',
       ...rankedAgents.map((agent, i) => {
         const label = ALGORITHMS[agent.algorithmKey]?.label ?? agent.algorithmKey;
@@ -151,22 +151,24 @@ export function ResultsDashboard() {
 
         {/* Winner Highlight (if any succeeded) */}
         {bestAgent && (
-          <div className="bg-gradient-to-r from-amber-500/15 to-blue-500/10 border border-amber-500/40 rounded-xl p-3.5 flex items-center gap-3 shadow-inner">
-            <div className="text-2xl">🥇</div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 font-mono font-bold text-sm shrink-0">
+              #1
+            </div>
             <div className="min-w-0">
-              <span className="text-xs font-semibold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Award size={14} /> Optimal Path Winner
+              <span className="text-xs font-semibold text-white/70 uppercase tracking-wider flex items-center gap-1.5">
+                <Award size={14} className="text-amber-400" /> Best Path — {ALGORITHMS[bestAgent.algorithmKey]?.label ?? bestAgent.algorithmKey}
               </span>
-              <p className="text-sm font-medium text-white">
-                {ALGORITHMS[bestAgent.algorithmKey]?.label ?? bestAgent.algorithmKey} found an optimal path with{' '}
+              <p className="text-xs text-white/80 mt-0.5">
+                Optimal cost of{' '}
                 <span className="font-bold text-amber-300">
-                  Cost {getAgentPathCost(bestAgent, costs)}
+                  {getAgentPathCost(bestAgent, costs)}
                 </span>{' '}
-                ({bestAgent.result?.path ? `${bestAgent.result.path.length} steps` : ''}) in{' '}
-                <span className="font-bold text-amber-300">
+                ({bestAgent.result?.path ? `${bestAgent.result.path.length} steps` : ''}) completed in{' '}
+                <span className="font-bold text-white">
                   {bestAgent.result?.timeMs.toFixed(1)}ms
                 </span>{' '}
-                exploring {bestAgent.result?.nodesExplored} nodes.
+                across {bestAgent.result?.nodesExplored} nodes explored.
               </p>
             </div>
           </div>
@@ -228,19 +230,19 @@ export function ResultsDashboard() {
                   );
                 }
 
-                // Medal or numeric rank
-                let medalDisplay: React.ReactNode = `#${index + 1}`;
+                // Clean typographic rank indicator
+                let rankColor = 'text-white/40';
                 if (result?.status === 'success') {
-                  if (index === 0) medalDisplay = <span className="text-base" title="1st Place">🥇</span>;
-                  else if (index === 1) medalDisplay = <span className="text-base" title="2nd Place">🥈</span>;
-                  else if (index === 2) medalDisplay = <span className="text-base" title="3rd Place">🥉</span>;
+                  if (index === 0) rankColor = 'text-amber-400 font-bold';
+                  else if (index === 1) rankColor = 'text-slate-300 font-bold';
+                  else if (index === 2) rankColor = 'text-amber-600 font-bold';
                 }
 
                 return (
                   <tr key={agent.id} className="hover:bg-white/5 transition-colors">
                     <td className="py-2.5 px-3 font-semibold flex items-center gap-2">
-                      <span className="w-5 text-center text-xs font-mono font-bold text-white/50">
-                        {medalDisplay}
+                      <span className={`w-5 text-center text-xs font-mono ${rankColor}`}>
+                        #{index + 1}
                       </span>
                       <span
                         className="w-2.5 h-2.5 rounded-full shrink-0"

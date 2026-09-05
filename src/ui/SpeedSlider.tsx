@@ -50,7 +50,7 @@ export function SpeedSlider() {
     statusText = 'RACING';
     isPulsing = true;
   } else if (status === 'finished') {
-    statusColor = 'bg-purple-400';
+    statusColor = 'bg-slate-300';
     statusText = 'FINISHED';
   } else {
     const anyExplored = agents.some((a) => a.visitedNodes.size > 1);
@@ -58,7 +58,7 @@ export function SpeedSlider() {
       statusColor = 'bg-amber-400';
       statusText = 'PAUSED';
     } else {
-      statusColor = 'bg-cyan-400';
+      statusColor = 'bg-blue-400';
       statusText = 'READY';
     }
   }

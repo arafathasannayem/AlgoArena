@@ -7,8 +7,8 @@
  *
  * ## Status legend
  *
- * - ✅ Implemented — factory is functional and tested.
- * - 🚧 TODO        — factory throws; needs implementation by a contributor.
+ * - Implemented (true)  — factory is functional and tested.
+ * - TODO (false)        — factory throws; needs implementation by a contributor.
  *
  * @module algorithms/index
  */

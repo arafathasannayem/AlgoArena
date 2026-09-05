@@ -84,7 +84,7 @@ export function CameraControls() {
         onClick={handleTopDown}
         className={`p-2 rounded-lg transition-colors ${
           isTopDown
-            ? 'bg-amber-400/25 text-amber-300 border border-amber-400/30 shadow-sm'
+            ? 'bg-white/20 text-white shadow-sm'
             : 'text-white/60 hover:text-white hover:bg-white/15'
         }`}
         title="Top-Down 2D View [T]"

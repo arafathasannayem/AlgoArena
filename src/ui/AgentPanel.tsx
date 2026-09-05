@@ -19,7 +19,7 @@ import { useAgentStore } from '../state/agentStore';
 import { useGridStore } from '../state/gridStore';
 import { ALGORITHMS } from '../algorithms';
 import { playClick } from '../utils/sound';
-import { UserPlus, Trash2, Eye, EyeOff, Bot, Swords, Sparkles } from 'lucide-react';
+import { UserPlus, Trash2, Eye, EyeOff, Bot, Swords } from 'lucide-react';
 
 const ALGO_TRAITS: Record<string, string> = {
   astar: 'Optimal Cost • Manhattan Heuristic',
@@ -86,12 +86,11 @@ export function AgentPanel() {
       {/* Quick 1-Click Match Preset */}
       <button
         onClick={handleQuickMatch}
-        className="flex items-center justify-center gap-1.5 w-full py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-blue-600/30 to-purple-600/30 hover:from-blue-600/50 hover:to-purple-600/50 border border-blue-500/30 hover:border-blue-400/50 text-white text-xs font-semibold shadow-sm transition-all"
-        title="Instant Showdown: Set up A* vs BFS"
+        className="flex items-center justify-center gap-2 w-full py-1.5 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-medium transition-colors"
+        title="Set up A* vs BFS match"
       >
         <Swords size={13} className="text-blue-400" />
         <span>Quick Match: A* vs BFS</span>
-        <Sparkles size={11} className="text-amber-400 ml-0.5" />
       </button>
 
       {/* Add Agent Form */}

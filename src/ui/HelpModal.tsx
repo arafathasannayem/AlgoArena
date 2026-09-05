@@ -19,7 +19,7 @@ import {
   Flag,
   Mountain,
   Square,
-  Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { ALGORITHMS } from '../algorithms';
 
@@ -52,9 +52,9 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-glass-border pb-3">
           <div className="flex items-center gap-2">
-            <Sparkles size={20} className="text-amber-400" />
-            <h2 className="text-lg font-bold tracking-wide text-white">
-              Algorithm Arena — Game Guide
+            <BookOpen size={18} className="text-slate-300" />
+            <h2 className="text-base font-semibold tracking-wide text-white">
+              Reference Guide & Shortcuts
             </h2>
           </div>
           <button
@@ -178,11 +178,11 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             </div>
 
             <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex gap-2.5">
-              <Square size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+              <Square size={18} className="text-slate-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-white">Dense Jungle (Walls)</span>
+                <span className="font-semibold text-white">Boulders (Walls)</span>
                 <p className="text-[11px] text-white/60">
-                  Impassable dense tropical jungle thickets that block agent movement.
+                  Impassable sandstone boulders that block agent movement.
                 </p>
               </div>
             </div>
@@ -192,7 +192,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <div>
                 <span className="font-semibold text-white">Rough Terrain</span>
                 <p className="text-[11px] text-white/60">
-                  Traversable rocky badlands scree with scattered boulders. Cost is configurable (×2 to ×99) and softly inscribed directly on the terrain. A* detours around it; BFS ignores cost!
+                  Traversable desert scrub with higher travel cost (×2 to ×99). Cost-aware algorithms detour around it, while unweighted algorithms traverse directly.
                 </p>
               </div>
             </div>
@@ -247,9 +247,9 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         <div className="flex justify-end pt-2 border-t border-glass-border">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors"
+            className="px-4 py-1.5 bg-white/10 hover:bg-white/15 text-white border border-white/10 rounded-lg text-xs font-medium transition-colors"
           >
-            Got it, Let's Race!
+            Close
           </button>
         </div>
       </div>
