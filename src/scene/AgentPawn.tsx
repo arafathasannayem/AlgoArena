@@ -18,6 +18,7 @@ interface AgentPawnProps {
   offsetX?: number;
   offsetZ?: number;
   scale?: number;
+  castShadow?: boolean;
   onClick: () => void;
 }
 
@@ -27,6 +28,7 @@ export function AgentPawn({
   offsetX = 0,
   offsetZ = 0,
   scale = 1.0,
+  castShadow = true,
   onClick,
 }: AgentPawnProps) {
   const { posX, posZ, s } = useSpring({
@@ -48,12 +50,12 @@ export function AgentPawn({
       }}
     >
       {/* Pawn base — tapered cylinder */}
-      <mesh castShadow position={[0, 0, 0]}>
+      <mesh castShadow={castShadow} position={[0, 0, 0]}>
         <cylinderGeometry args={[0.15, 0.3, 0.5, 16]} />
         <meshStandardMaterial color={color} roughness={0.3} metalness={0.2} />
       </mesh>
       {/* Pawn head — sphere */}
-      <mesh castShadow position={[0, 0.4, 0]}>
+      <mesh castShadow={castShadow} position={[0, 0.4, 0]}>
         <sphereGeometry args={[0.18, 16, 16]} />
         <meshStandardMaterial color={color} roughness={0.2} metalness={0.3} />
       </mesh>

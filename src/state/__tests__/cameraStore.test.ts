@@ -49,4 +49,23 @@ describe('Camera Store', () => {
     store.clearAction();
     expect(useCameraStore.getState().zoomAction).toBeNull();
   });
+
+  it('should manage isTopDown flag correctly for 2D top-down mode', () => {
+    const store = useCameraStore.getState();
+    expect(store.isTopDown).toBe(false);
+
+    store.triggerPreset('top');
+    expect(useCameraStore.getState().isTopDown).toBe(true);
+
+    store.triggerPreset('iso');
+    expect(useCameraStore.getState().isTopDown).toBe(false);
+
+    store.triggerPreset('top');
+    expect(useCameraStore.getState().isTopDown).toBe(true);
+    store.triggerReset();
+    expect(useCameraStore.getState().isTopDown).toBe(false);
+
+    store.setIsTopDown(true);
+    expect(useCameraStore.getState().isTopDown).toBe(true);
+  });
 });

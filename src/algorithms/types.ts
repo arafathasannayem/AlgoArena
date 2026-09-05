@@ -27,6 +27,8 @@ export interface GridSnapshot {
   height: number;
   /** Set of "x,y" string keys representing blocked cells. */
   walls: Set<string>;
+  /** Optional map of "x,y" keys to traversal costs (default cost is 1). */
+  costs?: Map<string, number>;
   start: Point;
   goal: Point;
 }

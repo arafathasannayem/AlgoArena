@@ -9,8 +9,19 @@
  * @module ui/ToolPalette
  */
 
+import { useState, useRef } from 'react';
 import { useGridStore, type Tool } from '../state/gridStore';
-import { Square, Eraser, Flag, Target, Trash2, Map } from 'lucide-react';
+import {
+  Square,
+  Eraser,
+  Flag,
+  Target,
+  Trash2,
+  Map,
+  Mountain,
+  GripVertical,
+  RotateCcw,
+} from 'lucide-react';
 import { PRESETS } from '../maps/presets';
 
 interface ToolDef {
@@ -20,55 +31,194 @@ interface ToolDef {
 }
 
 const TOOLS: ToolDef[] = [
-  { id: 'wall', label: 'Wall', icon: <Square size={18} /> },
-  { id: 'eraser', label: 'Eraser', icon: <Eraser size={18} /> },
-  { id: 'start', label: 'Start Point', icon: <Flag size={18} /> },
-  { id: 'goal', label: 'Goal Point', icon: <Target size={18} /> },
+  { id: 'wall', label: 'Wall', icon: <Square size={16} /> },
+  { id: 'cost', label: 'High Cost', icon: <Mountain size={16} /> },
+  { id: 'eraser', label: 'Eraser', icon: <Eraser size={16} /> },
+  { id: 'start', label: 'Start Point', icon: <Flag size={16} /> },
+  { id: 'goal', label: 'Goal Point', icon: <Target size={16} /> },
 ];
 
 export function ToolPalette() {
   const activeTool = useGridStore((s) => s.activeTool);
   const setActiveTool = useGridStore((s) => s.setActiveTool);
+  const highCostValue = useGridStore((s) => s.highCostValue);
+  const setHighCostValue = useGridStore((s) => s.setHighCostValue);
   const clearGrid = useGridStore((s) => s.clearGrid);
   const loadPreset = useGridStore((s) => s.loadPreset);
 
+  // Dragging / Moveable window state
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 16, y: 140 });
+  const isDragging = useRef(false);
+  const dragStart = useRef({ startX: 0, startY: 0, posX: 16, posY: 140 });
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = true;
+    dragStart.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: pos.x,
+      posY: pos.y,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - dragStart.current.startX;
+    const dy = e.clientY - dragStart.current.startY;
+    const panelWidth = panelRef.current?.offsetWidth ?? 170;
+    const panelHeight = panelRef.current?.offsetHeight ?? 420;
+    const nextX = Math.max(8, Math.min(window.innerWidth - panelWidth - 8, dragStart.current.posX + dx));
+    const nextY = Math.max(8, Math.min(window.innerHeight - panelHeight - 8, dragStart.current.posY + dy));
+    setPos({ x: nextX, y: nextY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // Ignore if pointer capture already released
+    }
+  };
+
   return (
-    <div className="fixed left-4 top-1/2 -translate-y-1/2 bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-3 flex flex-col gap-1.5 z-10">
-      {/* Tool buttons */}
-      {TOOLS.map((t) => (
+    <div
+      ref={panelRef}
+      style={{ left: `${pos.x}px`, top: `${pos.y}px` }}
+      className="fixed bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-2.5 flex flex-col gap-1.5 z-10 w-48 shadow-2xl transition-shadow"
+    >
+      {/* Draggable Window Header */}
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        className="flex items-center justify-between px-1 py-1 cursor-grab active:cursor-grabbing select-none text-white/50 hover:text-white/80 transition-colors border-b border-white/10 mb-0.5"
+        title="Click and drag to move tool palette"
+      >
+        <div className="flex items-center gap-1.5">
+          <GripVertical size={13} className="text-white/40" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase text-white/70">
+            Toolbox
+          </span>
+        </div>
         <button
-          key={t.id}
-          onClick={() => setActiveTool(t.id)}
-          className={`p-2.5 rounded-lg transition-colors flex items-center gap-2 ${
-            activeTool === t.id
-              ? 'bg-white/20 text-white'
-              : 'text-glass-text/60 hover:text-white hover:bg-white/10'
-          }`}
-          title={t.label}
+          onClick={(e) => {
+            e.stopPropagation();
+            setPos({ x: 16, y: 140 });
+          }}
+          className="text-[9px] text-white/40 hover:text-white/80 p-0.5 rounded transition-colors"
+          title="Reset position"
         >
-          {t.icon}
-          <span className="text-xs">{t.label}</span>
+          <RotateCcw size={11} />
         </button>
-      ))}
+      </div>
+
+      {/* Tool buttons */}
+      {TOOLS.map((t) => {
+        const isActive = activeTool === t.id;
+        return (
+          <div key={t.id} className="flex flex-col gap-1">
+            <button
+              onClick={() => setActiveTool(t.id)}
+              className={`p-2 rounded-lg transition-colors flex items-center justify-between w-full ${
+                isActive
+                  ? t.id === 'cost'
+                    ? 'bg-amber-500/25 border border-amber-500/40 text-amber-300'
+                    : 'bg-white/20 text-white shadow-sm'
+                  : 'text-glass-text/60 hover:text-white hover:bg-white/10'
+              }`}
+              title={t.label}
+            >
+              <div className="flex items-center gap-2">
+                {t.icon}
+                <span className="text-xs font-medium">{t.label}</span>
+              </div>
+              {t.id === 'cost' && (
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                  ×{highCostValue}
+                </span>
+              )}
+            </button>
+
+            {/* High Cost Value Settings (when cost tool is selected) */}
+            {t.id === 'cost' && isActive && (
+              <div className="bg-slate-900/60 border border-amber-500/30 rounded-lg p-2 flex flex-col gap-1.5 my-0.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-medium text-amber-300/90">
+                    Cost Multiplier
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setHighCostValue(Math.max(2, highCostValue - 1))}
+                      className="w-4 h-4 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors"
+                      title="Decrease cost"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={2}
+                      max={99}
+                      value={highCostValue}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value, 10);
+                        if (!isNaN(v)) setHighCostValue(v);
+                      }}
+                      className="w-8 bg-slate-950/80 border border-amber-500/40 rounded text-center text-xs font-mono font-bold text-amber-300 py-0.5 focus:outline-none focus:border-amber-400"
+                    />
+                    <button
+                      onClick={() => setHighCostValue(Math.min(99, highCostValue + 1))}
+                      className="w-4 h-4 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors"
+                      title="Increase cost"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick preset chips */}
+                <div className="flex items-center justify-between gap-1 pt-0.5">
+                  {[2, 5, 10, 20].map((presetVal) => (
+                    <button
+                      key={presetVal}
+                      onClick={() => setHighCostValue(presetVal)}
+                      className={`flex-1 py-0.5 text-[9px] font-mono font-bold rounded transition-colors ${
+                        highCostValue === presetVal
+                          ? 'bg-amber-500 text-slate-950 shadow-sm'
+                          : 'bg-white/5 text-amber-200/70 hover:bg-white/15 hover:text-white'
+                      }`}
+                      title={`Set cost to ${presetVal}`}
+                    >
+                      {presetVal}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       <div className="border-t border-glass-border my-1" />
 
       {/* Clear button */}
       <button
         onClick={clearGrid}
-        className="p-2.5 rounded-lg text-red-400/80 hover:text-red-400 hover:bg-white/10 transition-colors flex items-center gap-2"
-        title="Clear Grid"
+        className="p-2 rounded-lg text-red-400/80 hover:text-red-400 hover:bg-white/10 transition-colors flex items-center gap-2 w-full"
+        title="Clear Grid (removes all walls and high-cost tiles)"
       >
-        <Trash2 size={18} />
-        <span className="text-xs">Clear</span>
+        <Trash2 size={16} />
+        <span className="text-xs font-medium">Clear Grid</span>
       </button>
 
       <div className="border-t border-glass-border my-1" />
 
       {/* Map presets */}
-      <div className="px-2 py-1">
-        <span className="text-[10px] uppercase tracking-wider text-glass-text/40 font-semibold">
-          Presets
+      <div className="px-1 py-0.5">
+        <span className="text-[9px] uppercase tracking-wider text-glass-text/40 font-semibold">
+          Map Presets
         </span>
       </div>
       {Object.entries(PRESETS).map(([key, preset]) => (
@@ -77,11 +227,11 @@ export function ToolPalette() {
           onClick={() =>
             loadPreset(preset.walls, preset.start, preset.goal, preset.width, preset.height)
           }
-          className="p-2 rounded-lg text-glass-text/60 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+          className="p-1.5 rounded-lg text-glass-text/60 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-left w-full"
           title={preset.description}
         >
-          <Map size={14} />
-          <span className="text-xs">{preset.name}</span>
+          <Map size={13} />
+          <span className="text-xs truncate">{preset.name}</span>
         </button>
       ))}
     </div>

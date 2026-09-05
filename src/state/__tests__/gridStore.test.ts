@@ -89,4 +89,56 @@ describe('Grid Store', () => {
     snapshot.walls.add('1,1');
     expect(useGridStore.getState().walls.has('1,1')).toBe(false);
   });
+
+  it('should paint and erase high cost tiles with configurable cost value', () => {
+    const store = useGridStore.getState();
+    expect(store.highCostValue).toBe(5);
+
+    store.setHighCostValue(8);
+    expect(useGridStore.getState().highCostValue).toBe(8);
+
+    // Paint cost tile using current highCostValue
+    store.paintCost(4, 4);
+    expect(useGridStore.getState().costs.get('4,4')).toBe(8);
+
+    // Paint cost tile with explicit cost
+    store.paintCost(4, 5, 12);
+    expect(useGridStore.getState().costs.get('4,5')).toBe(12);
+
+    // Erase cost tile
+    store.eraseCost(4, 4);
+    expect(useGridStore.getState().costs.has('4,4')).toBe(false);
+    expect(useGridStore.getState().costs.get('4,5')).toBe(12);
+
+    // Erase via generic eraseWall should also remove cost tile
+    store.eraseWall(4, 5);
+    expect(useGridStore.getState().costs.has('4,5')).toBe(false);
+  });
+
+  it('should replace wall with cost and vice versa', () => {
+    const store = useGridStore.getState();
+    store.paintWall(2, 2);
+    expect(useGridStore.getState().walls.has('2,2')).toBe(true);
+    expect(useGridStore.getState().costs.has('2,2')).toBe(false);
+
+    // Painting cost over wall converts it
+    store.paintCost(2, 2, 7);
+    expect(useGridStore.getState().walls.has('2,2')).toBe(false);
+    expect(useGridStore.getState().costs.get('2,2')).toBe(7);
+
+    // Painting wall over cost converts it back
+    store.paintWall(2, 2);
+    expect(useGridStore.getState().walls.has('2,2')).toBe(true);
+    expect(useGridStore.getState().costs.has('2,2')).toBe(false);
+  });
+
+  it('should include costs in getSnapshot and clear costs on clearGrid', () => {
+    const store = useGridStore.getState();
+    store.paintCost(1, 2, 6);
+    const snapshot = store.getSnapshot();
+    expect(snapshot.costs?.get('1,2')).toBe(6);
+
+    store.clearGrid();
+    expect(useGridStore.getState().costs.size).toBe(0);
+  });
 });

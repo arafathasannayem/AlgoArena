@@ -63,6 +63,7 @@ export function CameraController({ defaultZoom }: CameraControllerProps) {
         camera.lookAt(0, 0, 0);
         camera.updateProjectionMatrix();
         useCameraStore.getState().setZoomLevel(defaultZoom);
+        useCameraStore.getState().setIsTopDown(false);
         break;
       }
       case 'top': {
@@ -75,6 +76,7 @@ export function CameraController({ defaultZoom }: CameraControllerProps) {
         camera.lookAt(0, 0, 0);
         camera.updateProjectionMatrix();
         useCameraStore.getState().setZoomLevel(defaultZoom);
+        useCameraStore.getState().setIsTopDown(true);
         break;
       }
     }
@@ -92,6 +94,16 @@ export function CameraController({ defaultZoom }: CameraControllerProps) {
       maxZoom={150}
       maxPolarAngle={Math.PI / 2 - 0.05}
       minPolarAngle={0.05}
+      onChange={(e) => {
+        if (e?.target?.object instanceof OrthographicCamera) {
+          const cam = e.target.object;
+          const horizontalDist = Math.hypot(cam.position.x, cam.position.z);
+          const isTop = horizontalDist < 0.8 && cam.position.y > 20;
+          if (useCameraStore.getState().isTopDown !== isTop) {
+            useCameraStore.getState().setIsTopDown(isTop);
+          }
+        }
+      }}
     />
   );
 }

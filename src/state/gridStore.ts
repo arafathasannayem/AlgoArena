@@ -15,7 +15,7 @@ import type { GridSnapshot, Point } from '../algorithms/types';
 // ── Types ───────────────────────────────────────────────────────────────────
 
 /** The editing tools available in the tool palette. */
-export type Tool = 'wall' | 'eraser' | 'start' | 'goal';
+export type Tool = 'wall' | 'eraser' | 'start' | 'goal' | 'cost';
 
 export interface GridState {
   /** Grid width in cells. */
@@ -24,6 +24,10 @@ export interface GridState {
   height: number;
   /** Set of "x,y" keys marking blocked cells. */
   walls: Set<string>;
+  /** Map of "x,y" keys to custom traversal cost values. */
+  costs: Map<string, number>;
+  /** Active path cost value when painting cost tiles (e.g. 5). */
+  highCostValue: number;
   /** The start tile. */
   start: Point;
   /** The goal tile. */
@@ -33,19 +37,25 @@ export interface GridState {
 
   // ── Actions ─────────────────────────────────────────────────────────────
 
-  /** Resize the grid. Clears walls and resets start/goal. */
+  /** Resize the grid. Clears walls and costs, resets start/goal. */
   setSize: (w: number, h: number) => void;
-  /** Add a wall at (x, y). No-op on start/goal or existing walls. */
+  /** Add a wall at (x, y). Removes cost if any. No-op on start/goal or existing walls. */
   paintWall: (x: number, y: number) => void;
-  /** Remove a wall at (x, y). No-op if no wall there. */
+  /** Paint a high path cost tile at (x, y). Removes wall if any. */
+  paintCost: (x: number, y: number, cost?: number) => void;
+  /** Set the configurable high path cost value. */
+  setHighCostValue: (cost: number) => void;
+  /** Remove a wall or high cost tile at (x, y). */
   eraseWall: (x: number, y: number) => void;
-  /** Move the start point. Removes wall at new position if any. */
+  /** Remove high cost tile at (x, y). */
+  eraseCost: (x: number, y: number) => void;
+  /** Move the start point. Removes wall/cost at new position if any. */
   setStart: (p: Point) => void;
-  /** Move the goal point. Removes wall at new position if any. */
+  /** Move the goal point. Removes wall/cost at new position if any. */
   setGoal: (p: Point) => void;
   /** Switch the active editing tool. */
   setActiveTool: (tool: Tool) => void;
-  /** Remove all walls (keeps size, start, goal). */
+  /** Remove all walls and custom costs (keeps size, start, goal). */
   clearGrid: () => void;
   /** Load a map preset (sets walls, start, goal, and resizes grid). */
   loadPreset: (
@@ -73,6 +83,8 @@ export const useGridStore = create<GridState>((set, get) => ({
   width: 10,
   height: 10,
   walls: new Set<string>(),
+  costs: new Map<string, number>(),
+  highCostValue: 5,
   start: { x: 0, y: 0 },
   goal: { x: 9, y: 9 },
   activeTool: 'wall',
@@ -82,64 +94,108 @@ export const useGridStore = create<GridState>((set, get) => ({
       width: w,
       height: h,
       walls: new Set<string>(),
+      costs: new Map<string, number>(),
       start: { x: 0, y: 0 },
       goal: { x: w - 1, y: h - 1 },
     }),
 
   paintWall: (x, y) => {
-    const { walls, start, goal, width, height } = get();
+    const { walls, costs, start, goal, width, height } = get();
     if (x < 0 || x >= width || y < 0 || y >= height) return;
     const k = wk(x, y);
     // Don't paint walls on start or goal
     if (k === wk(start.x, start.y) || k === wk(goal.x, goal.y)) return;
     if (walls.has(k)) return;
-    const next = new Set(walls);
-    next.add(k);
-    set({ walls: next });
+    const nextWalls = new Set(walls);
+    nextWalls.add(k);
+    if (costs.has(k)) {
+      const nextCosts = new Map(costs);
+      nextCosts.delete(k);
+      set({ walls: nextWalls, costs: nextCosts });
+    } else {
+      set({ walls: nextWalls });
+    }
   },
 
-  eraseWall: (x, y) => {
-    const { walls } = get();
+  paintCost: (x, y, cost) => {
+    const { walls, costs, start, goal, width, height, highCostValue } = get();
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
     const k = wk(x, y);
-    if (!walls.has(k)) return;
-    const next = new Set(walls);
-    next.delete(k);
-    set({ walls: next });
+    if (k === wk(start.x, start.y) || k === wk(goal.x, goal.y)) return;
+    const assignedCost = cost ?? highCostValue;
+    const nextCosts = new Map(costs);
+    nextCosts.set(k, assignedCost);
+    if (walls.has(k)) {
+      const nextWalls = new Set(walls);
+      nextWalls.delete(k);
+      set({ costs: nextCosts, walls: nextWalls });
+    } else {
+      set({ costs: nextCosts });
+    }
+  },
+
+  setHighCostValue: (cost) => set({ highCostValue: Math.max(2, Math.round(cost)) }),
+
+  eraseWall: (x, y) => {
+    const { walls, costs } = get();
+    const k = wk(x, y);
+    let changed = false;
+    let nextWalls = walls;
+    let nextCosts = costs;
+    if (walls.has(k)) {
+      nextWalls = new Set(walls);
+      nextWalls.delete(k);
+      changed = true;
+    }
+    if (costs.has(k)) {
+      nextCosts = new Map(costs);
+      nextCosts.delete(k);
+      changed = true;
+    }
+    if (changed) {
+      set({ walls: nextWalls, costs: nextCosts });
+    }
+  },
+
+  eraseCost: (x, y) => {
+    const { costs } = get();
+    const k = wk(x, y);
+    if (!costs.has(k)) return;
+    const nextCosts = new Map(costs);
+    nextCosts.delete(k);
+    set({ costs: nextCosts });
   },
 
   setStart: (p) => {
-    const { walls } = get();
+    const { walls, costs } = get();
     const k = wk(p.x, p.y);
-    if (walls.has(k)) {
-      const next = new Set(walls);
-      next.delete(k);
-      set({ start: p, walls: next });
-    } else {
-      set({ start: p });
-    }
+    const nextWalls = walls.has(k) ? new Set(walls) : walls;
+    nextWalls.delete(k);
+    const nextCosts = costs.has(k) ? new Map(costs) : costs;
+    nextCosts.delete(k);
+    set({ start: p, walls: nextWalls, costs: nextCosts });
   },
 
   setGoal: (p) => {
-    const { walls } = get();
+    const { walls, costs } = get();
     const k = wk(p.x, p.y);
-    if (walls.has(k)) {
-      const next = new Set(walls);
-      next.delete(k);
-      set({ goal: p, walls: next });
-    } else {
-      set({ goal: p });
-    }
+    const nextWalls = walls.has(k) ? new Set(walls) : walls;
+    nextWalls.delete(k);
+    const nextCosts = costs.has(k) ? new Map(costs) : costs;
+    nextCosts.delete(k);
+    set({ goal: p, walls: nextWalls, costs: nextCosts });
   },
 
   setActiveTool: (tool) => set({ activeTool: tool }),
 
-  clearGrid: () => set({ walls: new Set<string>() }),
+  clearGrid: () => set({ walls: new Set<string>(), costs: new Map<string, number>() }),
 
   loadPreset: (walls, start, goal, width, height) =>
     set({
       width,
       height,
       walls: new Set(walls.map(([x, y]) => wk(x, y))),
+      costs: new Map<string, number>(),
       start,
       goal,
     }),
@@ -149,6 +205,9 @@ export const useGridStore = create<GridState>((set, get) => ({
     switch (state.activeTool) {
       case 'wall':
         state.paintWall(x, y);
+        break;
+      case 'cost':
+        state.paintCost(x, y);
         break;
       case 'eraser':
         state.eraseWall(x, y);
@@ -163,11 +222,12 @@ export const useGridStore = create<GridState>((set, get) => ({
   },
 
   getSnapshot: () => {
-    const { width, height, walls, start, goal } = get();
+    const { width, height, walls, costs, start, goal } = get();
     return {
       width,
       height,
       walls: new Set(walls),
+      costs: new Map(costs),
       start: { ...start },
       goal: { ...goal },
     };

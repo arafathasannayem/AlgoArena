@@ -18,6 +18,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera } from '@react-three/drei';
 import { useGridStore } from '../state/gridStore';
 import { useAgentStore, type Agent } from '../state/agentStore';
+import { useCameraStore } from '../state/cameraStore';
 import { Tile } from './Tile';
 import { Wall } from './Wall';
 import { GoalGlow } from './GoalGlow';
@@ -35,12 +36,14 @@ function DioramaScene() {
   const width = useGridStore((s) => s.width);
   const height = useGridStore((s) => s.height);
   const walls = useGridStore((s) => s.walls);
+  const costs = useGridStore((s) => s.costs);
   const start = useGridStore((s) => s.start);
   const goal = useGridStore((s) => s.goal);
   const applyTool = useGridStore((s) => s.applyTool);
 
   const agents = useAgentStore((s) => s.agents);
   const toggleOverlay = useAgentStore((s) => s.toggleOverlay);
+  const isTopDown = useCameraStore((s) => s.isTopDown);
 
   // Group agents by current cell position to handle multi-agent clustering
   const { agentOffsets, cellClusters } = useMemo(() => {
@@ -123,6 +126,8 @@ function DioramaScene() {
             isStart={isStart}
             isGoal={isGoal}
             isWall={isWall}
+            cost={costs.get(k)}
+            receiveShadow={!isTopDown}
             onClick={() => applyTool(x, y)}
           />,
         );
@@ -133,6 +138,8 @@ function DioramaScene() {
               key={`w-${k}`}
               x={x}
               y={y}
+              castShadow={!isTopDown}
+              receiveShadow={!isTopDown}
               onClick={() => applyTool(x, y)}
             />,
           );
@@ -140,7 +147,7 @@ function DioramaScene() {
       }
     }
     return { tiles: ts, wallBlocks: ws };
-  }, [width, height, walls, start, goal, applyTool]);
+  }, [width, height, walls, costs, start, goal, isTopDown, applyTool]);
 
   return (
     <>
@@ -157,12 +164,12 @@ function DioramaScene() {
       {/* Interactive Orbit, Pan & Zoom Camera Controller */}
       <CameraController defaultZoom={zoom} />
 
-      {/* Lighting rig — static "baked" feel */}
-      <ambientLight intensity={0.45} />
+      {/* Lighting rig — static "baked" feel in 3D, even ambient in top-down 2D */}
+      <ambientLight intensity={isTopDown ? 0.95 : 0.45} />
       <directionalLight
-        castShadow
-        position={[20, 35, 20]}
-        intensity={1.5}
+        castShadow={!isTopDown}
+        position={isTopDown ? [0, 50, 0] : [20, 35, 20]}
+        intensity={isTopDown ? 0.6 : 1.5}
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-25}
         shadow-camera-right={25}
@@ -198,6 +205,7 @@ function DioramaScene() {
                   offsetX={offsetInfo.offsetX}
                   offsetZ={offsetInfo.offsetZ}
                   scale={offsetInfo.scale}
+                  castShadow={!isTopDown}
                   onClick={() => toggleOverlay(agent.id)}
                 />
               )}
@@ -248,9 +256,11 @@ function DioramaScene() {
 
 /** Diorama canvas wrapper. */
 export function Diorama() {
+  const isTopDown = useCameraStore((s) => s.isTopDown);
+
   return (
     <Canvas
-      shadows
+      shadows={!isTopDown}
       gl={{ antialias: true }}
       style={{ position: 'absolute', inset: 0 }}
     >

@@ -9,6 +9,7 @@
 
 import { useRef } from 'react';
 import { type Mesh } from 'three';
+import { Html } from '@react-three/drei';
 
 interface TileProps {
   x: number;
@@ -16,6 +17,8 @@ interface TileProps {
   isStart: boolean;
   isGoal: boolean;
   isWall: boolean;
+  cost?: number;
+  receiveShadow?: boolean;
   onClick: () => void;
 }
 
@@ -28,28 +31,55 @@ const COLOR_TILE = '#e8e2da';
 const COLOR_START = '#3b82f6';
 const COLOR_GOAL = '#f59e0b';
 const COLOR_WALL_TOP = '#8b8178';
+const COLOR_HIGH_COST = '#d97706'; // rich amber / rough terrain
 
-export function Tile({ x, y, isStart, isGoal, isWall, onClick }: TileProps) {
+export function Tile({
+  x,
+  y,
+  isStart,
+  isGoal,
+  isWall,
+  cost,
+  receiveShadow = true,
+  onClick,
+}: TileProps) {
   const meshRef = useRef<Mesh>(null);
+  const isHighCost = cost !== undefined && cost > 1 && !isStart && !isGoal && !isWall;
 
   let color: string;
   if (isStart) color = COLOR_START;
   else if (isGoal) color = COLOR_GOAL;
   else if (isWall) color = COLOR_WALL_TOP;
+  else if (isHighCost) color = COLOR_HIGH_COST;
   else color = COLOR_TILE;
 
   return (
-    <mesh
-      ref={meshRef}
-      position={[x, TILE_HEIGHT / 2, y]}
-      receiveShadow
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-    >
-      <boxGeometry args={[TILE_SIZE, TILE_HEIGHT, TILE_SIZE]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
+    <group>
+      <mesh
+        ref={meshRef}
+        position={[x, TILE_HEIGHT / 2, y]}
+        receiveShadow={receiveShadow}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+      >
+        <boxGeometry args={[TILE_SIZE, TILE_HEIGHT, TILE_SIZE]} />
+        <meshStandardMaterial
+          color={color}
+          roughness={isHighCost ? 0.85 : 0.4}
+          metalness={isHighCost ? 0.05 : 0.1}
+        />
+      </mesh>
+
+      {/* Path Cost Badge */}
+      {isHighCost && (
+        <Html center position={[x, 0.14, y]} style={{ pointerEvents: 'none' }}>
+          <span className="text-[9px] font-mono font-black text-amber-950 bg-amber-200/90 px-1 py-0.5 rounded shadow-sm border border-amber-600/30 select-none">
+            {cost}
+          </span>
+        </Html>
+      )}
+    </group>
   );
 }

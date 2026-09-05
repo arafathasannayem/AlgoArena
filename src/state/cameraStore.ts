@@ -14,6 +14,7 @@ export type CameraViewPreset = 'iso' | 'top';
 export interface CameraState {
   zoomAction: 'in' | 'out' | 'reset' | CameraViewPreset | null;
   zoomLevel: number;
+  isTopDown: boolean;
 
   triggerZoomIn: () => void;
   triggerZoomOut: () => void;
@@ -21,16 +22,19 @@ export interface CameraState {
   triggerPreset: (preset: CameraViewPreset) => void;
   clearAction: () => void;
   setZoomLevel: (zoom: number) => void;
+  setIsTopDown: (isTopDown: boolean) => void;
 }
 
 export const useCameraStore = create<CameraState>((set) => ({
   zoomAction: null,
   zoomLevel: 40,
+  isTopDown: false,
 
   triggerZoomIn: () => set({ zoomAction: 'in' }),
   triggerZoomOut: () => set({ zoomAction: 'out' }),
-  triggerReset: () => set({ zoomAction: 'reset' }),
-  triggerPreset: (preset) => set({ zoomAction: preset }),
+  triggerReset: () => set({ zoomAction: 'reset', isTopDown: false }),
+  triggerPreset: (preset) => set({ zoomAction: preset, isTopDown: preset === 'top' }),
   clearAction: () => set({ zoomAction: null }),
   setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
+  setIsTopDown: (isTopDown) => set({ isTopDown }),
 }));

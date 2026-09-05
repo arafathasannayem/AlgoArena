@@ -13,6 +13,8 @@ import { type Mesh } from 'three';
 interface WallProps {
   x: number;
   y: number;
+  castShadow?: boolean;
+  receiveShadow?: boolean;
   onClick?: () => void;
 }
 
@@ -20,15 +22,21 @@ const WALL_HEIGHT = 0.8;
 const WALL_SIZE = 0.96;
 const WALL_COLOR = '#6b6560';
 
-export function Wall({ x, y, onClick }: WallProps) {
+export function Wall({
+  x,
+  y,
+  castShadow = true,
+  receiveShadow = true,
+  onClick,
+}: WallProps) {
   const meshRef = useRef<Mesh>(null);
 
   return (
     <mesh
       ref={meshRef}
       position={[x, WALL_HEIGHT / 2 + 0.1, y]}
-      castShadow
-      receiveShadow
+      castShadow={castShadow}
+      receiveShadow={receiveShadow}
       onClick={(e) => {
         if (onClick) {
           e.stopPropagation();

@@ -215,7 +215,8 @@ export function* aStarSearch(
       const nbrKey = key(nbr);
       if (closedSet.has(nbrKey)) continue;
 
-      const tentativeG = currentG + 1; // uniform cost per step
+      const stepCost = grid.costs?.get(nbrKey) ?? 1;
+      const tentativeG = currentG + stepCost;
       const bestG = gScore.get(nbrKey) ?? Infinity;
 
       if (tentativeG < bestG) {

@@ -212,5 +212,29 @@ describe('A* Search', () => {
       const result = step.value as AlgorithmResult;
       expect(result.status).toBe('success');
     });
+
+    it('should detour around high cost tiles when a lower-cost path exists', () => {
+      // Direct path (0,0)->(1,0)->(2,0) passes through (1,0).
+      // Detour path (0,0)->(0,1)->(1,1)->(2,1)->(2,0) takes 4 steps (cost 4).
+      // When (1,0) has cost 10, total direct path cost is 11 > 4.
+      const costs = new Map<string, number>();
+      costs.set('1,0', 10);
+
+      const { result } = run({
+        width: 3,
+        height: 2,
+        walls: new Set<string>(),
+        costs,
+        start: { x: 0, y: 0 },
+        goal: { x: 2, y: 0 },
+      });
+
+      expect(result.status).toBe('success');
+      expect(result.path).not.toBeNull();
+      // Should detour: path must NOT pass through high-cost cell (1,0)
+      const passedThroughHighCost = result.path!.some((p) => p.x === 1 && p.y === 0);
+      expect(passedThroughHighCost).toBe(false);
+      expect(result.path).toHaveLength(5); // 4 steps + start = 5 nodes
+    });
   });
 });
