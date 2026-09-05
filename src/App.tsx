@@ -1,15 +1,20 @@
 /**
  * App — Root component for Algorithm Arena.
  *
- * Currently renders a placeholder canvas. The 3D diorama scene and HUD overlay
- * will be layered here in later phases (Phase 2+).
+ * Composes the grid view with floating HUD panels. In Phase 2 the grid is
+ * rendered as 2D divs; Phase 3 replaces GridView with the 3D Diorama.
  */
+
+import { GridView } from './ui/GridView';
+import { ToolPalette } from './ui/ToolPalette';
+import { GridSizeControl } from './ui/GridSizeControl';
+
 export function App() {
   return (
-    <div className="h-screen w-screen bg-board-base flex items-center justify-center">
-      <h1 className="text-2xl font-bold text-glass-text bg-glass-bg px-6 py-4 rounded-panel backdrop-blur-md border border-glass-border">
-        Algorithm Arena
-      </h1>
+    <div className="h-screen w-screen bg-board-base flex items-center justify-center overflow-hidden">
+      <GridView />
+      <ToolPalette />
+      <GridSizeControl />
     </div>
   );
 }
