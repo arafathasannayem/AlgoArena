@@ -6,39 +6,39 @@ This document is for **AI agents and human contributors** picking up work on thi
 
 Algorithm Arena is a browser-based pathfinding visualizer where users race different search algorithms against each other on a shared grid. The core architecture is:
 
-- **Algorithm engine** (pure TypeScript, framework-free) — the only part currently implemented
-- **State layer** (Zustand) — TODO
-- **Scene layer** (React Three Fiber) — TODO
-- **UI layer** (Tailwind CSS) — TODO
+- **Algorithm engine** (`src/algorithms/`): pure TypeScript, framework-free generator functions
+- **State layer** (`src/state/`): Zustand stores for grid, agents, race, camera, presets, and menus
+- **Scene layer** (`src/scene/`): React Three Fiber 3D isometric diorama with GLB models
+- **UI layer** (`src/ui/`): Tailwind CSS v4 glassmorphic HUD, launcher menu, and modal screens
 
 **Source of truth**: [`init.md`](init.md) is the original build plan. [`design.md`](design.md) has architecture details.
 
 ## 2. Current State (What's Done)
 
-### ✅ Phase 0 — Scaffolding
+### Phase 0 — Scaffolding
 - Vite 6 + React 19 + TypeScript (strict) + Tailwind CSS v4
 - All dependencies installed and configured
-- `npm run dev`, `npm test`, `npm run typecheck` all work
+- `npm run dev`, `npm test`, `npm run typecheck`, `npm run lint` all work cleanly
 
-### ✅ Phase 1 — Algorithm Engine (Partial)
+### Phase 1 — Algorithm Engine (Partial)
 - **A\* Search**: Fully implemented and tested (17 tests)
 - **BFS**: Fully implemented and tested (16 tests)
 - **Registry**: Wired up with `implemented` flag per algorithm (10 tests)
 - **Test fixtures**: 4 canonical grids with assertion helpers
 
-### 🚧 TODO — Remaining Algorithms (For Group Project)
+### TODO — Remaining Algorithms (For Group Project)
 - **Dijkstra, DFS, Greedy Best-First, Hill Climbing, Simulated Annealing**
 - Each has a stub file with detailed implementation notes and interface signatures
 - Stubs throw clear errors indicating they are ready for team implementation
 
-### ✅ Phases 2-8 & Game Polish — Full Application Complete
-- **Phase 2 (Grid & Presets)**: `gridStore.ts`, tool palette, drag wall painting, high-cost terrain, 3 presets (7 tests)
-- **Phase 3 (3D Scene)**: `Diorama.tsx` (diorama plinth pedestal), `IsometricCamera`, `Tile.tsx` (chamfered ceramic slabs), `Wall.tsx` (stone monoliths), `GoalGlow.tsx` (spinning crystal beacon)
-- **Phase 4 (Agents)**: `agentStore.ts`, `AgentPawn.tsx` (custom robot/meeple figurine with idle bob & ground ring aura), `NodeOverlay`, `PathTrail`, `HeuristicRay` (5 tests)
-- **Phase 5 (Race Scheduler)**: `raceStore.ts`, rAF scheduler, mid-race speed slider with arcade chips & status badge (4 tests)
-- **Phase 6 (Analytics)**: `Leaderboard.tsx` (live standings with medals), `ResultsDashboard.tsx` (comparative stats, podium, 1-click clipboard summary)
-- **Phase 7 (Visual Polish & Audio)**: Web Audio API sound synthesizer (`src/utils/sound.ts`, `soundStore.ts`), global keyboard hotkeys (`useKeyboardShortcuts.ts`), player manual (`HelpModal.tsx`)
-- **Phase 8 (QA & Ship)**: 75 tests passing, clean typecheck, clean lint, production build verified
+### Phases 2-8 & Polish — Full Application Complete
+- **Phase 2 (Grid & Presets)**: `gridStore.ts`, `presetStore.ts`, tool palette, drag wall painting, configurable high-cost terrain, 7 curated presets + custom map saving in `localStorage`
+- **Phase 3 (3D Scene)**: `Diorama.tsx` (sandstone desert diorama), `CameraController.tsx` (pan/zoom/orbit), `Tile.tsx` (desert slabs with cost inscriptions), `Wall.tsx` (sandstone boulder monoliths), `GoalGlow.tsx` (golden altar beacon)
+- **Phase 4 (Agents)**: `agentStore.ts`, `AgentPawn.tsx` (camel 3D models with team-colored saddles and non-overlapping cell clustering), `NodeOverlay`, `PathTrail`, `HeuristicRay`, `ScanReticle`
+- **Phase 5 (Race Scheduler)**: `raceStore.ts`, rAF scheduler, two-phase execution (Scout exploration sweep followed by physical path runner sprint), mid-race speed controls
+- **Phase 6 (Analytics)**: `Leaderboard.tsx` (live standings with distance and cost), `ResultsDashboard.tsx` (comparative stats, ranked standings, 1-click clipboard summary)
+- **Phase 7 (Visual Polish & Audio)**: Web Audio API sound synthesizer (`src/utils/sound.ts`, `soundStore.ts`), global keyboard hotkeys (`useKeyboardShortcuts.ts`), player manual (`HelpModal.tsx`), Game Start Menu (`StartMenu.tsx`), Preset Chooser screen (`PresetChooserModal.tsx`, `MiniMapPreview.tsx`), Save Preset dialog (`SavePresetModal.tsx`)
+- **Phase 8 (QA & Ship)**: 90 unit tests passing across 10 test files, clean typecheck, clean lint, production build verified
 
 ## 3. How to Pick Up Work
 
@@ -75,7 +75,7 @@ function* myAlgorithm(grid: GridSnapshot, config?: AlgorithmConfig): AlgorithmGe
     yield { kind: 'visit', node: current };
 
     // 4. Check if goal reached
-    if (current === goal) {
+    if (current.x === grid.goal.x && current.y === grid.goal.y) {
       const path = reconstructPath(...);
       yield { kind: 'path', path };
       const result = { status: 'success', path, nodesExplored, timeMs: performance.now() - t0 };
@@ -95,18 +95,6 @@ function* myAlgorithm(grid: GridSnapshot, config?: AlgorithmConfig): AlgorithmGe
 }
 ```
 
-### 3.3 Working on Phases 2-8
-
-Each phase builds on the previous. **Do not skip phases.** Read `init.md` §4 for detailed phase specs. Key constraints:
-
-- **Phase 2** (Grid): Zustand store + click-drag wall painting + presets
-- **Phase 3** (Scene): R3F orthographic camera at isometric angle, wall blocks with shadows
-- **Phase 4** (Agents): Agent store, pawn meshes, per-agent visualization overlay
-- **Phase 5** (Race): Single scheduler advancing all generators, speed slider
-- **Phase 6** (Analytics): Live leaderboard + post-race dashboard
-- **Phase 7** (Polish): Glassmorphism HUD, shadow tuning, style guide compliance
-- **Phase 8** (QA): Cross-test all combos, perf check at 30×30, production build
-
 ## 4. File Map
 
 ```
@@ -123,18 +111,18 @@ AlgoArena/
 ├── index.html
 └── src/
     ├── main.tsx                     # React entry point
-    ├── App.tsx                      # Root component (placeholder)
+    ├── App.tsx                      # Root component
     ├── styles.css                   # Tailwind v4 @theme tokens
     ├── vite-env.d.ts
     ├── algorithms/                  # ⭐ PURE ENGINE — no React/Three imports
     │   ├── types.ts                 # Core type definitions
-    │   ├── astar.ts                 # ✅ A* Search
-    │   ├── bfs.ts                   # ✅ BFS
-    │   ├── dijkstra.ts              # 🚧 TODO stub
-    │   ├── dfs.ts                   # 🚧 TODO stub
-    │   ├── greedyBestFirst.ts       # 🚧 TODO stub
-    │   ├── hillClimbing.ts          # 🚧 TODO stub
-    │   ├── simulatedAnnealing.ts    # 🚧 TODO stub
+    │   ├── astar.ts                 # Implemented A* Search
+    │   ├── bfs.ts                   # Implemented BFS
+    │   ├── dijkstra.ts              # TODO stub
+    │   ├── dfs.ts                   # TODO stub
+    │   ├── greedyBestFirst.ts       # TODO stub
+    │   ├── hillClimbing.ts          # TODO stub
+    │   ├── simulatedAnnealing.ts    # TODO stub
     │   ├── index.ts                 # Registry (ALGORITHMS map)
     │   └── __tests__/
     │       ├── fixtures.ts          # 4 canonical test grids + helpers
@@ -142,28 +130,54 @@ AlgoArena/
     │       ├── bfs.test.ts          # 16 tests
     │       └── registry.test.ts     # 10 tests
     ├── state/                       # ⭐ Zustand stores
-    │   ├── gridStore.ts             # ✅ Grid dimensions, walls, start/goal, presets
-    │   ├── agentStore.ts            # ✅ Agent list & visualization state
-    │   └── raceStore.ts             # ✅ rAF scheduler, speed, status
+    │   ├── gridStore.ts             # Grid dimensions, walls, start/goal, presets
+    │   ├── agentStore.ts            # Agent list, positions, overlays, and cluster offsets
+    │   ├── raceStore.ts             # rAF scheduler, speed, status, two-phase runner
+    │   ├── presetStore.ts           # Custom presets, localStorage CRUD, arena loader
+    │   ├── gameMenuStore.ts         # Start menu, preset chooser, and save preset modal
+    │   ├── soundStore.ts            # Web Audio FX toggle and volume state
+    │   ├── cameraStore.ts           # Zoom controls, isometric/top-down camera states
+    │   └── __tests__/
+    │       ├── gridStore.test.ts    # 8 tests
+    │       ├── agentStore.test.ts   # 5 tests
+    │       ├── raceStore.test.ts    # 4 tests
+    │       ├── cameraStore.test.ts  # 6 tests
+    │       └── presetStore.test.ts  # 6 tests
     ├── scene/                       # ⭐ React Three Fiber
-    │   ├── Diorama.tsx              # ✅ Main canvas + orthographic camera
-    │   ├── Tile.tsx                 # ✅ Grid tile mesh
-    │   ├── Wall.tsx                 # ✅ Raised 3D wall block with shadow
-    │   ├── Node.tsx                 # ✅ Frontier/visited overlay
-    │   ├── AgentPawn.tsx            # ✅ Animated pawn mesh (spring lerp)
-    │   ├── PathTrail.tsx            # ✅ Emissive path visualization
-    │   ├── HeuristicRay.tsx         # ✅ Pulsing ray to heuristic target
-    │   └── GoalGlow.tsx             # ✅ Emissive pulsing goal beacon
-    ├── ui/                          # ⭐ Tailwind CSS Glassmorphic HUD
-    │   ├── ToolPalette.tsx          # ✅ Wall/eraser/start/goal tools + presets
-    │   ├── GridSizeControl.tsx      # ✅ 10×10 / 20×20 / 30×30 selector
-    │   ├── AgentPanel.tsx           # ✅ Add/remove agents & overlay toggles
-    │   ├── SpeedSlider.tsx          # ✅ Play/pause/step & live speed slider
-    │   ├── Leaderboard.tsx          # ✅ Live ranked standings
-    │   ├── ResultsDashboard.tsx     # ✅ Post-race comparative results
-    │   └── Hud.tsx                  # ✅ HUD container
+    │   ├── Diorama.tsx              # Main canvas + diorama pedestal + lighting
+    │   ├── CameraController.tsx     # Animated camera transitions, zoom, and orientation
+    │   ├── Tile.tsx                 # Grid tile mesh with soft cost inscriptions
+    │   ├── Wall.tsx                 # Sandstone boulder monoliths with shadows
+    │   ├── Node.tsx                 # Frontier and visited overlay markers
+    │   ├── AgentPawn.tsx            # Animated camel pawns with team-colored saddles
+    │   ├── PathTrail.tsx            # Emissive path line visualization
+    │   ├── HeuristicRay.tsx         # Pulsing ray to heuristic target
+    │   ├── GoalGlow.tsx             # Emissive pulsing goal beacon
+    │   ├── ScanReticle.tsx          # Scout sweep evaluation indicator
+    │   ├── SquareClusterIndicator.tsx # 4+ agent cluster overflow indicator
+    │   └── clusterUtils.ts          # Non-overlapping pawn grid layout helpers
+    ├── ui/                          # ⭐ Tailwind CSS Glassmorphic HUD & Menus
+    │   ├── StartMenu.tsx            # Title screen launcher & game onboarding
+    │   ├── PresetChooserModal.tsx   # Fullscreen preset browser with search & tabs
+    │   ├── MiniMapPreview.tsx       # SVG vector thumbnail generator for presets
+    │   ├── SavePresetModal.tsx      # Modal to capture & save custom maps
+    │   ├── ToolPalette.tsx          # Wall/cost/eraser/start/goal tools + presets
+    │   ├── GridSizeControl.tsx      # 10×10 / 20×20 / 30×30 selector
+    │   ├── AgentPanel.tsx           # Add/remove agents & overlay toggles
+    │   ├── SpeedSlider.tsx          # Play/pause/step & live speed slider
+    │   ├── CameraControls.tsx       # Floating zoom in/out & view angle controls
+    │   ├── Leaderboard.tsx          # Live ranked standings with distance & cost
+    │   ├── ResultsDashboard.tsx     # Post-race comparative analytics & copy summary
+    │   ├── HelpModal.tsx            # Player manual, tile rules & hotkey legend
+    │   └── Hud.tsx                  # Root HUD container managing overlay layering
+    ├── hooks/
+    │   └── useKeyboardShortcuts.ts  # Global hotkeys listener
+    ├── utils/
+    │   └── sound.ts                 # Web Audio API procedural sound synthesizer
     └── maps/
-        └── presets.ts               # ✅ The Spiral, Local Maxima Trap, Chokepoints
+        ├── presets.ts               # 7 curated challenge maps (Spiral, Oasis, etc.)
+        └── __tests__/
+            └── presets.test.ts      # 8 tests validating map geometry & endpoints
 ```
 
 ## 5. Test Fixtures Reference
@@ -243,8 +257,9 @@ Before committing, always run:
 
 ```bash
 npm run typecheck   # Must exit 0 (no TypeScript errors)
-npm test            # Must exit 0 (all tests pass)
-npm run lint        # Should exit 0 (no lint errors)
+npm test            # Must exit 0 (all 90 tests pass)
+npm run lint        # Must exit 0 (no lint errors)
+npm run build       # Must exit 0 (production build verified)
 ```
 
 ## 9. Rules (Non-Negotiable)
@@ -253,22 +268,5 @@ npm run lint        # Should exit 0 (no lint errors)
 2. **No inline lint suppression** — `// eslint-disable` and `// @ts-ignore` are banned.
 3. **Algorithm isolation** — `src/algorithms/` must never import from `scene/`, `ui/`, or `state/`.
 4. **Test with implementation** — every algorithm gets tests in the same phase.
-5. **One commit per phase** — message format: `phase N: <summary>`.
-6. **Don't break existing tests** — 43 tests currently pass. They must continue to pass.
-
-## 10. FAQ
-
-**Q: Can I extract the MinHeap from astar.ts into a shared utility?**
-A: Yes, if another algorithm needs it. Put it in `src/algorithms/utils.ts`. Keep it in the `algorithms/` directory — no framework deps.
-
-**Q: Should DFS path be optimal?**
-A: No. DFS explicitly finds *a* path, not the shortest. The test should verify the path is valid (contiguous, avoids walls) but not assert it's optimal.
-
-**Q: How does Hill Climbing differ from Greedy Best-First?**
-A: Hill Climbing has **no backtracking** — it only looks at immediate neighbors and picks the best. If no neighbor improves the heuristic, it's `trapped`. Greedy Best-First uses a priority queue and can explore other branches.
-
-**Q: What config knobs does Simulated Annealing need?**
-A: `initialTemp` (default 100) and `coolingRate` (default 0.995). Read from `AlgorithmConfig`. The acceptance probability for worse moves is `P = e^(-ΔE / T)`.
-
-**Q: Can I use diagonal movement?**
-A: No. All algorithms use 4-directional cardinal movement only. The `neighbors()` helper uses `DIRS = [{0,-1}, {1,0}, {0,1}, {-1,0}]`.
+5. **No AI Slop / Emojis** — Use crisp typographic indicators (`#1`, `#2`) and clean Lucide SVG icons.
+6. **Don't break existing tests** — 90 tests currently pass. They must continue to pass.

@@ -21,9 +21,9 @@ This document captures the architecture, design decisions, and conventions for t
 | Layer | Directory | Responsibility | Dependencies |
 |-------|-----------|---------------|-------------|
 | **Algorithm Engine** | `src/algorithms/` | Pure pathfinding logic. Generator-based. Framework-agnostic. | None (stdlib only) |
-| **State** | `src/state/` | Zustand stores for grid, agents, race orchestration. | Algorithm Engine |
-| **Scene** | `src/scene/` | React Three Fiber 3D rendering — diorama, tiles, walls, pawns. | State, Three.js |
-| **UI** | `src/ui/` | Tailwind CSS overlay — HUD panels, controls, leaderboard. | State |
+| **State** | `src/state/` | Zustand stores for grid, agents, race orchestration, presets, menus. | Algorithm Engine |
+| **Scene** | `src/scene/` | React Three Fiber 3D rendering — diorama, tiles, walls, pawns, reticles. | State, Three.js |
+| **UI** | `src/ui/` | Tailwind CSS overlay — HUD panels, Start Menu, Preset Chooser, Dashboard. | State |
 
 ### Critical Boundary
 
@@ -45,7 +45,6 @@ Every algorithm is implemented as a **TypeScript generator function** that:
 This design lets the race scheduler advance N agents independently at a shared, slider-controlled pace. The scheduler calls `.next()` on each generator once per tick.
 
 ```typescript
-// Simplified flow:
 function* myAlgorithm(grid: GridSnapshot): AlgorithmGenerator {
   // 1. Initialize data structures
   // 2. Main loop:
@@ -97,8 +96,6 @@ function* myAlgorithm(grid: GridSnapshot): AlgorithmGenerator {
 
 ### 2.5 TODO Algorithms
 
-Each stub file contains detailed implementation notes. Summary:
-
 | Algorithm | Key Difference from A* | Special Behavior |
 |-----------|----------------------|-----------------|
 | **Dijkstra** | h(n) = 0 always | Uniform-cost, no heuristic target |
@@ -132,98 +129,65 @@ interface AlgorithmEntry {
 }
 ```
 
-Helper functions:
-- `getImplementedAlgorithms()` — for UI dropdowns (only show working ones)
-- `getTodoAlgorithms()` — for progress tracking
-
 ## 4. State Management
 
-Three Zustand stores, each owning a distinct domain:
+Zustand stores structured by domain:
 
-| Store | Owns | Implemented |
+| Store | Owns | Persistence |
 |-------|------|-------------|
-| `gridStore` | Grid dimensions, walls, start/goal, editing tools, presets | ✅ Yes |
-| `agentStore` | Agent list, algorithm assignment, per-agent visualization state | ✅ Yes |
-| `raceStore` | Generator instances, rAF scheduler, mid-race speed, race status | ✅ Yes |
+| `gridStore` | Dimensions, walls, start/goal, active tool, terrain costs | In-memory / presets |
+| `agentStore` | Agent list, colors, visited nodes, live path, cluster offsets | In-memory |
+| `raceStore` | Generator instances, rAF scheduler, mid-race speed, race status | In-memory |
+| `presetStore` | Official presets, custom map saving & deletion, arena loader | `localStorage` |
+| `gameMenuStore` | Start Menu launcher, Preset Chooser modal, Save Preset modal | In-memory |
+| `soundStore` | Procedural Web Audio FX enable/mute state | In-memory |
+| `cameraStore` | Orthographic zoom, reset isometric angle, top-down 2D preset | In-memory |
 
 ## 5. Scene Architecture
 
-The scene uses React Three Fiber with an **orthographic camera** at true isometric angle:
-- Position `[40, 40, 40]` looking at `[0, 0, 0]` (~35.264° tilt, 45° rotation)
-- Auto-calculated zoom fitting grid sizes 10×10, 20×20, 30×30 cleanly
-- Shadow-mapping enabled with soft directional sunlight and ambient fill
-
-Component hierarchy:
-```
-<Canvas shadows>
-  <OrthographicCamera makeDefault />
-  <ambientLight />
-  <directionalLight castShadow />
-  <group position={[offsetX, 0, offsetZ]}>   (centered grid)
-    {tiles.map(Tile)}
-    {walls.map(Wall)}                        (physical 3D blocks with shadows)
-    <GoalGlow />                             (pulsing emissive beacon)
-    {agents.map(AgentPawn)}                  (spring-animated lerped pawns)
-    {agents.map(NodeOverlay)}                (visited + frontier highlights)
-    {agents.map(PathTrail)}                  (emissive live path indicators)
-    {agents.map(HeuristicRay)}               (pulsing line to heuristicTarget)
-  </group>
-</Canvas>
-```
+The scene uses React Three Fiber with an **orthographic camera** and tabletop desert aesthetics:
+- **Diorama Pedestal**: Beveled sandstone slab pedestal grounding the board.
+- **Lighting**: Soft directional sunlight with shadow maps + ambient fill light.
+- **Camera Navigation**: Smooth animated transitions between isometric perspective (~35.264° tilt, 45° rotation) and Top-Down 2D view, with zoom controls.
+- **Desert 3D Assets**:
+  - Wall Monoliths: 3D sandstone boulder clusters (`sandstone-boulder.glb`).
+  - Rough Terrain: Desert scrub vegetation with configurable traversal cost (`desert-scrub.glb`).
+  - Agents: Animated camel figurines with team saddle colors (`camel.glb`) and local Draco decompression.
+- **Agent Dynamics & Anti-Overlap**:
+  - Non-overlapping pawn grid layout via `clusterUtils.ts` when multiple agents occupy the same tile.
+  - Two-phase execution: Search sweep phase (frontier reticle sweeps grid without pawn teleporting over walls) followed by smooth physical path runner sprint.
 
 ## 6. UI Architecture
 
-Glassmorphism floating panels, edge-anchored (never blocking center board):
-- **Top-left**: Agent management panel (`AgentPanel.tsx`)
-- **Top-left (adjacent)**: Live standings leaderboard (`Leaderboard.tsx`)
-- **Top-right**: Grid size selector (`GridSizeControl.tsx`)
-- **Left edge**: Tool palette & preset maps (`ToolPalette.tsx`)
-- **Bottom center**: Playback & speed controls (`SpeedSlider.tsx`)
-- **Modal overlay**: Post-race analytics dashboard (`ResultsDashboard.tsx`)
-
-Style tokens defined in `src/styles.css` via Tailwind v4 `@theme`:
-- `--color-glass-bg`: rgba(15, 23, 42, 0.65)
-- `--color-glass-border`: rgba(255, 255, 255, 0.12)
-- Backdrop blur via `backdrop-blur-md`
+Glassmorphism floating panels with a restrained, minimal color guideline (no AI slop, no emojis, no artificial gradients):
+- **Start Menu (`StartMenu.tsx`)**: Game launcher onboarding card offering Quick Match, Map Preset Browser, Sandbox mode, and Manual.
+- **Preset Chooser (`PresetChooserModal.tsx`)**: Real-time vector SVG mini-map browser for 7 curated challenges and custom user maps.
+- **Save Preset Modal (`SavePresetModal.tsx`)**: Capture active grid walls, dimensions, and costs to browser `localStorage`.
+- **Toolbox (`ToolPalette.tsx`)**: Draggable tool window for walls, eraser, high-cost terrain, and start/goal points. Automatically hidden during active races to maintain an unobstructed view.
+- **Grid Size Selector (`GridSizeControl.tsx`)**: 10×10, 20×20, 30×30 grid chooser, automatically hidden during active races.
+- **Agent Panel (`AgentPanel.tsx`)**: Add/remove agents and toggle visualization overlays.
+- **Speed Slider (`SpeedSlider.tsx`)**: Play/pause/step playback bar with fine slider and quick multipliers (0.5x, 1x, 2x, 5x, MAX).
+- **Leaderboard (`Leaderboard.tsx`)**: Live ranked standings showing goal distance, explored count, and path cost.
+- **Results Dashboard (`ResultsDashboard.tsx`)**: Post-race analytics table with 1-click clipboard summary export.
+- **Player Guide (`HelpModal.tsx`)**: In-game manual with tile mechanics, algorithm traits, and keyboard hotkeys.
 
 ## 7. Testing Strategy
 
-### Unit Tests (Vitest)
-- **Scope**: Algorithm engine only (pure logic, no DOM/WebGL)
-- **Fixtures**: 4 canonical grids in `src/algorithms/__tests__/fixtures.ts`
-  - Open field (5×5, no walls)
-  - Wall detour (7×7, wall blocks direct path)
-  - U-trap (10×10, concave wall traps greedy algorithms)
-  - Fully blocked (5×5, goal surrounded by walls)
-- **Assertions**: Path validity (contiguous, avoids walls, correct endpoints), status correctness, generator protocol compliance
-
-### Adding Tests for New Algorithms
-
-When implementing a new algorithm:
-1. Create `src/algorithms/__tests__/<name>.test.ts`
-2. Import the 4 fixtures from `fixtures.ts`
-3. Test all 4 grids + generator protocol + any algorithm-specific behavior
-4. Use the `pathEndpoints`, `pathIsContiguous`, `pathAvoidsWalls` helpers
+### Test Suites (Vitest)
+- Total tests: **90 unit tests** across 10 test suites.
+- Coverage:
+  - Algorithm engine (`astar.test.ts`, `bfs.test.ts`, `registry.test.ts`): 43 tests
+  - Grid and map presets (`gridStore.test.ts`, `presets.test.ts`): 16 tests
+  - Custom preset persistence (`presetStore.test.ts`): 6 tests
+  - Agent and cluster mechanics (`agentStore.test.ts`, `clusterUtils.test.ts`): 11 tests
+  - Race scheduler (`raceStore.test.ts`): 4 tests
+  - Camera navigation (`cameraStore.test.ts`): 6 tests
+- Fixtures: 4 canonical test grids + assertion helpers in `src/algorithms/__tests__/fixtures.ts`.
 
 ## 8. Conventions
 
 ### Code Style
-- **No `any`** — ever. Fix the types instead.
-- **No inline lint suppression** — if it doesn't compile, fix the code.
-- Strict TypeScript: `strict: true`, `noUncheckedIndexedAccess: true`
-
-### Commit Messages
-- Format: `phase N: <summary>`
-- One commit per completed phase
-- Don't commit mid-phase with broken tests
-
-### Dependencies
-- Smallest dependency that does the job
-- The algorithm engine uses zero external deps (custom min-heap)
-- Don't add packages without a stated reason
-
-### File Naming
-- Algorithms: `camelCase.ts` (e.g., `greedyBestFirst.ts`)
-- Components: `PascalCase.tsx` (e.g., `AgentPawn.tsx`)
-- Stores: `camelCase.ts` (e.g., `gridStore.ts`)
-- Tests: `<name>.test.ts` in `__tests__/` directories
+- **No `any`** — TypeScript strict mode strictly enforced.
+- **No inline lint suppression** — All ESLint rules adhered to without exception.
+- **No Emojis or AI Slop** — Monospace typographic indicators (`#1`, `#2`) and clean Lucide SVG icons.
+- **Algorithm isolation** — `src/algorithms/` must never import from `scene/`, `ui/`, or `state/`.
