@@ -31,14 +31,14 @@ Algorithm Arena is a browser-based pathfinding visualizer where users race diffe
 - Each has a stub file with detailed implementation notes and interface signatures
 - Stubs throw clear errors indicating they are ready for team implementation
 
-### ✅ Phases 2-8 — Full Application Complete
-- **Phase 2 (Grid & Presets)**: `gridStore.ts`, tool palette, drag wall painting, 3 presets (7 tests)
-- **Phase 3 (3D Scene)**: `Diorama.tsx`, `IsometricCamera`, `Tile.tsx`, `Wall.tsx`, `GoalGlow.tsx`
-- **Phase 4 (Agents)**: `agentStore.ts`, `AgentPawn.tsx` (spring lerp), `NodeOverlay`, `PathTrail`, `HeuristicRay` (5 tests)
-- **Phase 5 (Race Scheduler)**: `raceStore.ts`, rAF scheduler, mid-race speed slider (4 tests)
-- **Phase 6 (Analytics)**: `Leaderboard.tsx` (live standings), `ResultsDashboard.tsx` (comparative stats)
-- **Phase 7 (Visual Polish)**: Glassmorphism HUD overlay, edge-anchored panels, tactile theme
-- **Phase 8 (QA & Ship)**: 59 tests passing, clean typecheck, clean lint, production build verified
+### ✅ Phases 2-8 & Game Polish — Full Application Complete
+- **Phase 2 (Grid & Presets)**: `gridStore.ts`, tool palette, drag wall painting, high-cost terrain, 3 presets (7 tests)
+- **Phase 3 (3D Scene)**: `Diorama.tsx` (diorama plinth pedestal), `IsometricCamera`, `Tile.tsx` (chamfered ceramic slabs), `Wall.tsx` (stone monoliths), `GoalGlow.tsx` (spinning crystal beacon)
+- **Phase 4 (Agents)**: `agentStore.ts`, `AgentPawn.tsx` (custom robot/meeple figurine with idle bob & ground ring aura), `NodeOverlay`, `PathTrail`, `HeuristicRay` (5 tests)
+- **Phase 5 (Race Scheduler)**: `raceStore.ts`, rAF scheduler, mid-race speed slider with arcade chips & status badge (4 tests)
+- **Phase 6 (Analytics)**: `Leaderboard.tsx` (live standings with medals), `ResultsDashboard.tsx` (comparative stats, podium, 1-click clipboard summary)
+- **Phase 7 (Visual Polish & Audio)**: Web Audio API sound synthesizer (`src/utils/sound.ts`, `soundStore.ts`), global keyboard hotkeys (`useKeyboardShortcuts.ts`), player manual (`HelpModal.tsx`)
+- **Phase 8 (QA & Ship)**: 75 tests passing, clean typecheck, clean lint, production build verified
 
 ## 3. How to Pick Up Work
 
