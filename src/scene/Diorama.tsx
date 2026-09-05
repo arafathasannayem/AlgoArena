@@ -13,7 +13,7 @@
  * @module scene/Diorama
  */
 
-import { useMemo } from 'react';
+import { useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera } from '@react-three/drei';
 import { useGridStore } from '../state/gridStore';
@@ -301,7 +301,9 @@ export function Diorama() {
       gl={{ antialias: true }}
       style={{ position: 'absolute', inset: 0 }}
     >
-      <DioramaScene />
+      <Suspense fallback={null}>
+        <DioramaScene />
+      </Suspense>
     </Canvas>
   );
 }

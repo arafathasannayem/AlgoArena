@@ -13,7 +13,7 @@
 
 import { useRef } from 'react';
 import { type Mesh } from 'three';
-import { Text } from '@react-three/drei';
+import { Text, useGLTF, Clone } from '@react-three/drei';
 import { useRaceStore } from '../state/raceStore';
 import { useGridStore } from '../state/gridStore';
 import { playPlace } from '../utils/sound';
@@ -31,6 +31,9 @@ interface TileProps {
 
 const TILE_HEIGHT = 0.08;
 const TILE_SIZE = 0.96;
+
+const SCRUB_URL = '/3d-assets/desert-scrub.glb';
+const DRACO_URL = '/draco/';
 
 // Desert Palette
 const COLOR_TILE_BASE = '#c89b6b';
@@ -138,73 +141,71 @@ export function Tile({
         </group>
       )}
 
-      {/* High Cost: Rough Rocky Desert Terrain Scree */}
+      {/* High Cost: Rough Desert Terrain with Desert Scrub */}
       {isHighCost && (
-        <group position={[0, TILE_HEIGHT, 0]}>
-          {/* Cracked badlands stone bed */}
-          <mesh position={[0, 0.005, 0]} receiveShadow={receiveShadow}>
-            <boxGeometry args={[0.88, 0.012, 0.88]} />
-            <meshStandardMaterial
-              color={COLOR_ROUGH_TERRAIN_SURFACE}
-              roughness={0.95}
-              metalness={0.05}
-            />
-          </mesh>
-
-          {/* Miniature Jagged Desert Boulders */}
-          <mesh
-            position={[-0.22, 0.035, -0.2]}
-            rotation={[0.3, 0.5, 0.2]}
-            castShadow={receiveShadow}
-            receiveShadow={receiveShadow}
-          >
-            <dodecahedronGeometry args={[0.075, 0]} />
-            <meshStandardMaterial color="#8c532b" roughness={0.9} />
-          </mesh>
-          <mesh
-            position={[0.24, 0.04, 0.22]}
-            rotation={[0.6, 0.2, 0.7]}
-            castShadow={receiveShadow}
-            receiveShadow={receiveShadow}
-          >
-            <dodecahedronGeometry args={[0.085, 0]} />
-            <meshStandardMaterial color="#6e3d18" roughness={0.92} />
-          </mesh>
-          <mesh
-            position={[-0.18, 0.03, 0.24]}
-            rotation={[0.1, 0.8, 0.4]}
-            castShadow={receiveShadow}
-            receiveShadow={receiveShadow}
-          >
-            <dodecahedronGeometry args={[0.065, 0]} />
-            <meshStandardMaterial color="#9a6035" roughness={0.88} />
-          </mesh>
-          <mesh
-            position={[0.22, 0.028, -0.22]}
-            rotation={[0.4, 0.3, 0.9]}
-            castShadow={receiveShadow}
-            receiveShadow={receiveShadow}
-          >
-            <dodecahedronGeometry args={[0.06, 0]} />
-            <meshStandardMaterial color="#5c341b" roughness={0.95} />
-          </mesh>
-
-          {/* Softly written cost value directly on the terrain surface (toggleable) */}
-          {showCostLabels && !showResults && (
-            <Text
-              position={[0, 0.025, 0]}
-              rotation={[-Math.PI / 2, 0, 0]}
-              fontSize={0.28}
-              color="#fef3c7"
-              fillOpacity={0.8}
-              anchorX="center"
-              anchorY="middle"
-            >
-              {cost}
-            </Text>
-          )}
-        </group>
+        <RoughTerrainModel
+          cost={cost}
+          showCostLabels={showCostLabels}
+          showResults={showResults}
+          receiveShadow={receiveShadow}
+        />
       )}
     </group>
   );
 }
+
+function RoughTerrainModel({
+  cost,
+  showCostLabels,
+  showResults,
+  receiveShadow,
+}: {
+  cost: number;
+  showCostLabels: boolean;
+  showResults: boolean;
+  receiveShadow: boolean;
+}) {
+  const { scene } = useGLTF(SCRUB_URL, DRACO_URL);
+
+  return (
+    <group position={[0, TILE_HEIGHT, 0]}>
+      {/* Cracked badlands stone bed */}
+      <mesh position={[0, 0.005, 0]} receiveShadow={receiveShadow}>
+        <boxGeometry args={[0.88, 0.012, 0.88]} />
+        <meshStandardMaterial
+          color={COLOR_ROUGH_TERRAIN_SURFACE}
+          roughness={0.95}
+          metalness={0.05}
+        />
+      </mesh>
+
+      {/* 3D Desert Scrub Asset */}
+      <group position={[0, 0.01, -0.05]}>
+        <Clone
+          object={scene}
+          scale={[0.75, 0.75, 0.75]}
+          castShadow={receiveShadow}
+          receiveShadow={receiveShadow}
+        />
+      </group>
+
+      {/* Softly written cost value directly on the terrain surface (toggleable) */}
+      {showCostLabels && !showResults && (
+        <Text
+          position={[0, 0.025, 0.22]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          fontSize={0.24}
+          color="#fef3c7"
+          fillOpacity={0.85}
+          anchorX="center"
+          anchorY="middle"
+          fontWeight="bold"
+        >
+          {cost}
+        </Text>
+      )}
+    </group>
+  );
+}
+
+useGLTF.preload(SCRUB_URL, DRACO_URL);
