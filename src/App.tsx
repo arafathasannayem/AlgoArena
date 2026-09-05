@@ -8,6 +8,7 @@ import { Diorama } from './scene/Diorama';
 import { ToolPalette } from './ui/ToolPalette';
 import { GridSizeControl } from './ui/GridSizeControl';
 import { AgentPanel } from './ui/AgentPanel';
+import { SpeedSlider } from './ui/SpeedSlider';
 
 export function App() {
   return (
@@ -19,6 +20,7 @@ export function App() {
       <AgentPanel />
       <ToolPalette />
       <GridSizeControl />
+      <SpeedSlider />
     </div>
   );
 }
