@@ -66,7 +66,9 @@ describe('Race Store', () => {
     const agents = useAgentStore.getState().agents;
     expect(agents[0]!.status).toBe('done');
     expect(agents[0]!.result?.status).toBe('success');
+    expect(agents[0]!.position).toEqual({ x: 4, y: 4 }); // Pawn reached goal along path
     expect(agents[1]!.status).toBe('done');
     expect(agents[1]!.result?.status).toBe('success');
+    expect(agents[1]!.position).toEqual({ x: 4, y: 4 }); // Pawn reached goal along path
   });
 });

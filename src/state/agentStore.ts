@@ -1,9 +1,8 @@
 /**
  * Agent Store — Zustand store for agent management.
  *
- * Manages the list of agents, their algorithm assignments, positions,
- * statuses, and per-agent visualization state (visited nodes, frontier,
- * current path, heuristic target).
+ * Manages the list of agents, their algorithm assignments, physical pawn positions,
+ * active scout scanner positions, statuses, and per-agent visualization state.
  *
  * @module state/agentStore
  */
@@ -19,8 +18,10 @@ export interface Agent {
   algorithmKey: string;
   /** Hex color from ALGORITHMS registry. */
   color: string;
-  /** Current position on the grid. */
+  /** Physical pawn position on the grid (stays on valid walkable paths). */
   position: Point;
+  /** Active scout scanner probe position evaluating candidate nodes. */
+  scanPosition?: Point;
   /** Agent lifecycle status. */
   status: 'idle' | 'running' | 'done';
   /** Final result after the algorithm finishes. */
@@ -50,6 +51,8 @@ export interface AgentState {
 
   /** Apply a step event from the race scheduler to an agent's visualization state. */
   applyStep: (agentId: string, event: StepEvent) => void;
+  /** Advance the physical pawn one step along a validated path. */
+  advancePawn: (agentId: string, point: Point) => void;
   /** Mark an agent as running (called by race start). */
   setRunning: (agentId: string) => void;
   /** Reset all agents to idle with cleared visualization state. */
@@ -66,6 +69,7 @@ function createAgent(algorithmKey: string, color: string, start: Point): Agent {
     algorithmKey,
     color,
     position: { ...start },
+    scanPosition: undefined,
     status: 'idle',
     visitedNodes: new Set(),
     frontierNodes: [],
@@ -105,6 +109,13 @@ export const useAgentStore = create<AgentState>((set) => ({
       ),
     })),
 
+  advancePawn: (agentId, point) =>
+    set((s) => ({
+      agents: s.agents.map((a) =>
+        a.id === agentId ? { ...a, position: { ...point } } : a,
+      ),
+    })),
+
   applyStep: (agentId, event) =>
     set((s) => ({
       agents: s.agents.map((a) => {
@@ -114,7 +125,7 @@ export const useAgentStore = create<AgentState>((set) => ({
           case 'consider': {
             return {
               ...a,
-              position: { ...event.node },
+              scanPosition: { ...event.node },
               heuristicTarget: event.heuristicTarget
                 ? { ...event.heuristicTarget }
                 : undefined,
@@ -149,6 +160,7 @@ export const useAgentStore = create<AgentState>((set) => ({
         ...a,
         status: 'idle' as const,
         position: { ...start },
+        scanPosition: undefined,
         result: undefined,
         visitedNodes: new Set<string>(),
         frontierNodes: [],

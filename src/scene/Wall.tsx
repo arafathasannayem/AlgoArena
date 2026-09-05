@@ -13,13 +13,14 @@ import { type Mesh } from 'three';
 interface WallProps {
   x: number;
   y: number;
+  onClick?: () => void;
 }
 
 const WALL_HEIGHT = 0.8;
 const WALL_SIZE = 0.96;
 const WALL_COLOR = '#6b6560';
 
-export function Wall({ x, y }: WallProps) {
+export function Wall({ x, y, onClick }: WallProps) {
   const meshRef = useRef<Mesh>(null);
 
   return (
@@ -28,6 +29,12 @@ export function Wall({ x, y }: WallProps) {
       position={[x, WALL_HEIGHT / 2 + 0.1, y]}
       castShadow
       receiveShadow
+      onClick={(e) => {
+        if (onClick) {
+          e.stopPropagation();
+          onClick();
+        }
+      }}
     >
       <boxGeometry args={[WALL_SIZE, WALL_HEIGHT, WALL_SIZE]} />
       <meshStandardMaterial color={WALL_COLOR} roughness={0.9} metalness={0.1} />

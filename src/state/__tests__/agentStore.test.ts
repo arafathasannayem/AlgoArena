@@ -59,8 +59,14 @@ describe('Agent Store', () => {
     // Consider event
     store.applyStep(id, { kind: 'consider', node: { x: 1, y: 0 }, heuristicTarget: { x: 9, y: 9 } });
     let agent = useAgentStore.getState().agents[0]!;
-    expect(agent.position).toEqual({ x: 1, y: 0 });
+    expect(agent.scanPosition).toEqual({ x: 1, y: 0 });
+    expect(agent.position).toEqual({ x: 0, y: 0 }); // Grounded on walkable path
     expect(agent.heuristicTarget).toEqual({ x: 9, y: 9 });
+
+    // Advance pawn along path
+    store.advancePawn(id, { x: 1, y: 0 });
+    agent = useAgentStore.getState().agents[0]!;
+    expect(agent.position).toEqual({ x: 1, y: 0 });
 
     // Visit event
     store.applyStep(id, { kind: 'visit', node: { x: 1, y: 0 } });

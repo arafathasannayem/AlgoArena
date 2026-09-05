@@ -2,13 +2,15 @@
  * Race Store — Zustand store for race orchestration.
  *
  * Owns the algorithm generator instances, race execution status, playback speed,
- * and the central rAF-based scheduler that ticks all running agents concurrently.
+ * and the central rAF-based scheduler that ticks all running agents concurrently:
+ * 1. Scout Search Phase: Scouts sweep and evaluate frontier nodes without physical jumping.
+ * 2. Path Runner Phase: Pawns smoothly sprint the discovered contiguous path step-by-step.
  *
  * @module state/raceStore
  */
 
 import { create } from 'zustand';
-import type { AlgorithmGenerator } from '../algorithms/types';
+import type { AlgorithmGenerator, Point } from '../algorithms/types';
 import { ALGORITHMS } from '../algorithms';
 import { useAgentStore } from './agentStore';
 import { useGridStore } from './gridStore';
@@ -33,6 +35,7 @@ export interface RaceState {
 // Module-scoped scheduler state (outside Zustand to avoid reactive overhead on 60fps ticks)
 let generators = new Map<string, AlgorithmGenerator>();
 let activeAgentIds = new Set<string>();
+const runnerQueues = new Map<string, { path: Point[]; nextIndex: number }>();
 let animationFrameId: number | null = null;
 let lastTimestamp: number | null = null;
 let accumulator = 0;
@@ -110,6 +113,7 @@ export const useRaceStore = create<RaceState>((set) => ({
     const snapshot = gridStore.getSnapshot();
     generators = new Map();
     activeAgentIds = new Set();
+    runnerQueues.clear();
 
     for (const agent of agentStore.agents) {
       const entry = ALGORITHMS[agent.algorithmKey];
@@ -140,7 +144,7 @@ export const useRaceStore = create<RaceState>((set) => ({
   },
 
   resumeRace: () => {
-    if (activeAgentIds.size === 0) return;
+    if (activeAgentIds.size === 0 && runnerQueues.size === 0) return;
     set({ status: 'running' });
     runScheduler();
   },
@@ -149,25 +153,28 @@ export const useRaceStore = create<RaceState>((set) => ({
     stopLoop();
     generators.clear();
     activeAgentIds.clear();
+    runnerQueues.clear();
     const gridStore = useGridStore.getState();
     useAgentStore.getState().resetAll(gridStore.start);
     set({ status: 'idle', showResults: false });
   },
 
   tick: () => {
-    if (activeAgentIds.size === 0) {
+    // If no agents are searching and no pawns are running, finish race
+    if (activeAgentIds.size === 0 && runnerQueues.size === 0) {
       stopLoop();
       set({ status: 'finished', showResults: true });
       return;
     }
 
     const agentStore = useAgentStore.getState();
-    const finishedIds: string[] = [];
+    const finishedSearchIds: string[] = [];
 
+    // 1. Advance search phase for active generators
     for (const id of activeAgentIds) {
       const gen = generators.get(id);
       if (!gen) {
-        finishedIds.push(id);
+        finishedSearchIds.push(id);
         continue;
       }
 
@@ -175,21 +182,46 @@ export const useRaceStore = create<RaceState>((set) => ({
       if (!step.done) {
         agentStore.applyStep(id, step.value);
         if (step.value.kind === 'done') {
-          finishedIds.push(id);
+          finishedSearchIds.push(id);
+          if (step.value.result.status === 'success' && step.value.result.path && step.value.result.path.length > 0) {
+            runnerQueues.set(id, { path: step.value.result.path, nextIndex: 0 });
+          }
         }
       } else {
         if (step.value) {
           agentStore.applyStep(id, { kind: 'done', result: step.value });
+          if (step.value.status === 'success' && step.value.path && step.value.path.length > 0) {
+            runnerQueues.set(id, { path: step.value.path, nextIndex: 0 });
+          }
         }
-        finishedIds.push(id);
+        finishedSearchIds.push(id);
       }
     }
 
-    for (const id of finishedIds) {
+    for (const id of finishedSearchIds) {
       activeAgentIds.delete(id);
     }
 
-    if (activeAgentIds.size === 0) {
+    // 2. Advance runner phase for completed algorithms (pawn walks the contiguous path)
+    const finishedRunners: string[] = [];
+    for (const [id, runner] of runnerQueues) {
+      const nextPoint = runner.path[runner.nextIndex];
+      if (nextPoint) {
+        agentStore.advancePawn(id, nextPoint);
+        runner.nextIndex++;
+      }
+
+      if (runner.nextIndex >= runner.path.length) {
+        finishedRunners.push(id);
+      }
+    }
+
+    for (const id of finishedRunners) {
+      runnerQueues.delete(id);
+    }
+
+    // Check if everything has finished
+    if (activeAgentIds.size === 0 && runnerQueues.size === 0) {
       stopLoop();
       set({ status: 'finished', showResults: true });
     }

@@ -7,7 +7,7 @@
  * - Walls as raised 3D blocks with shadows
  * - Goal glow via emissive material + pulse animation
  * - Directional "sun" light + ambient fill + shadow mapping
- * - Agents with low-poly animated pawns and customizable overlays
+ * - Agents with grounded pawns and holographic scout scan reticles
  *
  * @module scene/Diorama
  */
@@ -21,6 +21,7 @@ import { Tile } from './Tile';
 import { Wall } from './Wall';
 import { GoalGlow } from './GoalGlow';
 import { AgentPawn } from './AgentPawn';
+import { ScanReticle } from './ScanReticle';
 import { NodeOverlay } from './Node';
 import { PathTrail } from './PathTrail';
 import { HeuristicRay } from './HeuristicRay';
@@ -73,7 +74,14 @@ function DioramaScene() {
         );
 
         if (isWall) {
-          ws.push(<Wall key={`w-${k}`} x={x} y={y} />);
+          ws.push(
+            <Wall
+              key={`w-${k}`}
+              x={x}
+              y={y}
+              onClick={() => applyTool(x, y)}
+            />,
+          );
         }
       }
     }
@@ -117,6 +125,7 @@ function DioramaScene() {
         {/* Agents & their overlays */}
         {agents.map((agent) => (
           <group key={agent.id}>
+            {/* Grounded physical pawn running valid paths */}
             <AgentPawn
               position={agent.position}
               color={agent.color}
@@ -125,6 +134,14 @@ function DioramaScene() {
 
             {agent.showOverlay && (
               <>
+                {/* Active scout scanner reticle exploring nodes */}
+                {agent.scanPosition && agent.status === 'running' && (
+                  <ScanReticle
+                    position={agent.scanPosition}
+                    color={agent.color}
+                  />
+                )}
+
                 <NodeOverlay
                   visitedNodes={agent.visitedNodes}
                   frontierNodes={agent.frontierNodes}
@@ -133,7 +150,7 @@ function DioramaScene() {
                 <PathTrail path={agent.currentPath} color={agent.color} />
                 {agent.heuristicTarget && (
                   <HeuristicRay
-                    from={agent.position}
+                    from={agent.scanPosition ?? agent.position}
                     to={agent.heuristicTarget}
                     color={agent.color}
                   />
