@@ -1,26 +1,20 @@
 /**
  * App — Root component for Algorithm Arena.
  *
- * Layers the 3D diorama scene beneath floating glass HUD panels.
+ * Composites the 3D isometric diorama scene with the glassmorphism HUD overlay.
  */
 
 import { Diorama } from './scene/Diorama';
-import { ToolPalette } from './ui/ToolPalette';
-import { GridSizeControl } from './ui/GridSizeControl';
-import { AgentPanel } from './ui/AgentPanel';
-import { SpeedSlider } from './ui/SpeedSlider';
+import { Hud } from './ui/Hud';
 
 export function App() {
   return (
-    <div className="h-screen w-screen bg-board-base overflow-hidden relative">
+    <main className="h-screen w-screen bg-board-base overflow-hidden relative select-none">
       {/* 3D isometric diorama scene (full viewport) */}
       <Diorama />
 
-      {/* Floating glass HUD panels */}
-      <AgentPanel />
-      <ToolPalette />
-      <GridSizeControl />
-      <SpeedSlider />
-    </div>
+      {/* Floating glassmorphic HUD overlay */}
+      <Hud />
+    </main>
   );
 }

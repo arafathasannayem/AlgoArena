@@ -17,6 +17,8 @@ export interface RaceState {
   status: 'idle' | 'running' | 'finished';
   /** Delay per step in ms (smaller = faster). */
   speed: number;
+  /** Whether the post-race results modal is currently visible. */
+  showResults: boolean;
 
   // Actions
   startRace: () => void;
@@ -24,6 +26,7 @@ export interface RaceState {
   resumeRace: () => void;
   resetRace: () => void;
   setSpeed: (ms: number) => void;
+  dismissResults: () => void;
   tick: () => void;
 }
 
@@ -84,9 +87,14 @@ function runScheduler() {
 export const useRaceStore = create<RaceState>((set) => ({
   status: 'idle',
   speed: 60, // 60ms delay per step default
+  showResults: false,
 
   setSpeed: (ms: number) => {
     set({ speed: ms });
+  },
+
+  dismissResults: () => {
+    set({ showResults: false });
   },
 
   startRace: () => {
@@ -118,11 +126,11 @@ export const useRaceStore = create<RaceState>((set) => ({
     }
 
     if (activeAgentIds.size === 0) {
-      set({ status: 'idle' });
+      set({ status: 'idle', showResults: false });
       return;
     }
 
-    set({ status: 'running' });
+    set({ status: 'running', showResults: false });
     runScheduler();
   },
 
@@ -143,13 +151,13 @@ export const useRaceStore = create<RaceState>((set) => ({
     activeAgentIds.clear();
     const gridStore = useGridStore.getState();
     useAgentStore.getState().resetAll(gridStore.start);
-    set({ status: 'idle' });
+    set({ status: 'idle', showResults: false });
   },
 
   tick: () => {
     if (activeAgentIds.size === 0) {
       stopLoop();
-      set({ status: 'finished' });
+      set({ status: 'finished', showResults: true });
       return;
     }
 
@@ -183,7 +191,7 @@ export const useRaceStore = create<RaceState>((set) => ({
 
     if (activeAgentIds.size === 0) {
       stopLoop();
-      set({ status: 'finished' });
+      set({ status: 'finished', showResults: true });
     }
   },
 }));
