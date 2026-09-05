@@ -178,11 +178,11 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             </div>
 
             <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex gap-2.5">
-              <Square size={18} className="text-stone-400 shrink-0 mt-0.5" />
+              <Square size={18} className="text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-white">Walls</span>
+                <span className="font-semibold text-white">Dense Jungle (Walls)</span>
                 <p className="text-[11px] text-white/60">
-                  Impassable stone barriers that block agent movement.
+                  Impassable dense tropical jungle thickets that block agent movement.
                 </p>
               </div>
             </div>
@@ -190,9 +190,9 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex gap-2.5">
               <Mountain size={18} className="text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-white">High Cost Terrain</span>
+                <span className="font-semibold text-white">Rough Terrain</span>
                 <p className="text-[11px] text-white/60">
-                  Traversable mud/rough terrain. Cost is configurable (×2 to ×99). A* detours around it; BFS ignores cost!
+                  Traversable rocky badlands scree with scattered boulders. Cost is configurable (×2 to ×99) and softly inscribed directly on the terrain. A* detours around it; BFS ignores cost!
                 </p>
               </div>
             </div>

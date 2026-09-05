@@ -34,9 +34,15 @@ export interface GridState {
   goal: Point;
   /** Currently selected editing tool. */
   activeTool: Tool;
+  /** Whether to softly display path cost values directly on the tile design. */
+  showCostLabels: boolean;
 
   // ── Actions ─────────────────────────────────────────────────────────────
 
+  /** Toggle soft cost label display on tiles. */
+  toggleCostLabels: () => void;
+  /** Explicitly set cost label display on tiles. */
+  setShowCostLabels: (show: boolean) => void;
   /** Resize the grid. Clears walls and costs, resets start/goal. */
   setSize: (w: number, h: number) => void;
   /** Add a wall at (x, y). Removes cost if any. No-op on start/goal or existing walls. */
@@ -88,6 +94,10 @@ export const useGridStore = create<GridState>((set, get) => ({
   start: { x: 0, y: 0 },
   goal: { x: 9, y: 9 },
   activeTool: 'wall',
+  showCostLabels: true,
+
+  toggleCostLabels: () => set((s) => ({ showCostLabels: !s.showCostLabels })),
+  setShowCostLabels: (showCostLabels) => set({ showCostLabels }),
 
   setSize: (w, h) =>
     set({

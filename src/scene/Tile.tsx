@@ -1,20 +1,21 @@
 /**
- * Tile — Game-grade grid tile mesh with role-specific detailing.
+ * Tile — Desert-themed grid tile mesh with role-specific detailing.
  *
- * Implements tactile tabletop game aesthetics:
- * - Regular tiles: Beveled stone slabs with micro-gap grout lines
- * - Start tile: Sci-fi teleportation launch pad with glowing blue rings
- * - Goal tile: Luminous amber checkpoint platform
- * - High cost tile: Sunken amber-hazard rough terrain with cost indicator
- * - Wall top: Recessed foundation receiver
+ * Implements tactile tabletop desert board aesthetics:
+ * - Regular tiles: Sun-baked desert sand slabs with subtle sandstone bevels
+ * - Start tile: Desert oasis spring pool with cyan water and stone perimeter
+ * - Goal tile: Ancient golden sun-altar platform
+ * - High cost tile: Jagged rough desert badlands/scree with scattered boulders
+ * - Softly written cost number inscribed directly on the terrain design (no modal elements)
  *
  * @module scene/Tile
  */
 
 import { useRef } from 'react';
 import { type Mesh } from 'three';
-import { Html } from '@react-three/drei';
+import { Text } from '@react-three/drei';
 import { useRaceStore } from '../state/raceStore';
+import { useGridStore } from '../state/gridStore';
 import { playPlace } from '../utils/sound';
 
 interface TileProps {
@@ -31,16 +32,16 @@ interface TileProps {
 const TILE_HEIGHT = 0.08;
 const TILE_SIZE = 0.96;
 
-// Palette
-const COLOR_TILE_BASE = '#d6cfc4';
-const COLOR_TILE_TOP = '#ede7de';
-const COLOR_START = '#2563eb';
-const COLOR_START_GLOW = '#60a5fa';
+// Desert Palette
+const COLOR_TILE_BASE = '#c89b6b';
+const COLOR_TILE_TOP = '#ebd5b3';
+const COLOR_START = '#0284c7';
+const COLOR_START_GLOW = '#38bdf8';
 const COLOR_GOAL = '#d97706';
 const COLOR_GOAL_GLOW = '#fbbf24';
-const COLOR_WALL_FOUNDATION = '#292524';
-const COLOR_HIGH_COST_PIT = '#78350f';
-const COLOR_HIGH_COST_SURFACE = '#b45309';
+const COLOR_WALL_FOUNDATION = '#1e3a1a';
+const COLOR_ROUGH_TERRAIN_BED = '#4a2810';
+const COLOR_ROUGH_TERRAIN_SURFACE = '#783d19';
 
 export function Tile({
   x,
@@ -54,6 +55,7 @@ export function Tile({
 }: TileProps) {
   const meshRef = useRef<Mesh>(null);
   const showResults = useRaceStore((s) => s.showResults);
+  const showCostLabels = useGridStore((s) => s.showCostLabels);
   const isHighCost = cost !== undefined && cost > 1 && !isStart && !isGoal && !isWall;
 
   const handleClick = () => {
@@ -83,46 +85,45 @@ export function Tile({
               : isGoal
               ? COLOR_GOAL
               : isHighCost
-              ? COLOR_HIGH_COST_PIT
+              ? COLOR_ROUGH_TERRAIN_BED
               : COLOR_TILE_BASE
           }
-          roughness={isHighCost ? 0.95 : 0.6}
-          metalness={0.1}
+          roughness={isHighCost ? 0.95 : 0.65}
+          metalness={0.05}
         />
       </mesh>
 
-      {/* Surface Inset / Role Details */}
+      {/* Surface Inset / Desert Sand Dune Slabs */}
       {!isWall && !isHighCost && !isStart && !isGoal && (
         <mesh position={[0, TILE_HEIGHT + 0.005, 0]} receiveShadow={receiveShadow}>
           <boxGeometry args={[0.88, 0.01, 0.88]} />
-          <meshStandardMaterial color={COLOR_TILE_TOP} roughness={0.45} metalness={0.05} />
+          <meshStandardMaterial color={COLOR_TILE_TOP} roughness={0.7} metalness={0.02} />
         </mesh>
       )}
 
-      {/* Start Pad Glowing Teleport Ring */}
+      {/* Start Pad: Desert Oasis Spring Pool */}
       {isStart && (
         <group position={[0, TILE_HEIGHT + 0.01, 0]}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.22, 0.38, 24]} />
             <meshStandardMaterial
-              color={COLOR_START_GLOW}
-              emissive={COLOR_START_GLOW}
-              emissiveIntensity={1.2}
-              roughness={0.2}
+              color="#bae6fd"
+              roughness={0.4}
             />
           </mesh>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[0.14, 16]} />
+            <circleGeometry args={[0.2, 24]} />
             <meshStandardMaterial
-              color="#93c5fd"
-              emissive="#3b82f6"
+              color={COLOR_START_GLOW}
+              emissive="#0284c7"
               emissiveIntensity={0.8}
+              roughness={0.1}
             />
           </mesh>
         </group>
       )}
 
-      {/* Goal Pad Beacon Disc */}
+      {/* Goal Pad: Ancient Desert Sun Altar Disc */}
       {isGoal && (
         <group position={[0, TILE_HEIGHT + 0.01, 0]}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
@@ -137,43 +138,72 @@ export function Tile({
         </group>
       )}
 
-      {/* High Cost Rough Terrain Pit */}
+      {/* High Cost: Rough Rocky Desert Terrain Scree */}
       {isHighCost && (
-        <group position={[0, TILE_HEIGHT + 0.006, 0]}>
-          <mesh receiveShadow={receiveShadow}>
-            <boxGeometry args={[0.86, 0.012, 0.86]} />
+        <group position={[0, TILE_HEIGHT, 0]}>
+          {/* Cracked badlands stone bed */}
+          <mesh position={[0, 0.005, 0]} receiveShadow={receiveShadow}>
+            <boxGeometry args={[0.88, 0.012, 0.88]} />
             <meshStandardMaterial
-              color={COLOR_HIGH_COST_SURFACE}
-              roughness={0.9}
+              color={COLOR_ROUGH_TERRAIN_SURFACE}
+              roughness={0.95}
               metalness={0.05}
             />
           </mesh>
-          {/* Inner textured hazard mud layer */}
-          <mesh position={[0, 0.008, 0]} receiveShadow={receiveShadow}>
-            <boxGeometry args={[0.74, 0.01, 0.74]} />
-            <meshStandardMaterial
-              color="#92400e"
-              emissive="#d97706"
-              emissiveIntensity={0.3}
-              roughness={0.95}
-            />
-          </mesh>
-        </group>
-      )}
 
-      {/* Path Cost Badge */}
-      {isHighCost && !showResults && (
-        <Html
-          center
-          position={[0, 0.14, 0]}
-          zIndexRange={[0, 5]}
-          style={{ pointerEvents: 'none' }}
-        >
-          <span className="flex items-center gap-0.5 text-[9px] font-mono font-black text-amber-950 bg-amber-300/95 px-1.5 py-0.5 rounded shadow-md border border-amber-600/40 select-none">
-            <span className="text-[7px] text-amber-900/80">COST</span>
-            <span>{cost}</span>
-          </span>
-        </Html>
+          {/* Miniature Jagged Desert Boulders */}
+          <mesh
+            position={[-0.22, 0.035, -0.2]}
+            rotation={[0.3, 0.5, 0.2]}
+            castShadow={receiveShadow}
+            receiveShadow={receiveShadow}
+          >
+            <dodecahedronGeometry args={[0.075, 0]} />
+            <meshStandardMaterial color="#8c532b" roughness={0.9} />
+          </mesh>
+          <mesh
+            position={[0.24, 0.04, 0.22]}
+            rotation={[0.6, 0.2, 0.7]}
+            castShadow={receiveShadow}
+            receiveShadow={receiveShadow}
+          >
+            <dodecahedronGeometry args={[0.085, 0]} />
+            <meshStandardMaterial color="#6e3d18" roughness={0.92} />
+          </mesh>
+          <mesh
+            position={[-0.18, 0.03, 0.24]}
+            rotation={[0.1, 0.8, 0.4]}
+            castShadow={receiveShadow}
+            receiveShadow={receiveShadow}
+          >
+            <dodecahedronGeometry args={[0.065, 0]} />
+            <meshStandardMaterial color="#9a6035" roughness={0.88} />
+          </mesh>
+          <mesh
+            position={[0.22, 0.028, -0.22]}
+            rotation={[0.4, 0.3, 0.9]}
+            castShadow={receiveShadow}
+            receiveShadow={receiveShadow}
+          >
+            <dodecahedronGeometry args={[0.06, 0]} />
+            <meshStandardMaterial color="#5c341b" roughness={0.95} />
+          </mesh>
+
+          {/* Softly written cost value directly on the terrain surface (toggleable) */}
+          {showCostLabels && !showResults && (
+            <Text
+              position={[0, 0.025, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              fontSize={0.28}
+              color="#fef3c7"
+              fillOpacity={0.8}
+              anchorX="center"
+              anchorY="middle"
+            >
+              {cost}
+            </Text>
+          )}
+        </group>
       )}
     </group>
   );

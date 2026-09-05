@@ -141,4 +141,18 @@ describe('Grid Store', () => {
     store.clearGrid();
     expect(useGridStore.getState().costs.size).toBe(0);
   });
+
+  it('should toggle and set cost labels visibility', () => {
+    const store = useGridStore.getState();
+    expect(store.showCostLabels).toBe(true);
+
+    store.toggleCostLabels();
+    expect(useGridStore.getState().showCostLabels).toBe(false);
+
+    store.toggleCostLabels();
+    expect(useGridStore.getState().showCostLabels).toBe(true);
+
+    store.setShowCostLabels(false);
+    expect(useGridStore.getState().showCostLabels).toBe(false);
+  });
 });

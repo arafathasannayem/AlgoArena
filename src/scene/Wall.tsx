@@ -1,10 +1,12 @@
 /**
- * Wall — Stylized stone monolith wall block.
+ * Wall — Dense miniature jungle thicket wall block.
  *
- * Designed with miniature tabletop game aesthetics:
- * - Solid chiseled stone base
- * - Beveled decorative top cap
- * - Micro-relief edge chamfers for enhanced lighting and shadows
+ * Designed with tabletop game diorama aesthetics:
+ * - Lush mossy earthen undergrowth mound
+ * - Clustered hardwood tree trunks with natural variation
+ * - Multi-tiered dense leafy tropical canopies
+ * - Low jungle bushes & undergrowth foliage
+ * - Casts rich organic dappled shadows onto the desert terrain
  *
  * @module scene/Wall
  */
@@ -19,10 +21,6 @@ interface WallProps {
   receiveShadow?: boolean;
   onClick?: () => void;
 }
-
-const WALL_BASE_COLOR = '#3f3c3a';
-const WALL_CAP_COLOR = '#57524e';
-const WALL_ACCENT_COLOR = '#292524';
 
 export function Wall({
   x,
@@ -44,34 +42,133 @@ export function Wall({
         }
       }}
     >
-      {/* Lower foundation plinth */}
+      {/* Mossy Jungle Undergrowth Mound Base */}
       <mesh
-        position={[0, 0.12, 0]}
+        position={[0, 0.04, 0]}
         castShadow={castShadow}
         receiveShadow={receiveShadow}
       >
-        <boxGeometry args={[0.96, 0.08, 0.96]} />
-        <meshStandardMaterial color={WALL_ACCENT_COLOR} roughness={0.95} metalness={0.05} />
+        <boxGeometry args={[0.94, 0.08, 0.94]} />
+        <meshStandardMaterial color="#1c3817" roughness={0.95} metalness={0.02} />
       </mesh>
 
-      {/* Main stone monolith body */}
+      {/* Clustered Jungle Hardwood Tree Trunks */}
       <mesh
-        position={[0, 0.46, 0]}
+        position={[-0.2, 0.28, -0.18]}
         castShadow={castShadow}
         receiveShadow={receiveShadow}
       >
-        <boxGeometry args={[0.92, 0.62, 0.92]} />
-        <meshStandardMaterial color={WALL_BASE_COLOR} roughness={0.88} metalness={0.12} />
+        <cylinderGeometry args={[0.038, 0.05, 0.5, 8]} />
+        <meshStandardMaterial color="#4a3525" roughness={0.9} />
+      </mesh>
+      <mesh
+        position={[0.22, 0.32, -0.15]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <cylinderGeometry args={[0.04, 0.052, 0.58, 8]} />
+        <meshStandardMaterial color="#543d2b" roughness={0.9} />
+      </mesh>
+      <mesh
+        position={[-0.12, 0.36, 0.22]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <cylinderGeometry args={[0.042, 0.055, 0.66, 8]} />
+        <meshStandardMaterial color="#422f20" roughness={0.9} />
+      </mesh>
+      <mesh
+        position={[0.18, 0.25, 0.2]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <cylinderGeometry args={[0.036, 0.048, 0.46, 8]} />
+        <meshStandardMaterial color="#4e3828" roughness={0.9} />
       </mesh>
 
-      {/* Beveled top cap */}
+      {/* Multi-Tiered Dense Jungle Foliage Canopies */}
+      {/* Center merging dense canopy */}
       <mesh
-        position={[0, 0.81, 0]}
+        position={[0.02, 0.58, 0.02]}
         castShadow={castShadow}
         receiveShadow={receiveShadow}
       >
-        <boxGeometry args={[0.86, 0.1, 0.86]} />
-        <meshStandardMaterial color={WALL_CAP_COLOR} roughness={0.75} metalness={0.15} />
+        <icosahedronGeometry args={[0.3, 1]} />
+        <meshStandardMaterial color="#1e5628" roughness={0.85} metalness={0.05} />
+      </mesh>
+
+      {/* Tallest deep rainforest crown */}
+      <mesh
+        position={[-0.12, 0.72, 0.22]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <icosahedronGeometry args={[0.26, 1]} />
+        <meshStandardMaterial color="#1b4d24" roughness={0.82} metalness={0.05} />
+      </mesh>
+
+      {/* Medium tropical green crown */}
+      <mesh
+        position={[0.22, 0.65, -0.15]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <icosahedronGeometry args={[0.25, 1]} />
+        <meshStandardMaterial color="#23632f" roughness={0.85} metalness={0.05} />
+      </mesh>
+
+      {/* Western jungle crown */}
+      <mesh
+        position={[-0.2, 0.54, -0.18]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <icosahedronGeometry args={[0.23, 1]} />
+        <meshStandardMaterial color="#2e7d32" roughness={0.85} metalness={0.05} />
+      </mesh>
+
+      {/* Eastern vibrant canopy */}
+      <mesh
+        position={[0.18, 0.48, 0.2]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <icosahedronGeometry args={[0.21, 1]} />
+        <meshStandardMaterial color="#388e3c" roughness={0.85} metalness={0.05} />
+      </mesh>
+
+      {/* Low Jungle Undergrowth Bushes */}
+      <mesh
+        position={[-0.28, 0.12, 0.06]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <icosahedronGeometry args={[0.14, 0]} />
+        <meshStandardMaterial color="#276730" roughness={0.9} />
+      </mesh>
+      <mesh
+        position={[0.26, 0.13, 0.08]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <icosahedronGeometry args={[0.15, 0]} />
+        <meshStandardMaterial color="#317d3b" roughness={0.9} />
+      </mesh>
+      <mesh
+        position={[0.05, 0.11, -0.28]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <icosahedronGeometry args={[0.13, 0]} />
+        <meshStandardMaterial color="#235d2b" roughness={0.9} />
+      </mesh>
+      <mesh
+        position={[-0.05, 0.12, 0.28]}
+        castShadow={castShadow}
+        receiveShadow={receiveShadow}
+      >
+        <icosahedronGeometry args={[0.14, 0]} />
+        <meshStandardMaterial color="#2c7235" roughness={0.9} />
       </mesh>
     </group>
   );

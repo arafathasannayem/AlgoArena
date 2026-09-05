@@ -26,6 +26,8 @@ import {
   Volume2,
   VolumeX,
   HelpCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { PRESETS } from '../maps/presets';
 
@@ -53,6 +55,8 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
   const setActiveTool = useGridStore((s) => s.setActiveTool);
   const highCostValue = useGridStore((s) => s.highCostValue);
   const setHighCostValue = useGridStore((s) => s.setHighCostValue);
+  const showCostLabels = useGridStore((s) => s.showCostLabels);
+  const toggleCostLabels = useGridStore((s) => s.toggleCostLabels);
   const clearGrid = useGridStore((s) => s.clearGrid);
   const loadPreset = useGridStore((s) => s.loadPreset);
 
@@ -132,6 +136,22 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
             title={soundEnabled ? 'Audio FX Enabled (Click to Mute)' : 'Audio FX Muted (Click to Unmute)'}
           >
             {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+          </button>
+
+          {/* Toggle Cost Text on Tiles */}
+          <button
+            onClick={() => {
+              toggleCostLabels();
+              playClick();
+            }}
+            className={`p-1 rounded transition-colors ${
+              showCostLabels
+                ? 'text-amber-400 hover:text-amber-300 hover:bg-white/10'
+                : 'text-white/30 hover:text-white/60 hover:bg-white/10'
+            }`}
+            title={showCostLabels ? 'Tile Cost Numbers: ON (Click to Hide)' : 'Tile Cost Numbers: OFF (Click to Show)'}
+          >
+            {showCostLabels ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
 
           {/* Guide / Manual Button */}
@@ -258,6 +278,28 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
                       {presetVal}
                     </button>
                   ))}
+                </div>
+
+                {/* Toggle Cost Number on Tiles */}
+                <div className="flex items-center justify-between pt-1 border-t border-amber-500/20">
+                  <span className="text-[10px] font-medium text-amber-300/80">
+                    Tile Cost Numbers
+                  </span>
+                  <button
+                    onClick={() => {
+                      toggleCostLabels();
+                      playClick();
+                    }}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      showCostLabels
+                        ? 'bg-amber-500/25 text-amber-200 hover:bg-amber-500/35 border border-amber-500/40'
+                        : 'bg-white/5 text-white/40 hover:bg-white/10'
+                    }`}
+                    title="Toggle softly displaying cost value on the tile design"
+                  >
+                    {showCostLabels ? <Eye size={11} /> : <EyeOff size={11} />}
+                    <span>{showCostLabels ? 'Visible' : 'Hidden'}</span>
+                  </button>
                 </div>
               </div>
             )}

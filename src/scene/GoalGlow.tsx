@@ -10,6 +10,7 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Mesh, Group } from 'three';
+import { useAgentStore } from '../state/agentStore';
 
 interface GoalGlowProps {
   x: number;
@@ -22,7 +23,19 @@ export function GoalGlow({ x, y }: GoalGlowProps) {
   const ringRef = useRef<Mesh>(null);
   const innerRingRef = useRef<Mesh>(null);
 
+  const agents = useAgentStore((s) => s.agents);
+
+  // Has any agent, visited search node, or scout scanner reached the goal?
+  const isGoalReached = agents.some(
+    (a) =>
+      (a.position.x === x && a.position.y === y) ||
+      a.visitedNodes.has(`${x},${y}`) ||
+      (a.scanPosition && a.scanPosition.x === x && a.scanPosition.y === y) ||
+      (a.status === 'done' && a.result?.status === 'success')
+  );
+
   useFrame(({ clock }) => {
+    if (isGoalReached) return;
     const t = clock.getElapsedTime();
 
     // Floating gem bobbing and spinning
@@ -51,9 +64,9 @@ export function GoalGlow({ x, y }: GoalGlowProps) {
         <meshStandardMaterial
           color="#f59e0b"
           emissive="#f59e0b"
-          emissiveIntensity={1.2}
+          emissiveIntensity={isGoalReached ? 0.3 : 1.2}
           transparent
-          opacity={0.8}
+          opacity={isGoalReached ? 0.25 : 0.8}
         />
       </mesh>
 
@@ -63,37 +76,41 @@ export function GoalGlow({ x, y }: GoalGlowProps) {
         <meshStandardMaterial
           color="#fbbf24"
           emissive="#fbbf24"
-          emissiveIntensity={1.5}
+          emissiveIntensity={isGoalReached ? 0.4 : 1.5}
           transparent
-          opacity={0.9}
+          opacity={isGoalReached ? 0.3 : 0.9}
         />
       </mesh>
 
-      {/* Floating rotating octahedron crystal */}
-      <mesh ref={crystalRef} position={[0, 0.55, 0]}>
-        <octahedronGeometry args={[0.2, 0]} />
-        <meshStandardMaterial
-          color="#fef08a"
-          emissive="#f59e0b"
-          emissiveIntensity={1.0}
-          roughness={0.15}
-          metalness={0.8}
-          transparent
-          opacity={0.95}
-        />
-      </mesh>
+      {/* Floating rotating diamond crystal & celestial beam — vanishes once node reaches it */}
+      {!isGoalReached && (
+        <>
+          <mesh ref={crystalRef} position={[0, 0.55, 0]}>
+            <octahedronGeometry args={[0.2, 0]} />
+            <meshStandardMaterial
+              color="#fef08a"
+              emissive="#f59e0b"
+              emissiveIntensity={1.0}
+              roughness={0.15}
+              metalness={0.8}
+              transparent
+              opacity={0.95}
+            />
+          </mesh>
 
-      {/* Vertical light column beacon */}
-      <mesh position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[0.04, 0.12, 0.9, 16]} />
-        <meshStandardMaterial
-          color="#f59e0b"
-          emissive="#f59e0b"
-          emissiveIntensity={0.6}
-          transparent
-          opacity={0.25}
-        />
-      </mesh>
+          {/* Vertical light column beacon */}
+          <mesh position={[0, 0.5, 0]}>
+            <cylinderGeometry args={[0.04, 0.12, 0.9, 16]} />
+            <meshStandardMaterial
+              color="#f59e0b"
+              emissive="#f59e0b"
+              emissiveIntensity={0.6}
+              transparent
+              opacity={0.25}
+            />
+          </mesh>
+        </>
+      )}
     </group>
   );
 }
