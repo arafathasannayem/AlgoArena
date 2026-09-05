@@ -141,6 +141,18 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               </kbd>
             </div>
             <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
+              <span className="text-white/70">Main Menu</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+                M
+              </kbd>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
+              <span className="text-white/70">Map Presets</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+                P
+              </kbd>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
               <span className="text-white/70">This Guide</span>
               <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
                 ? or H

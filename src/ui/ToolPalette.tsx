@@ -13,7 +13,7 @@ import { useState, useRef } from 'react';
 import { useGridStore, type Tool } from '../state/gridStore';
 import { useRaceStore } from '../state/raceStore';
 import { useSoundStore } from '../state/soundStore';
-import { playClick, playPlace } from '../utils/sound';
+import { playClick } from '../utils/sound';
 import {
   Square,
   Eraser,
@@ -29,8 +29,13 @@ import {
   HelpCircle,
   Eye,
   EyeOff,
+  Layers,
+  Save,
+  Home,
 } from 'lucide-react';
 import { PRESETS } from '../maps/presets';
+import { useGameMenuStore } from '../state/gameMenuStore';
+import { usePresetStore } from '../state/presetStore';
 
 interface ToolDef {
   id: Tool;
@@ -56,6 +61,11 @@ let savedPos = { x: 16, y: 140 };
 
 export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
   const isRunning = useRaceStore((s) => s.status === 'running');
+  const openStartMenu = useGameMenuStore((s) => s.openStartMenu);
+  const openPresetChooser = useGameMenuStore((s) => s.openPresetChooser);
+  const openSavePreset = useGameMenuStore((s) => s.openSavePreset);
+  const loadPresetIntoArena = usePresetStore((s) => s.loadPresetIntoArena);
+
   const activeTool = useGridStore((s) => s.activeTool);
   const setActiveTool = useGridStore((s) => s.setActiveTool);
   const highCostValue = useGridStore((s) => s.highCostValue);
@@ -63,7 +73,6 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
   const showCostLabels = useGridStore((s) => s.showCostLabels);
   const toggleCostLabels = useGridStore((s) => s.toggleCostLabels);
   const clearGrid = useGridStore((s) => s.clearGrid);
-  const loadPreset = useGridStore((s) => s.loadPreset);
 
   const soundEnabled = useSoundStore((s) => s.enabled);
   const toggleSound = useSoundStore((s) => s.toggleSound);
@@ -176,6 +185,18 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
               <HelpCircle size={13} />
             </button>
           )}
+
+          {/* Main Menu */}
+          <button
+            onClick={() => {
+              openStartMenu();
+              playClick();
+            }}
+            className="p-1 rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            title="Main Menu [M]"
+          >
+            <Home size={12} />
+          </button>
 
           {/* Reset position */}
           <button
@@ -335,25 +356,51 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
       <div className="border-t border-glass-border my-1" />
 
       {/* Map presets */}
-      <div className="px-1 py-0.5">
+      <div className="flex items-center justify-between px-1 py-0.5">
         <span className="text-[9px] uppercase tracking-wider text-glass-text/40 font-semibold">
           Map Presets
         </span>
-      </div>
-      {Object.entries(PRESETS).map(([key, preset]) => (
         <button
-          key={key}
           onClick={() => {
-            loadPreset(preset.walls, preset.start, preset.goal, preset.width, preset.height);
-            playPlace();
+            openPresetChooser();
+            playClick();
           }}
-          className="p-1.5 rounded-lg text-glass-text/60 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-left w-full"
-          title={preset.description}
+          className="text-[10px] text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
+          title="Browse all official & custom presets"
         >
-          <Map size={13} />
-          <span className="text-xs truncate">{preset.name}</span>
+          <Layers size={11} />
+          <span>Browse</span>
         </button>
-      ))}
+      </div>
+
+      <div className="flex flex-col gap-0.5 max-h-36 overflow-y-auto pr-0.5">
+        {Object.entries(PRESETS).map(([key, preset]) => (
+          <button
+            key={key}
+            onClick={() => {
+              loadPresetIntoArena(preset);
+            }}
+            className="p-1.5 rounded-lg text-glass-text/60 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-left w-full"
+            title={preset.description}
+          >
+            <Map size={13} className="shrink-0 text-slate-400" />
+            <span className="text-xs truncate">{preset.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Save Map as Preset Button */}
+      <button
+        onClick={() => {
+          openSavePreset();
+          playClick();
+        }}
+        className="mt-1 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1.5 text-xs font-medium w-full"
+        title="Save current grid as a custom preset"
+      >
+        <Save size={13} className="text-blue-400" />
+        <span>Save Map as Preset</span>
+      </button>
     </div>
   );
 }

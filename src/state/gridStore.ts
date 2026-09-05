@@ -70,6 +70,7 @@ export interface GridState {
     goal: Point,
     width: number,
     height: number,
+    costs?: [number, number, number][],
   ) => void;
   /** Apply the currently active tool at grid position (x, y). */
   applyTool: (x: number, y: number) => void;
@@ -200,12 +201,12 @@ export const useGridStore = create<GridState>((set, get) => ({
 
   clearGrid: () => set({ walls: new Set<string>(), costs: new Map<string, number>() }),
 
-  loadPreset: (walls, start, goal, width, height) =>
+  loadPreset: (walls, start, goal, width, height, costs) =>
     set({
       width,
       height,
       walls: new Set(walls.map(([x, y]) => wk(x, y))),
-      costs: new Map<string, number>(),
+      costs: new Map(costs ? costs.map(([x, y, c]) => [wk(x, y), c]) : []),
       start,
       goal,
     }),

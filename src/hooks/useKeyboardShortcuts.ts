@@ -23,6 +23,7 @@ import { useRaceStore } from '../state/raceStore';
 import { useGridStore, type Tool } from '../state/gridStore';
 import { useCameraStore } from '../state/cameraStore';
 import { useAgentStore } from '../state/agentStore';
+import { useGameMenuStore } from '../state/gameMenuStore';
 import { playClick, playStepTick } from '../utils/sound';
 
 interface UseKeyboardShortcutsOptions {
@@ -49,6 +50,13 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}):
       switch (key) {
         case ' ': {
           e.preventDefault();
+          const { isStartMenuOpen, closeStartMenu } = useGameMenuStore.getState();
+          if (isStartMenuOpen) {
+            closeStartMenu();
+            playClick();
+            break;
+          }
+
           const { status, startRace, pauseRace } = useRaceStore.getState();
           const agentsCount = useAgentStore.getState().agents.length;
           if (agentsCount === 0) return;
@@ -131,6 +139,20 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}):
         case '_': {
           e.preventDefault();
           useCameraStore.getState().triggerZoomOut();
+          playClick();
+          break;
+        }
+
+        case 'm': {
+          e.preventDefault();
+          useGameMenuStore.getState().toggleStartMenu();
+          playClick();
+          break;
+        }
+
+        case 'p': {
+          e.preventDefault();
+          useGameMenuStore.getState().openPresetChooser();
           playClick();
           break;
         }
