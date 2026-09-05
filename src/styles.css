@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Board palette ─────────────────────────────────────── */
+  --color-board-base: #d6cfc7;
+  --color-board-tile: #e8e2da;
+  --color-board-wall: #8b8178;
+  --color-board-border: #b5ada5;
+
+  /* ── Goal accent ───────────────────────────────────────── */
+  --color-accent-goal: #f59e0b;
+
+  /* ── Glass HUD ─────────────────────────────────────────── */
+  --color-glass-bg: rgba(15, 23, 42, 0.65);
+  --color-glass-border: rgba(255, 255, 255, 0.12);
+  --color-glass-text: #f8fafc;
+
+  /* ── Typography ────────────────────────────────────────── */
+  --font-sans: "Inter", "Roboto", ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Radius ────────────────────────────────────────────── */
+  --radius-panel: 1rem;
+}
