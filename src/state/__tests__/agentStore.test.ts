@@ -106,4 +106,26 @@ describe('Agent Store', () => {
     expect(agent.visitedNodes.size).toBe(0);
     expect(agent.result).toBeUndefined();
   });
+
+  it('should track arrival order via monotonic enteredAt counter', () => {
+    const store = useAgentStore.getState();
+    store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });
+    store.addAgent('bfs', '#eab308', { x: 0, y: 0 });
+
+    const agents = useAgentStore.getState().agents;
+    expect(agents[0]!.enteredAt).toBeDefined();
+    expect(agents[1]!.enteredAt).toBeGreaterThan(agents[0]!.enteredAt);
+
+    const firstEntered = agents[0]!.enteredAt;
+    // Moving the first agent advances its enteredAt
+    store.advancePawn(agents[0]!.id, { x: 1, y: 0 });
+    const updatedAgent0 = useAgentStore.getState().agents[0]!;
+    expect(updatedAgent0.enteredAt).toBeGreaterThan(firstEntered);
+    expect(updatedAgent0.enteredAt).toBeGreaterThan(agents[1]!.enteredAt);
+
+    // If advancePawn is called with same coordinates, enteredAt should NOT change
+    const samePositionEntered = updatedAgent0.enteredAt;
+    store.advancePawn(agents[0]!.id, { x: 1, y: 0 });
+    expect(useAgentStore.getState().agents[0]!.enteredAt).toBe(samePositionEntered);
+  });
 });

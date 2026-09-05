@@ -2,7 +2,8 @@
  * Agent Store — Zustand store for agent management.
  *
  * Manages the list of agents, their algorithm assignments, physical pawn positions,
- * active scout scanner positions, statuses, and per-agent visualization state.
+ * active scout scanner positions, arrival sequences (for cluster placement),
+ * statuses, and per-agent visualization state.
  *
  * @module state/agentStore
  */
@@ -22,6 +23,8 @@ export interface Agent {
   position: Point;
   /** Active scout scanner probe position evaluating candidate nodes. */
   scanPosition?: Point;
+  /** Monotonic counter marking when this agent entered its current position. */
+  enteredAt: number;
   /** Agent lifecycle status. */
   status: 'idle' | 'running' | 'done';
   /** Final result after the algorithm finishes. */
@@ -62,6 +65,7 @@ export interface AgentState {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 let nextId = 1;
+let entryCounter = 1;
 
 function createAgent(algorithmKey: string, color: string, start: Point): Agent {
   return {
@@ -70,6 +74,7 @@ function createAgent(algorithmKey: string, color: string, start: Point): Agent {
     color,
     position: { ...start },
     scanPosition: undefined,
+    enteredAt: entryCounter++,
     status: 'idle',
     visitedNodes: new Set(),
     frontierNodes: [],
@@ -111,9 +116,15 @@ export const useAgentStore = create<AgentState>((set) => ({
 
   advancePawn: (agentId, point) =>
     set((s) => ({
-      agents: s.agents.map((a) =>
-        a.id === agentId ? { ...a, position: { ...point } } : a,
-      ),
+      agents: s.agents.map((a) => {
+        if (a.id !== agentId) return a;
+        const moved = a.position.x !== point.x || a.position.y !== point.y;
+        return {
+          ...a,
+          position: { ...point },
+          enteredAt: moved ? entryCounter++ : a.enteredAt,
+        };
+      }),
     })),
 
   applyStep: (agentId, event) =>
@@ -160,6 +171,7 @@ export const useAgentStore = create<AgentState>((set) => ({
         ...a,
         status: 'idle' as const,
         position: { ...start },
+        enteredAt: entryCounter++,
         scanPosition: undefined,
         result: undefined,
         visitedNodes: new Set<string>(),

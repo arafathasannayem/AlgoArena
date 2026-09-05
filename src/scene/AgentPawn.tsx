@@ -2,6 +2,8 @@
  * AgentPawn — Low-poly pawn mesh with spring-animated position.
  *
  * The pawn smoothly lerps between grid cells using @react-spring/three.
+ * Supports clustering offsets and scaling so multiple agents on the same
+ * square sit close to each other without overlapping.
  * Clicking toggles the agent's visualization overlay.
  *
  * @module scene/AgentPawn
@@ -13,14 +15,25 @@ import type { Point } from '../algorithms/types';
 interface AgentPawnProps {
   position: Point;
   color: string;
+  offsetX?: number;
+  offsetZ?: number;
+  scale?: number;
   onClick: () => void;
 }
 
-export function AgentPawn({ position, color, onClick }: AgentPawnProps) {
-  const { posX, posZ } = useSpring({
-    posX: position.x,
-    posZ: position.y,
-    config: { tension: 180, friction: 22 },
+export function AgentPawn({
+  position,
+  color,
+  offsetX = 0,
+  offsetZ = 0,
+  scale = 1.0,
+  onClick,
+}: AgentPawnProps) {
+  const { posX, posZ, s } = useSpring({
+    posX: position.x + offsetX,
+    posZ: position.y + offsetZ,
+    s: scale,
+    config: { tension: 200, friction: 22 },
   });
 
   return (
@@ -28,6 +41,7 @@ export function AgentPawn({ position, color, onClick }: AgentPawnProps) {
       position-x={posX}
       position-y={0.5}
       position-z={posZ}
+      scale={s}
       onClick={(e) => {
         e.stopPropagation();
         onClick();

@@ -17,7 +17,7 @@ import { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera } from '@react-three/drei';
 import { useGridStore } from '../state/gridStore';
-import { useAgentStore } from '../state/agentStore';
+import { useAgentStore, type Agent } from '../state/agentStore';
 import { Tile } from './Tile';
 import { Wall } from './Wall';
 import { GoalGlow } from './GoalGlow';
@@ -27,6 +27,8 @@ import { NodeOverlay } from './Node';
 import { PathTrail } from './PathTrail';
 import { HeuristicRay } from './HeuristicRay';
 import { CameraController } from './CameraController';
+import { getClusterOffset } from './clusterUtils';
+import { SquareClusterIndicator } from './SquareClusterIndicator';
 
 /** Inner scene component — reads store and renders geometry. */
 function DioramaScene() {
@@ -39,6 +41,56 @@ function DioramaScene() {
 
   const agents = useAgentStore((s) => s.agents);
   const toggleOverlay = useAgentStore((s) => s.toggleOverlay);
+
+  // Group agents by current cell position to handle multi-agent clustering
+  const { agentOffsets, cellClusters } = useMemo(() => {
+    const cellMap = new Map<string, Agent[]>();
+    for (const agent of agents) {
+      const k = `${agent.position.x},${agent.position.y}`;
+      const list = cellMap.get(k);
+      if (list) {
+        list.push(agent);
+      } else {
+        cellMap.set(k, [agent]);
+      }
+    }
+
+    const offsets = new Map<
+      string,
+      { offsetX: number; offsetZ: number; scale: number; isVisiblePawn: boolean }
+    >();
+    const clusters: { key: string; x: number; y: number; lastEnteredAgents: Agent[] }[] = [];
+
+    for (const [key, cellAgents] of cellMap.entries()) {
+      // Sort by arrival order: earliest first, latest last
+      cellAgents.sort((a, b) => a.enteredAt - b.enteredAt);
+      const total = cellAgents.length;
+
+      cellAgents.forEach((agent, index) => {
+        const cluster = getClusterOffset(index, total);
+        // Display up to 4 corner pawns on ground, 4+ represented by indicator
+        const isVisiblePawn = index < 4;
+        offsets.set(agent.id, {
+          offsetX: cluster.offsetX,
+          offsetZ: cluster.offsetZ,
+          scale: cluster.scale,
+          isVisiblePawn,
+        });
+      });
+
+      if (total >= 4) {
+        const [xStr, yStr] = key.split(',');
+        clusters.push({
+          key,
+          x: Number(xStr),
+          y: Number(yStr),
+          lastEnteredAgents: cellAgents.slice(3),
+        });
+      }
+    }
+
+    return { agentOffsets: offsets, cellClusters: clusters };
+  }, [agents]);
 
   // Center the grid around the origin
   const offsetX = -(width - 1) / 2;
@@ -128,41 +180,66 @@ function DioramaScene() {
         <GoalGlow x={goal.x} y={goal.y} />
 
         {/* Agents & their overlays */}
-        {agents.map((agent) => (
-          <group key={agent.id}>
-            {/* Grounded physical pawn running valid paths */}
-            <AgentPawn
-              position={agent.position}
-              color={agent.color}
-              onClick={() => toggleOverlay(agent.id)}
-            />
+        {agents.map((agent) => {
+          const offsetInfo = agentOffsets.get(agent.id) ?? {
+            offsetX: 0,
+            offsetZ: 0,
+            scale: 1.0,
+            isVisiblePawn: true,
+          };
 
-            {agent.showOverlay && (
-              <>
-                {/* Active scout scanner reticle exploring nodes */}
-                {agent.scanPosition && agent.status === 'running' && (
-                  <ScanReticle
-                    position={agent.scanPosition}
-                    color={agent.color}
-                  />
-                )}
-
-                <NodeOverlay
-                  visitedNodes={agent.visitedNodes}
-                  frontierNodes={agent.frontierNodes}
+          return (
+            <group key={agent.id}>
+              {/* Grounded physical pawn running valid paths */}
+              {offsetInfo.isVisiblePawn && (
+                <AgentPawn
+                  position={agent.position}
                   color={agent.color}
+                  offsetX={offsetInfo.offsetX}
+                  offsetZ={offsetInfo.offsetZ}
+                  scale={offsetInfo.scale}
+                  onClick={() => toggleOverlay(agent.id)}
                 />
-                <PathTrail path={agent.currentPath} color={agent.color} />
-                {agent.heuristicTarget && (
-                  <HeuristicRay
-                    from={agent.scanPosition ?? agent.position}
-                    to={agent.heuristicTarget}
+              )}
+
+              {agent.showOverlay && (
+                <>
+                  {/* Active scout scanner reticle exploring nodes */}
+                  {agent.scanPosition && agent.status === 'running' && (
+                    <ScanReticle
+                      position={agent.scanPosition}
+                      color={agent.color}
+                    />
+                  )}
+
+                  <NodeOverlay
+                    visitedNodes={agent.visitedNodes}
+                    frontierNodes={agent.frontierNodes}
                     color={agent.color}
                   />
-                )}
-              </>
-            )}
-          </group>
+                  <PathTrail path={agent.currentPath} color={agent.color} />
+                  {agent.heuristicTarget && (
+                    <HeuristicRay
+                      from={agent.scanPosition ?? agent.position}
+                      to={agent.heuristicTarget}
+                      color={agent.color}
+                    />
+                  )}
+                </>
+              )}
+            </group>
+          );
+        })}
+
+        {/* 4+ Agent Square Overflow Indicators */}
+        {cellClusters.map((cluster) => (
+          <SquareClusterIndicator
+            key={`cluster-${cluster.key}`}
+            x={cluster.x}
+            y={cluster.y}
+            lastEnteredAgents={cluster.lastEnteredAgents}
+            onToggleOverlay={toggleOverlay}
+          />
         ))}
       </group>
     </>
