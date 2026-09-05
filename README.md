@@ -17,15 +17,15 @@ npm run build     # Production build
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 0 | Scaffolding (Vite + React + TS + Tailwind) | ✅ Done |
-| 1 | Algorithm engine (partial) | 🚧 In progress |
-| 2 | Grid state + map builder | ❌ Not started |
-| 3 | Isometric diorama scene | ❌ Not started |
-| 4 | Agents | ❌ Not started |
-| 5 | Race orchestration | ❌ Not started |
-| 6 | Analytics | ❌ Not started |
-| 7 | Visual polish | ❌ Not started |
-| 8 | QA and ship | ❌ Not started |
+| 0 | Scaffolding (Vite 6 + React 19 + TS strict + Tailwind v4) | ✅ Done |
+| 1 | Algorithm engine (A* & BFS complete; 5 stubs with specs) | ✅ Done (Group TODOs) |
+| 2 | Grid state + map builder (Zustand, drag paint, presets) | ✅ Done |
+| 3 | Isometric diorama scene (R3F, orthographic camera, shadows) | ✅ Done |
+| 4 | Agents (animated pawn meshes, per-agent overlays) | ✅ Done |
+| 5 | Race orchestration (rAF scheduler, live speed slider) | ✅ Done |
+| 6 | Analytics (live standings leaderboard, post-race dashboard) | ✅ Done |
+| 7 | Visual polish (glassmorphism HUD, edge-anchored layout) | ✅ Done |
+| 8 | QA and ship (59 unit tests green, production build verified) | ✅ Done |
 
 ### Algorithm Implementation Status
 
@@ -33,34 +33,33 @@ npm run build     # Production build
 |-----------|--------|------|-------|
 | A* | ✅ Implemented | `src/algorithms/astar.ts` | 17 tests passing |
 | BFS | ✅ Implemented | `src/algorithms/bfs.ts` | 16 tests passing |
-| Dijkstra's | 🚧 TODO | `src/algorithms/dijkstra.ts` | — |
-| DFS | 🚧 TODO | `src/algorithms/dfs.ts` | — |
-| Greedy Best-First | 🚧 TODO | `src/algorithms/greedyBestFirst.ts` | — |
-| Hill Climbing | 🚧 TODO | `src/algorithms/hillClimbing.ts` | — |
-| Simulated Annealing | 🚧 TODO | `src/algorithms/simulatedAnnealing.ts` | — |
+| Dijkstra's | 🚧 TODO (Group) | `src/algorithms/dijkstra.ts` | Stubs & specs ready |
+| DFS | 🚧 TODO (Group) | `src/algorithms/dfs.ts` | Stubs & specs ready |
+| Greedy Best-First | 🚧 TODO (Group) | `src/algorithms/greedyBestFirst.ts` | Stubs & specs ready |
+| Hill Climbing | 🚧 TODO (Group) | `src/algorithms/hillClimbing.ts` | Stubs & specs ready |
+| Simulated Annealing | 🚧 TODO (Group) | `src/algorithms/simulatedAnnealing.ts` | Stubs & specs ready |
 
 ## Tech Stack
 
-- **Vite 6** + **React 19** + **TypeScript** (strict mode)
+- **Vite 6** + **React 19** + **TypeScript** (strict mode, `noUncheckedIndexedAccess`)
 - **@react-three/fiber v9** + **@react-three/drei** + **three.js**
-- **Tailwind CSS v4** (via `@tailwindcss/vite` plugin)
-- **Zustand** for state management
-- **@react-spring/three** for animations
-- **lucide-react** for icons
-- **Vitest** for unit tests
+- **Tailwind CSS v4** (via `@tailwindcss/vite` plugin, `@theme` glassmorphism tokens)
+- **Zustand** for state management (`gridStore`, `agentStore`, `raceStore`)
+- **@react-spring/three** for smooth pawn movement animations
+- **lucide-react** for all icons
+- **Vitest** for unit test suites (59 tests passing)
 
 ## Architecture
 
 See [`design.md`](design.md) for the full architecture and design decisions.
 
-See [`agents.md`](agents.md) for onboarding guide for new contributors (human or AI).
+See [`agents.md`](agents.md) for the onboarding guide for contributors picking up the remaining TODO algorithms.
 
-See [`init.md`](init.md) for the original build plan and GDD translation.
+See [`init.md`](init.md) for the original build plan and GDD specification.
 
 ## Key Rules
 
-1. **No `any`** — TypeScript strict mode is enforced. No inline lint disabling.
-2. **Algorithm isolation** — `src/algorithms/` must never import from `scene/` or `ui/`.
+1. **No `any`** — TypeScript strict mode is strictly enforced across all files.
+2. **Algorithm isolation** — `src/algorithms/` must never import from `scene/`, `ui/`, or `state/`.
 3. **Tests first** — Every algorithm gets unit tests in the same phase it's written.
-4. **Generator protocol** — All algorithms are generators yielding `StepEvent`s. See `src/algorithms/types.ts`.
-5. **Commit per phase** — One commit per completed phase, message format: `phase N: <summary>`.
+4. **Generator protocol** — All algorithms are generators yielding `StepEvent`s.

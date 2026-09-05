@@ -136,49 +136,50 @@ Helper functions:
 - `getImplementedAlgorithms()` — for UI dropdowns (only show working ones)
 - `getTodoAlgorithms()` — for progress tracking
 
-## 4. State Management (TODO — Phase 2-5)
+## 4. State Management
 
 Three Zustand stores, each owning a distinct domain:
 
-| Store | Owns | Phase |
-|-------|------|-------|
-| `gridStore` | Grid dimensions, walls, start/goal | Phase 2 |
-| `agentStore` | Agent list, algorithm assignment, viz state | Phase 4 |
-| `raceStore` | Generator instances, scheduler, speed | Phase 5 |
+| Store | Owns | Implemented |
+|-------|------|-------------|
+| `gridStore` | Grid dimensions, walls, start/goal, editing tools, presets | ✅ Yes |
+| `agentStore` | Agent list, algorithm assignment, per-agent visualization state | ✅ Yes |
+| `raceStore` | Generator instances, rAF scheduler, mid-race speed, race status | ✅ Yes |
 
-See the stub files in `src/state/` for detailed interface specs.
-
-## 5. Scene Architecture (TODO — Phase 3-4)
+## 5. Scene Architecture
 
 The scene uses React Three Fiber with an **orthographic camera** at true isometric angle:
-- Tilt: ~35.264°
-- Rotation: 45°
-- No orbit controls
+- Position `[40, 40, 40]` looking at `[0, 0, 0]` (~35.264° tilt, 45° rotation)
+- Auto-calculated zoom fitting grid sizes 10×10, 20×20, 30×30 cleanly
+- Shadow-mapping enabled with soft directional sunlight and ambient fill
 
 Component hierarchy:
 ```
-<Canvas>
-  <OrthographicCamera />
-  <DirectionalLight />   (sun, casts shadows)
-  <AmbientLight />       (soft fill)
-  <group>                (grid container)
+<Canvas shadows>
+  <OrthographicCamera makeDefault />
+  <ambientLight />
+  <directionalLight castShadow />
+  <group position={[offsetX, 0, offsetZ]}>   (centered grid)
     {tiles.map(Tile)}
-    {walls.map(Wall)}    (raised 3D blocks)
-    <GoalGlow />         (emissive pulse at goal)
-    {agents.map(AgentPawn)}
-    {agents.map(PathTrail)}
-    {agents.map(HeuristicRay)}
+    {walls.map(Wall)}                        (physical 3D blocks with shadows)
+    <GoalGlow />                             (pulsing emissive beacon)
+    {agents.map(AgentPawn)}                  (spring-animated lerped pawns)
+    {agents.map(NodeOverlay)}                (visited + frontier highlights)
+    {agents.map(PathTrail)}                  (emissive live path indicators)
+    {agents.map(HeuristicRay)}               (pulsing line to heuristicTarget)
   </group>
 </Canvas>
 ```
 
-## 6. UI Architecture (TODO — Phase 2-7)
+## 6. UI Architecture
 
-Glassmorphism floating panels, edge-anchored:
-- **Left/Bottom**: Tool palette (wall/start/end tools)
-- **Top-left**: Leaderboard
-- **Bottom-right**: Speed slider
-- **Center overlay** (post-race): Results dashboard
+Glassmorphism floating panels, edge-anchored (never blocking center board):
+- **Top-left**: Agent management panel (`AgentPanel.tsx`)
+- **Top-left (adjacent)**: Live standings leaderboard (`Leaderboard.tsx`)
+- **Top-right**: Grid size selector (`GridSizeControl.tsx`)
+- **Left edge**: Tool palette & preset maps (`ToolPalette.tsx`)
+- **Bottom center**: Playback & speed controls (`SpeedSlider.tsx`)
+- **Modal overlay**: Post-race analytics dashboard (`ResultsDashboard.tsx`)
 
 Style tokens defined in `src/styles.css` via Tailwind v4 `@theme`:
 - `--color-glass-bg`: rgba(15, 23, 42, 0.65)

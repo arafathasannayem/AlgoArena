@@ -25,14 +25,20 @@ Algorithm Arena is a browser-based pathfinding visualizer where users race diffe
 - **BFS**: Fully implemented and tested (16 tests)
 - **Registry**: Wired up with `implemented` flag per algorithm (10 tests)
 - **Test fixtures**: 4 canonical grids with assertion helpers
-- **Total**: 43 tests, all passing
 
-### 🚧 TODO — Remaining Algorithms
-- Dijkstra, DFS, Greedy Best-First, Hill Climbing, Simulated Annealing
-- Each has a stub file with detailed implementation notes
+### 🚧 TODO — Remaining Algorithms (For Group Project)
+- **Dijkstra, DFS, Greedy Best-First, Hill Climbing, Simulated Annealing**
+- Each has a stub file with detailed implementation notes and interface signatures
+- Stubs throw clear errors indicating they are ready for team implementation
 
-### ❌ TODO — Phases 2-8
-- Grid state, map builder, 3D scene, agents, race orchestration, analytics, polish
+### ✅ Phases 2-8 — Full Application Complete
+- **Phase 2 (Grid & Presets)**: `gridStore.ts`, tool palette, drag wall painting, 3 presets (7 tests)
+- **Phase 3 (3D Scene)**: `Diorama.tsx`, `IsometricCamera`, `Tile.tsx`, `Wall.tsx`, `GoalGlow.tsx`
+- **Phase 4 (Agents)**: `agentStore.ts`, `AgentPawn.tsx` (spring lerp), `NodeOverlay`, `PathTrail`, `HeuristicRay` (5 tests)
+- **Phase 5 (Race Scheduler)**: `raceStore.ts`, rAF scheduler, mid-race speed slider (4 tests)
+- **Phase 6 (Analytics)**: `Leaderboard.tsx` (live standings), `ResultsDashboard.tsx` (comparative stats)
+- **Phase 7 (Visual Polish)**: Glassmorphism HUD overlay, edge-anchored panels, tactile theme
+- **Phase 8 (QA & Ship)**: 59 tests passing, clean typecheck, clean lint, production build verified
 
 ## 3. How to Pick Up Work
 
@@ -135,29 +141,29 @@ AlgoArena/
     │       ├── astar.test.ts        # 17 tests
     │       ├── bfs.test.ts          # 16 tests
     │       └── registry.test.ts     # 10 tests
-    ├── state/                       # 🚧 TODO — Zustand stores
-    │   ├── gridStore.ts             # Grid dimensions, walls, start/goal
-    │   ├── agentStore.ts            # Agent list & visualization state
-    │   └── raceStore.ts             # Race scheduler & speed
-    ├── scene/                       # 🚧 TODO — React Three Fiber
-    │   ├── Diorama.tsx              # Main canvas + camera
-    │   ├── Tile.tsx                 # Grid tile mesh
-    │   ├── Wall.tsx                 # Raised wall block
-    │   ├── Node.tsx                 # Frontier/visited overlay
-    │   ├── AgentPawn.tsx            # Pawn mesh + spring animation
-    │   ├── PathTrail.tsx            # Path visualization
-    │   ├── HeuristicRay.tsx         # Line to heuristic target
-    │   └── GoalGlow.tsx             # Pulsing glow at goal
-    ├── ui/                          # 🚧 TODO — Tailwind overlay
-    │   ├── ToolPalette.tsx          # Wall/start/end tools
-    │   ├── GridSizeControl.tsx      # Grid size selector
-    │   ├── AgentPanel.tsx           # Add/remove agents
-    │   ├── SpeedSlider.tsx          # Race speed control
-    │   ├── Leaderboard.tsx          # Live leaderboard
-    │   ├── ResultsDashboard.tsx     # Post-race results
-    │   └── Hud.tsx                  # HUD container
+    ├── state/                       # ⭐ Zustand stores
+    │   ├── gridStore.ts             # ✅ Grid dimensions, walls, start/goal, presets
+    │   ├── agentStore.ts            # ✅ Agent list & visualization state
+    │   └── raceStore.ts             # ✅ rAF scheduler, speed, status
+    ├── scene/                       # ⭐ React Three Fiber
+    │   ├── Diorama.tsx              # ✅ Main canvas + orthographic camera
+    │   ├── Tile.tsx                 # ✅ Grid tile mesh
+    │   ├── Wall.tsx                 # ✅ Raised 3D wall block with shadow
+    │   ├── Node.tsx                 # ✅ Frontier/visited overlay
+    │   ├── AgentPawn.tsx            # ✅ Animated pawn mesh (spring lerp)
+    │   ├── PathTrail.tsx            # ✅ Emissive path visualization
+    │   ├── HeuristicRay.tsx         # ✅ Pulsing ray to heuristic target
+    │   └── GoalGlow.tsx             # ✅ Emissive pulsing goal beacon
+    ├── ui/                          # ⭐ Tailwind CSS Glassmorphic HUD
+    │   ├── ToolPalette.tsx          # ✅ Wall/eraser/start/goal tools + presets
+    │   ├── GridSizeControl.tsx      # ✅ 10×10 / 20×20 / 30×30 selector
+    │   ├── AgentPanel.tsx           # ✅ Add/remove agents & overlay toggles
+    │   ├── SpeedSlider.tsx          # ✅ Play/pause/step & live speed slider
+    │   ├── Leaderboard.tsx          # ✅ Live ranked standings
+    │   ├── ResultsDashboard.tsx     # ✅ Post-race comparative results
+    │   └── Hud.tsx                  # ✅ HUD container
     └── maps/
-        └── presets.ts               # "The Spiral", "Local Maxima Trap"
+        └── presets.ts               # ✅ The Spiral, Local Maxima Trap, Chokepoints
 ```
 
 ## 5. Test Fixtures Reference

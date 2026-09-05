@@ -2,12 +2,12 @@
  * Map Presets
  *
  * Static wall-set definitions for preset maps from the GDD.
- * These are loadable from a dropdown in the UI.
+ * These are loadable from the Tool Palette preset buttons.
  *
- * ## TODO — Phase 2
- *
- * Finalize wall coordinates for each preset at each grid size.
- * Current definitions are for 20×20 grids.
+ * Presets:
+ * 1. "The Spiral" — winding corridor forcing deep paths
+ * 2. "Local Maxima Trap" — U-shaped concave wall trapping greedy algorithms
+ * 3. "The Chokepoints" — alternating wall barriers with narrow passages
  *
  * @module maps/presets
  */
@@ -76,9 +76,31 @@ export const LOCAL_MAXIMA_TRAP: MapPreset = {
 };
 
 /**
+ * "The Chokepoints" — alternating vertical barriers with single gaps.
+ * Tests how algorithms navigate multiple bottleneck passages.
+ */
+export const THE_CHOKEPOINTS: MapPreset = {
+  name: 'The Chokepoints',
+  description: 'Alternating barriers with single gaps — tests bottleneck navigation.',
+  width: 20,
+  height: 20,
+  walls: [
+    // Barrier 1 at x = 5 (gap at y = 17)
+    ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((y): [number, number] => [5, y]),
+    // Barrier 2 at x = 10 (gap at y = 2)
+    ...[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map((y): [number, number] => [10, y]),
+    // Barrier 3 at x = 15 (gap at y = 16)
+    ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((y): [number, number] => [15, y]),
+  ],
+  start: { x: 1, y: 10 },
+  goal: { x: 18, y: 10 },
+};
+
+/**
  * All available presets, indexed by a stable key.
  */
 export const PRESETS: Record<string, MapPreset> = {
   spiral: THE_SPIRAL,
   trap: LOCAL_MAXIMA_TRAP,
+  chokepoints: THE_CHOKEPOINTS,
 };
