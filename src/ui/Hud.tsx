@@ -16,6 +16,7 @@ import { GridSizeControl } from './GridSizeControl';
 import { ToolPalette } from './ToolPalette';
 import { SpeedSlider } from './SpeedSlider';
 import { ResultsDashboard } from './ResultsDashboard';
+import { CameraControls } from './CameraControls';
 
 export function Hud() {
   return (
@@ -27,6 +28,7 @@ export function Hud() {
         <GridSizeControl />
         <ToolPalette />
         <SpeedSlider />
+        <CameraControls />
         <ResultsDashboard />
       </div>
     </div>

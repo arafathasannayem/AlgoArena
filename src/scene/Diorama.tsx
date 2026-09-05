@@ -3,6 +3,7 @@
  *
  * Renders the grid as a 3D isometric diorama with:
  * - Orthographic camera at true isometric angle (position [D,D,D] → lookAt origin)
+ * - Interactive movable camera (orbit, pan, zoom) via Drei OrbitControls
  * - Grid tiles as flat box geometry
  * - Walls as raised 3D blocks with shadows
  * - Goal glow via emissive material + pulse animation
@@ -25,6 +26,7 @@ import { ScanReticle } from './ScanReticle';
 import { NodeOverlay } from './Node';
 import { PathTrail } from './PathTrail';
 import { HeuristicRay } from './HeuristicRay';
+import { CameraController } from './CameraController';
 
 /** Inner scene component — reads store and renders geometry. */
 function DioramaScene() {
@@ -99,6 +101,9 @@ function DioramaScene() {
         far={1000}
         onUpdate={(cam) => cam.lookAt(0, 0, 0)}
       />
+
+      {/* Interactive Orbit, Pan & Zoom Camera Controller */}
+      <CameraController defaultZoom={zoom} />
 
       {/* Lighting rig — static "baked" feel */}
       <ambientLight intensity={0.45} />
