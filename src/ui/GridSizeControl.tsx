@@ -8,6 +8,7 @@
  */
 
 import { useGridStore } from '../state/gridStore';
+import { useRaceStore } from '../state/raceStore';
 import { playClick } from '../utils/sound';
 
 const SIZES = [10, 20, 30] as const;
@@ -15,9 +16,12 @@ const SIZES = [10, 20, 30] as const;
 export function GridSizeControl() {
   const width = useGridStore((s) => s.width);
   const setSize = useGridStore((s) => s.setSize);
+  const isRunning = useRaceStore((s) => s.status === 'running');
+
+  if (isRunning) return null;
 
   return (
-    <div className="fixed top-4 right-4 bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-2 flex items-center gap-1.5 z-10 shadow-lg">
+    <div className="fixed top-4 right-4 bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-2 flex items-center gap-1.5 z-10 shadow-lg animate-in fade-in duration-150">
       <span className="text-[10px] uppercase tracking-wider text-glass-text/40 font-semibold px-2">
         Grid
       </span>

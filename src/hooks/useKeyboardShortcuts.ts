@@ -86,6 +86,9 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}):
         case 'e':
         case 's':
         case 'g': {
+          const { status } = useRaceStore.getState();
+          if (status === 'running') break;
+
           const toolMap: Record<string, Tool> = {
             w: 'wall',
             c: 'cost',

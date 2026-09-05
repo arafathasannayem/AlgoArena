@@ -58,10 +58,12 @@ export function Tile({
 }: TileProps) {
   const meshRef = useRef<Mesh>(null);
   const showResults = useRaceStore((s) => s.showResults);
+  const isRunning = useRaceStore((s) => s.status === 'running');
   const showCostLabels = useGridStore((s) => s.showCostLabels);
   const isHighCost = cost !== undefined && cost > 1 && !isStart && !isGoal && !isWall;
 
   const handleClick = () => {
+    if (isRunning) return;
     playPlace();
     onClick();
   };

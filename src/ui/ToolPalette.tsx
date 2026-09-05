@@ -11,6 +11,7 @@
 
 import { useState, useRef } from 'react';
 import { useGridStore, type Tool } from '../state/gridStore';
+import { useRaceStore } from '../state/raceStore';
 import { useSoundStore } from '../state/soundStore';
 import { playClick, playPlace } from '../utils/sound';
 import {
@@ -50,7 +51,11 @@ interface ToolPaletteProps {
   onOpenHelp?: () => void;
 }
 
+// Persist user-dragged position across run/pause/finish cycles
+let savedPos = { x: 16, y: 140 };
+
 export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
+  const isRunning = useRaceStore((s) => s.status === 'running');
   const activeTool = useGridStore((s) => s.activeTool);
   const setActiveTool = useGridStore((s) => s.setActiveTool);
   const highCostValue = useGridStore((s) => s.highCostValue);
@@ -65,9 +70,9 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
 
   // Dragging / Moveable window state
   const panelRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 16, y: 140 });
+  const [pos, setPos] = useState<{ x: number; y: number }>(savedPos);
   const isDragging = useRef(false);
-  const dragStart = useRef({ startX: 0, startY: 0, posX: 16, posY: 140 });
+  const dragStart = useRef({ startX: 0, startY: 0, posX: savedPos.x, posY: savedPos.y });
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     isDragging.current = true;
@@ -88,7 +93,9 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
     const panelHeight = panelRef.current?.offsetHeight ?? 420;
     const nextX = Math.max(8, Math.min(window.innerWidth - panelWidth - 8, dragStart.current.posX + dx));
     const nextY = Math.max(8, Math.min(window.innerHeight - panelHeight - 8, dragStart.current.posY + dy));
-    setPos({ x: nextX, y: nextY });
+    const nextPos = { x: nextX, y: nextY };
+    savedPos = nextPos;
+    setPos(nextPos);
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -100,11 +107,13 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
     }
   };
 
+  if (isRunning) return null;
+
   return (
     <div
       ref={panelRef}
       style={{ left: `${pos.x}px`, top: `${pos.y}px` }}
-      className="fixed bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-2.5 flex flex-col gap-1.5 z-10 w-48 shadow-2xl transition-shadow"
+      className="fixed bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-2.5 flex flex-col gap-1.5 z-10 w-48 shadow-2xl transition-shadow animate-in fade-in duration-150"
     >
       {/* Draggable Window Header */}
       <div
@@ -171,7 +180,8 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
           {/* Reset position */}
           <button
             onClick={() => {
-              setPos({ x: 16, y: 140 });
+              savedPos = { x: 16, y: 140 };
+              setPos(savedPos);
               playClick();
             }}
             className="text-[9px] text-white/40 hover:text-white/80 p-1 rounded transition-colors"
