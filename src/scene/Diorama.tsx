@@ -182,6 +182,39 @@ function DioramaScene() {
 
       {/* Grid container — centered at origin */}
       <group position={[offsetX, 0, offsetZ]}>
+        {/* Diorama Tabletop Pedestal Base (underneath the grid in 3D mode) */}
+        {!isTopDown && (
+          <group position={[(width - 1) / 2, 0, (height - 1) / 2]}>
+            {/* Upper beveled slate trim */}
+            <mesh position={[0, -0.05, 0]} receiveShadow>
+              <boxGeometry args={[width + 0.3, 0.1, height + 0.3]} />
+              <meshStandardMaterial color="#1e293b" roughness={0.7} metalness={0.2} />
+            </mesh>
+            {/* Deep foundation pedestal block */}
+            <mesh position={[0, -0.28, 0]} receiveShadow>
+              <boxGeometry args={[width + 0.7, 0.38, height + 0.7]} />
+              <meshStandardMaterial color="#0f172a" roughness={0.85} metalness={0.3} />
+            </mesh>
+            {/* Sleek edge accent line */}
+            <mesh position={[0, -0.08, 0]}>
+              <boxGeometry args={[width + 0.32, 0.02, height + 0.32]} />
+              <meshStandardMaterial color="#38bdf8" emissive="#0284c7" emissiveIntensity={0.4} />
+            </mesh>
+          </group>
+        )}
+
+        {/* Start Position Soft Beacon Halo */}
+        <mesh position={[start.x, 0.11, start.y]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.34, 0.44, 24]} />
+          <meshStandardMaterial
+            color="#3b82f6"
+            emissive="#3b82f6"
+            emissiveIntensity={0.9}
+            transparent
+            opacity={0.65}
+          />
+        </mesh>
+
         {tiles}
         {wallBlocks}
         <GoalGlow x={goal.x} y={goal.y} />

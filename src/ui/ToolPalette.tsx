@@ -11,6 +11,8 @@
 
 import { useState, useRef } from 'react';
 import { useGridStore, type Tool } from '../state/gridStore';
+import { useSoundStore } from '../state/soundStore';
+import { playClick, playPlace } from '../utils/sound';
 import {
   Square,
   Eraser,
@@ -21,30 +23,41 @@ import {
   Mountain,
   GripVertical,
   RotateCcw,
+  Volume2,
+  VolumeX,
+  HelpCircle,
 } from 'lucide-react';
 import { PRESETS } from '../maps/presets';
 
 interface ToolDef {
   id: Tool;
   label: string;
+  shortcut: string;
   icon: React.ReactNode;
 }
 
 const TOOLS: ToolDef[] = [
-  { id: 'wall', label: 'Wall', icon: <Square size={16} /> },
-  { id: 'cost', label: 'High Cost', icon: <Mountain size={16} /> },
-  { id: 'eraser', label: 'Eraser', icon: <Eraser size={16} /> },
-  { id: 'start', label: 'Start Point', icon: <Flag size={16} /> },
-  { id: 'goal', label: 'Goal Point', icon: <Target size={16} /> },
+  { id: 'wall', label: 'Wall', shortcut: 'W', icon: <Square size={16} /> },
+  { id: 'cost', label: 'High Cost', shortcut: 'C', icon: <Mountain size={16} /> },
+  { id: 'eraser', label: 'Eraser', shortcut: 'E', icon: <Eraser size={16} /> },
+  { id: 'start', label: 'Start Point', shortcut: 'S', icon: <Flag size={16} /> },
+  { id: 'goal', label: 'Goal Point', shortcut: 'G', icon: <Target size={16} /> },
 ];
 
-export function ToolPalette() {
+interface ToolPaletteProps {
+  onOpenHelp?: () => void;
+}
+
+export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
   const activeTool = useGridStore((s) => s.activeTool);
   const setActiveTool = useGridStore((s) => s.setActiveTool);
   const highCostValue = useGridStore((s) => s.highCostValue);
   const setHighCostValue = useGridStore((s) => s.setHighCostValue);
   const clearGrid = useGridStore((s) => s.clearGrid);
   const loadPreset = useGridStore((s) => s.loadPreset);
+
+  const soundEnabled = useSoundStore((s) => s.enabled);
+  const toggleSound = useSoundStore((s) => s.toggleSound);
 
   // Dragging / Moveable window state
   const panelRef = useRef<HTMLDivElement>(null);
@@ -95,7 +108,7 @@ export function ToolPalette() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         className="flex items-center justify-between px-1 py-1 cursor-grab active:cursor-grabbing select-none text-white/50 hover:text-white/80 transition-colors border-b border-white/10 mb-0.5"
-        title="Click and drag to move tool palette"
+        title="Click and drag to move toolbox"
       >
         <div className="flex items-center gap-1.5">
           <GripVertical size={13} className="text-white/40" />
@@ -103,16 +116,50 @@ export function ToolPalette() {
             Toolbox
           </span>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setPos({ x: 16, y: 140 });
-          }}
-          className="text-[9px] text-white/40 hover:text-white/80 p-0.5 rounded transition-colors"
-          title="Reset position"
-        >
-          <RotateCcw size={11} />
-        </button>
+
+        <div className="flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()}>
+          {/* Sound Toggle */}
+          <button
+            onClick={() => {
+              toggleSound();
+              playClick();
+            }}
+            className={`p-1 rounded transition-colors ${
+              soundEnabled
+                ? 'text-amber-300 hover:text-amber-200 hover:bg-white/10'
+                : 'text-white/30 hover:text-white/60 hover:bg-white/10'
+            }`}
+            title={soundEnabled ? 'Audio FX Enabled (Click to Mute)' : 'Audio FX Muted (Click to Unmute)'}
+          >
+            {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+          </button>
+
+          {/* Guide / Manual Button */}
+          {onOpenHelp && (
+            <button
+              onClick={() => {
+                onOpenHelp();
+                playClick();
+              }}
+              className="p-1 rounded text-blue-300 hover:text-blue-200 hover:bg-white/10 transition-colors"
+              title="Game Manual & Hotkeys [?]"
+            >
+              <HelpCircle size={13} />
+            </button>
+          )}
+
+          {/* Reset position */}
+          <button
+            onClick={() => {
+              setPos({ x: 16, y: 140 });
+              playClick();
+            }}
+            className="text-[9px] text-white/40 hover:text-white/80 p-1 rounded transition-colors"
+            title="Reset position"
+          >
+            <RotateCcw size={12} />
+          </button>
+        </div>
       </div>
 
       {/* Tool buttons */}
@@ -121,25 +168,33 @@ export function ToolPalette() {
         return (
           <div key={t.id} className="flex flex-col gap-1">
             <button
-              onClick={() => setActiveTool(t.id)}
+              onClick={() => {
+                setActiveTool(t.id);
+                playClick();
+              }}
               className={`p-2 rounded-lg transition-colors flex items-center justify-between w-full ${
                 isActive
                   ? t.id === 'cost'
-                    ? 'bg-amber-500/25 border border-amber-500/40 text-amber-300'
+                    ? 'bg-amber-500/25 border border-amber-500/40 text-amber-300 shadow-sm'
                     : 'bg-white/20 text-white shadow-sm'
                   : 'text-glass-text/60 hover:text-white hover:bg-white/10'
               }`}
-              title={t.label}
+              title={`${t.label} [${t.shortcut}]`}
             >
               <div className="flex items-center gap-2">
                 {t.icon}
                 <span className="text-xs font-medium">{t.label}</span>
               </div>
-              {t.id === 'cost' && (
-                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                  ×{highCostValue}
-                </span>
-              )}
+              <div className="flex items-center gap-1">
+                {t.id === 'cost' && (
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                    ×{highCostValue}
+                  </span>
+                )}
+                <kbd className="text-[9px] font-mono font-semibold px-1 py-0.5 rounded bg-white/10 text-white/50">
+                  {t.shortcut}
+                </kbd>
+              </div>
             </button>
 
             {/* High Cost Value Settings (when cost tool is selected) */}
@@ -151,7 +206,10 @@ export function ToolPalette() {
                   </span>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => setHighCostValue(Math.max(2, highCostValue - 1))}
+                      onClick={() => {
+                        setHighCostValue(Math.max(2, highCostValue - 1));
+                        playClick();
+                      }}
                       className="w-4 h-4 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors"
                       title="Decrease cost"
                     >
@@ -169,7 +227,10 @@ export function ToolPalette() {
                       className="w-8 bg-slate-950/80 border border-amber-500/40 rounded text-center text-xs font-mono font-bold text-amber-300 py-0.5 focus:outline-none focus:border-amber-400"
                     />
                     <button
-                      onClick={() => setHighCostValue(Math.min(99, highCostValue + 1))}
+                      onClick={() => {
+                        setHighCostValue(Math.min(99, highCostValue + 1));
+                        playClick();
+                      }}
                       className="w-4 h-4 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors"
                       title="Increase cost"
                     >
@@ -183,7 +244,10 @@ export function ToolPalette() {
                   {[2, 5, 10, 20].map((presetVal) => (
                     <button
                       key={presetVal}
-                      onClick={() => setHighCostValue(presetVal)}
+                      onClick={() => {
+                        setHighCostValue(presetVal);
+                        playClick();
+                      }}
                       className={`flex-1 py-0.5 text-[9px] font-mono font-bold rounded transition-colors ${
                         highCostValue === presetVal
                           ? 'bg-amber-500 text-slate-950 shadow-sm'
@@ -205,7 +269,10 @@ export function ToolPalette() {
 
       {/* Clear button */}
       <button
-        onClick={clearGrid}
+        onClick={() => {
+          clearGrid();
+          playClick();
+        }}
         className="p-2 rounded-lg text-red-400/80 hover:text-red-400 hover:bg-white/10 transition-colors flex items-center gap-2 w-full"
         title="Clear Grid (removes all walls and high-cost tiles)"
       >
@@ -224,9 +291,10 @@ export function ToolPalette() {
       {Object.entries(PRESETS).map(([key, preset]) => (
         <button
           key={key}
-          onClick={() =>
-            loadPreset(preset.walls, preset.start, preset.goal, preset.width, preset.height)
-          }
+          onClick={() => {
+            loadPreset(preset.walls, preset.start, preset.goal, preset.width, preset.height);
+            playPlace();
+          }}
           className="p-1.5 rounded-lg text-glass-text/60 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-left w-full"
           title={preset.description}
         >

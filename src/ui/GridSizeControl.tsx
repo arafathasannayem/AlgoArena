@@ -8,6 +8,7 @@
  */
 
 import { useGridStore } from '../state/gridStore';
+import { playClick } from '../utils/sound';
 
 const SIZES = [10, 20, 30] as const;
 
@@ -16,17 +17,20 @@ export function GridSizeControl() {
   const setSize = useGridStore((s) => s.setSize);
 
   return (
-    <div className="fixed top-4 right-4 bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-2 flex items-center gap-1.5 z-10">
+    <div className="fixed top-4 right-4 bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-2 flex items-center gap-1.5 z-10 shadow-lg">
       <span className="text-[10px] uppercase tracking-wider text-glass-text/40 font-semibold px-2">
         Grid
       </span>
       {SIZES.map((s) => (
         <button
           key={s}
-          onClick={() => setSize(s, s)}
+          onClick={() => {
+            setSize(s, s);
+            playClick();
+          }}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
             width === s
-              ? 'bg-white/20 text-white'
+              ? 'bg-white/20 text-white shadow-sm'
               : 'text-glass-text/60 hover:text-white hover:bg-white/10'
           }`}
         >

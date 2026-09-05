@@ -2,11 +2,12 @@
  * AgentPanel — Floating glass panel for managing race agents.
  *
  * Positioned on the left or top-left, allows users to:
- * - Select an algorithm from the registry
+ * - Select an algorithm from the registry with search trait indicators
+ * - 1-Click Quick Match setup (A* vs BFS showdown)
  * - Add a new agent to the race
  * - View existing agents with their status and color
  * - Toggle individual agent visualization overlays
- * - Remove agents
+ * - Remove single agent or Clear All
  *
  * Sourced directly from the ALGORITHMS registry to keep colors/labels in sync.
  *
@@ -17,7 +18,18 @@ import { useState } from 'react';
 import { useAgentStore } from '../state/agentStore';
 import { useGridStore } from '../state/gridStore';
 import { ALGORITHMS } from '../algorithms';
-import { UserPlus, Trash2, Eye, EyeOff, Bot } from 'lucide-react';
+import { playClick } from '../utils/sound';
+import { UserPlus, Trash2, Eye, EyeOff, Bot, Swords, Sparkles } from 'lucide-react';
+
+const ALGO_TRAITS: Record<string, string> = {
+  astar: 'Optimal Cost • Manhattan Heuristic',
+  bfs: 'Fewest Steps • Unweighted',
+  dijkstra: 'Cost-Optimal • Uniform Search',
+  dfs: 'Deep Path • Non-Optimal',
+  greedy: 'Greedy Heuristic • Fast Explorer',
+  hillclimb: 'Local Ascent • Trap-Prone',
+  annealing: 'Thermal Search • Escapes Traps',
+};
 
 export function AgentPanel() {
   const agents = useAgentStore((s) => s.agents);
@@ -33,19 +45,59 @@ export function AgentPanel() {
     const entry = ALGORITHMS[selectedKey];
     if (!entry) return;
     addAgent(selectedKey, entry.color, start);
+    playClick();
+  };
+
+  const handleQuickMatch = () => {
+    // Clear existing and add A* and BFS for instant race
+    agents.forEach((a) => removeAgent(a.id));
+    if (ALGORITHMS.astar) {
+      addAgent('astar', ALGORITHMS.astar.color, start);
+    }
+    if (ALGORITHMS.bfs) {
+      addAgent('bfs', ALGORITHMS.bfs.color, start);
+    }
+    playClick();
+  };
+
+  const handleClearAll = () => {
+    agents.forEach((a) => removeAgent(a.id));
+    playClick();
   };
 
   return (
-    <div className="fixed top-4 left-4 bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-3 flex flex-col gap-2.5 z-10 w-64 text-glass-text max-h-[calc(100vh-2rem)] overflow-y-auto">
-      <div className="flex items-center gap-2 pb-1 border-b border-glass-border">
-        <Bot size={18} className="text-blue-400" />
-        <span className="text-sm font-semibold tracking-wide">Agents ({agents.length})</span>
+    <div className="fixed top-4 left-4 bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-3 flex flex-col gap-2.5 z-10 w-64 text-glass-text max-h-[calc(100vh-2rem)] overflow-y-auto shadow-xl">
+      <div className="flex items-center justify-between pb-1 border-b border-glass-border">
+        <div className="flex items-center gap-2">
+          <Bot size={18} className="text-blue-400" />
+          <span className="text-sm font-semibold tracking-wide">Agents ({agents.length})</span>
+        </div>
+        {agents.length > 0 && (
+          <button
+            onClick={handleClearAll}
+            className="text-[10px] text-red-400/80 hover:text-red-300 font-medium px-1.5 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20 transition-colors"
+            title="Clear all placed agents"
+          >
+            Clear All
+          </button>
+        )}
       </div>
 
+      {/* Quick 1-Click Match Preset */}
+      <button
+        onClick={handleQuickMatch}
+        className="flex items-center justify-center gap-1.5 w-full py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-blue-600/30 to-purple-600/30 hover:from-blue-600/50 hover:to-purple-600/50 border border-blue-500/30 hover:border-blue-400/50 text-white text-xs font-semibold shadow-sm transition-all"
+        title="Instant Showdown: Set up A* vs BFS"
+      >
+        <Swords size={13} className="text-blue-400" />
+        <span>Quick Match: A* vs BFS</span>
+        <Sparkles size={11} className="text-amber-400 ml-0.5" />
+      </button>
+
       {/* Add Agent Form */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <label className="text-[11px] uppercase tracking-wider text-glass-text/60 font-semibold">
-          Algorithm
+          Select Algorithm
         </label>
         <div className="flex gap-2">
           <select
@@ -62,12 +114,19 @@ export function AgentPanel() {
 
           <button
             onClick={handleAddAgent}
-            className="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
-            title="Add Agent"
+            className="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-lg transition-colors flex items-center justify-center shrink-0 shadow-sm"
+            title="Add Agent to Grid"
           >
             <UserPlus size={16} />
           </button>
         </div>
+
+        {/* Algorithm Characteristic Badge */}
+        {ALGO_TRAITS[selectedKey] && (
+          <div className="text-[10px] text-white/50 bg-white/5 border border-white/5 rounded px-2 py-1 leading-tight">
+            {ALGO_TRAITS[selectedKey]}
+          </div>
+        )}
       </div>
 
       {/* Agent List */}
@@ -96,7 +155,10 @@ export function AgentPanel() {
 
                   <div className="flex items-center gap-1 shrink-0">
                     <button
-                      onClick={() => toggleOverlay(agent.id)}
+                      onClick={() => {
+                        toggleOverlay(agent.id);
+                        playClick();
+                      }}
                       className={`p-1 rounded transition-colors ${
                         agent.showOverlay
                           ? 'text-blue-400 hover:bg-white/10'
@@ -107,7 +169,10 @@ export function AgentPanel() {
                       {agent.showOverlay ? <Eye size={14} /> : <EyeOff size={14} />}
                     </button>
                     <button
-                      onClick={() => removeAgent(agent.id)}
+                      onClick={() => {
+                        removeAgent(agent.id);
+                        playClick();
+                      }}
                       className="p-1 rounded text-red-400/70 hover:text-red-400 hover:bg-white/10 transition-colors"
                       title="Remove Agent"
                     >

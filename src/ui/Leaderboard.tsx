@@ -80,14 +80,21 @@ export function Leaderboard() {
           const dist = Math.abs(agent.position.x - goal.x) + Math.abs(agent.position.y - goal.y);
           const nodesExplored = agent.result ? agent.result.nodesExplored : agent.visitedNodes.size;
 
+          let rankBadge: React.ReactNode = `#${index + 1}`;
+          if (agent.status === 'done' && agent.result?.status === 'success') {
+            if (index === 0) rankBadge = '🥇';
+            else if (index === 1) rankBadge = '🥈';
+            else if (index === 2) rankBadge = '🥉';
+          }
+
           return (
             <div
               key={agent.id}
               className="flex items-center justify-between p-1.5 rounded-lg bg-white/5 border border-white/5 text-xs"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[11px] font-bold text-glass-text/40 w-3.5 text-center">
-                  #{index + 1}
+                <span className="text-[11px] font-bold text-glass-text/40 w-4 text-center">
+                  {rankBadge}
                 </span>
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"

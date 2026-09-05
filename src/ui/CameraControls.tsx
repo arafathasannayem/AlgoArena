@@ -10,6 +10,7 @@
  */
 
 import { useCameraStore } from '../state/cameraStore';
+import { playClick } from '../utils/sound';
 import { ZoomIn, ZoomOut, Compass, Grid } from 'lucide-react';
 
 export function CameraControls() {
@@ -20,13 +21,33 @@ export function CameraControls() {
 
   const isTopDown = useCameraStore((s) => s.isTopDown);
 
+  const handleZoomIn = () => {
+    triggerZoomIn();
+    playClick();
+  };
+
+  const handleZoomOut = () => {
+    triggerZoomOut();
+    playClick();
+  };
+
+  const handleReset = () => {
+    triggerReset();
+    playClick();
+  };
+
+  const handleTopDown = () => {
+    triggerPreset('top');
+    playClick();
+  };
+
   return (
     <div className="fixed bottom-6 right-6 bg-glass-bg backdrop-blur-md border border-glass-border rounded-panel p-1.5 flex flex-col gap-1 z-10 text-glass-text shadow-xl">
       {/* Zoom In */}
       <button
-        onClick={triggerZoomIn}
+        onClick={handleZoomIn}
         className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/15 active:bg-white/25 transition-colors"
-        title="Zoom In"
+        title="Zoom In [+]"
         aria-label="Zoom In"
       >
         <ZoomIn size={16} />
@@ -34,9 +55,9 @@ export function CameraControls() {
 
       {/* Zoom Out */}
       <button
-        onClick={triggerZoomOut}
+        onClick={handleZoomOut}
         className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/15 active:bg-white/25 transition-colors"
-        title="Zoom Out"
+        title="Zoom Out [-]"
         aria-label="Zoom Out"
       >
         <ZoomOut size={16} />
@@ -46,13 +67,13 @@ export function CameraControls() {
 
       {/* Reset to Isometric */}
       <button
-        onClick={triggerReset}
+        onClick={handleReset}
         className={`p-2 rounded-lg transition-colors ${
           !isTopDown
             ? 'bg-white/20 text-white shadow-sm'
             : 'text-white/60 hover:text-white hover:bg-white/15'
         }`}
-        title="Reset to Isometric View (3D with Shadows)"
+        title="Reset to Isometric View [I]"
         aria-label="Reset to Isometric View"
       >
         <Compass size={16} />
@@ -60,13 +81,13 @@ export function CameraControls() {
 
       {/* Top-Down View */}
       <button
-        onClick={() => triggerPreset('top')}
+        onClick={handleTopDown}
         className={`p-2 rounded-lg transition-colors ${
           isTopDown
             ? 'bg-amber-400/25 text-amber-300 border border-amber-400/30 shadow-sm'
             : 'text-white/60 hover:text-white hover:bg-white/15'
         }`}
-        title="Top-Down 2D View (Flat, No Shadows)"
+        title="Top-Down 2D View [T]"
         aria-label="Top-Down View"
       >
         <Grid size={16} />

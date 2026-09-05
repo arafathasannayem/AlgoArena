@@ -1,8 +1,8 @@
 /**
  * PathTrail — Visualization of the current best-known path.
  *
- * Renders a series of small raised indicators along the path,
- * colored with the agent's color.
+ * Renders glowing neon energy nodes along the path with emissive cores
+ * to create an illuminated circuit trail across the diorama.
  *
  * @module scene/PathTrail
  */
@@ -20,16 +20,29 @@ export function PathTrail({ path, color }: PathTrailProps) {
   return (
     <group>
       {path.map((p, i) => (
-        <mesh key={`p-${i}`} position={[p.x, 0.16, p.y]}>
-          <boxGeometry args={[0.3, 0.04, 0.3]} />
-          <meshStandardMaterial
-            color={color}
-            emissive={color}
-            emissiveIntensity={0.3}
-            transparent
-            opacity={0.7}
-          />
-        </mesh>
+        <group key={`p-${i}`} position={[p.x, 0.14, p.y]}>
+          {/* Outer glowing energy disc */}
+          <mesh>
+            <cylinderGeometry args={[0.15, 0.15, 0.03, 16]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={0.9}
+              transparent
+              opacity={0.75}
+            />
+          </mesh>
+
+          {/* Inner bright energy core */}
+          <mesh position={[0, 0.02, 0]}>
+            <sphereGeometry args={[0.05, 12, 12]} />
+            <meshStandardMaterial
+              color="#ffffff"
+              emissive={color}
+              emissiveIntensity={1.5}
+            />
+          </mesh>
+        </group>
       ))}
     </group>
   );
