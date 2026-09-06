@@ -226,6 +226,9 @@ export function PresetChooserModal() {
                       <span>{preset.walls.length} walls</span>
                       {costCount > 0 && <span>• {costCount} rough</span>}
                       <span>• ({preset.start.x},{preset.start.y}) → ({preset.goal.x},{preset.goal.y})</span>
+                      {(preset.goals?.length ?? 0) > 1 && (
+                        <span>• {preset.goals!.length} goals</span>
+                      )}
                     </div>
                   </div>
 

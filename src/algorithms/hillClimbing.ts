@@ -40,17 +40,13 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
+import { isGoal, nearestGoal, nearestGoalDist } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Encode a Point as a string key for Set/Map lookups. */
 function key(p: Point): string {
   return `${p.x},${p.y}`;
-}
-
-/** Manhattan distance — the heuristic the walker descends. */
-function manhattan(a: Point, b: Point): number {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
 /** Cardinal neighbor offsets (no diagonals). */
@@ -101,7 +97,6 @@ export function* hillClimbingSearch(
 ): AlgorithmGenerator {
   const t0 = performance.now();
 
-  const goal = grid.goal;
   const path: Point[] = [grid.start];
   const visited = new Set<string>([key(grid.start)]);
   let nodesExplored = 1;
@@ -109,9 +104,9 @@ export function* hillClimbingSearch(
   while (true) {
     const current = path[path.length - 1]!;
 
-    // Goal check — reached the goal (including when start === goal).
-    if (current.x === goal.x && current.y === goal.y) {
-      yield { kind: 'consider', node: current, heuristicTarget: goal };
+    // Goal check — reached any of the goals (including when start is a goal).
+    if (isGoal(grid, current)) {
+      yield { kind: 'consider', node: current, heuristicTarget: nearestGoal(grid, current) };
       yield { kind: 'visit', node: current };
 
       const result: AlgorithmResult = {
@@ -126,7 +121,7 @@ export function* hillClimbingSearch(
       return result;
     }
 
-    yield { kind: 'consider', node: current, heuristicTarget: goal };
+    yield { kind: 'consider', node: current, heuristicTarget: nearestGoal(grid, current) };
     yield { kind: 'visit', node: current };
 
     const rawNeighbors = neighbors(current, grid);
@@ -158,12 +153,12 @@ export function* hillClimbingSearch(
       return result;
     }
 
-    // Pick the neighbor with the smallest heuristic distance to the goal.
+    // Pick the neighbor with the smallest heuristic distance to the nearest goal.
     let best = candidates[0]!;
-    let bestH = manhattan(best, goal);
+    let bestH = nearestGoalDist(grid, best);
     for (let i = 1; i < candidates.length; i++) {
       const c = candidates[i]!;
-      const h = manhattan(c, goal);
+      const h = nearestGoalDist(grid, c);
       if (h < bestH) {
         best = c;
         bestH = h;
@@ -171,7 +166,7 @@ export function* hillClimbingSearch(
     }
 
     // No neighbor improves the heuristic → local optimum → trapped.
-    const currentH = manhattan(current, goal);
+    const currentH = nearestGoalDist(grid, current);
     if (bestH >= currentH) {
       const result: AlgorithmResult = {
         status: 'trapped',

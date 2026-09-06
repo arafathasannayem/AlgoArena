@@ -58,6 +58,7 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
+import { isGoal, nearestGoal, nearestGoalDist } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -68,11 +69,6 @@ import type {
  */
 function asNumber(value: number | boolean | undefined, fallback: number): number {
   return typeof value === 'number' ? value : fallback;
-}
-
-/** Manhattan distance — the heuristic used to compute ΔE. */
-function manhattan(a: Point, b: Point): number {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
 /** Cardinal neighbor offsets (no diagonals). */
@@ -127,7 +123,7 @@ function autoCoolingRate(
   initialTemp: number,
   maxSteps: number,
 ): number {
-  const distance = Math.max(1, manhattan(grid.start, grid.goal));
+  const distance = Math.max(1, nearestGoalDist(grid, grid.start));
   const cells = grid.width * grid.height;
   // A small map needs a comfortable budget relative to its size; the distance
   // term prevents a long thin corridor from being starved; MAX_BUDGET keeps
@@ -164,15 +160,14 @@ export function* simulatedAnnealingSearch(
   const avoidImmediateBacktrack = avoidFlag === undefined ? true : Boolean(avoidFlag);
   const t0 = performance.now();
 
-  const goal = grid.goal;
   const path: Point[] = [grid.start];
   let nodesExplored = 1;
   let temperature = initialTemp;
   let steps = 0;
 
-  // ── start === goal ────────────────────────────────────────────────────────
-  if (grid.start.x === goal.x && grid.start.y === goal.y) {
-    yield { kind: 'consider', node: grid.start, heuristicTarget: goal, temperature: initialTemp };
+  // ── start is one of the goals ─────────────────────────────────────────────
+  if (isGoal(grid, grid.start)) {
+    yield { kind: 'consider', node: grid.start, heuristicTarget: nearestGoal(grid, grid.start), temperature: initialTemp };
     yield { kind: 'visit', node: grid.start };
     yield { kind: 'path', path };
     const result: AlgorithmResult = {
@@ -186,7 +181,7 @@ export function* simulatedAnnealingSearch(
     return result;
   }
 
-  yield { kind: 'consider', node: grid.start, heuristicTarget: goal, temperature: initialTemp };
+  yield { kind: 'consider', node: grid.start, heuristicTarget: nearestGoal(grid, grid.start), temperature: initialTemp };
   yield { kind: 'visit', node: grid.start };
 
   // ── Annealing loop ────────────────────────────────────────────────────────
@@ -221,20 +216,20 @@ export function* simulatedAnnealingSearch(
 
     // Pick a random candidate and compute the energy change.
     const candidate = pool[Math.floor(Math.random() * pool.length)]!;
-    const deltaE = manhattan(candidate, goal) - manhattan(current, goal);
+    const deltaE = nearestGoalDist(grid, candidate) - nearestGoalDist(grid, current);
     const accepted = deltaE <= 0 || Math.random() < Math.exp(-deltaE / temperature);
 
     nodesExplored++;
 
     // Evaluate the candidate move visually.
-    yield { kind: 'consider', node: candidate, heuristicTarget: goal, temperature };
+    yield { kind: 'consider', node: candidate, heuristicTarget: nearestGoal(grid, current), temperature };
 
     if (accepted) {
       path.push(candidate);
       yield { kind: 'visit', node: candidate };
 
-      // Reached the goal.
-      if (candidate.x === goal.x && candidate.y === goal.y) {
+      // Reached one of the goals.
+      if (isGoal(grid, candidate)) {
         yield { kind: 'path', path };
         const result: AlgorithmResult = {
           status: 'success',

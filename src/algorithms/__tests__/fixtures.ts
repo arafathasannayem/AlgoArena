@@ -145,6 +145,92 @@ export const FULLY_BLOCKED: GridSnapshot = {
   goal: { x: 3, y: 3 },
 };
 
+// ── 5. Multi-goal grids ─────────────────────────────────────────────────────
+
+/**
+ * ```
+ * G . . . . . G     (G = goal; S = start)
+ * . . . . . . .
+ * . . . . . . .
+ * . . . . . . .
+ * . . . . . . .
+ * . . . . . . .
+ * G . . . . . S
+ * ```
+ *
+ * 7×7 fully open. Start (0, 0). Goals at (6, 0), (0, 6) and (6, 6) — all
+ * reachable. Any algorithm that reaches ANY goal counts as success.
+ */
+export const MULTI_GOAL_OPEN: GridSnapshot = {
+  width: 7,
+  height: 7,
+  walls: new Set<string>(),
+  start: { x: 0, y: 0 },
+  goal: { x: 6, y: 6 },
+  goals: [
+    { x: 6, y: 0 },
+    { x: 0, y: 6 },
+    { x: 6, y: 6 },
+  ],
+};
+
+/**
+ * ```
+ * . G . . . . .          y = 0
+ * . . . . . . .
+ * . . . . . . .
+ * S . . . . . G          y = 3  (S at (0,3), far goal at (6,3))
+ * . . . . . . .
+ * . . . . . . .
+ * . . . . . . .
+ * ```
+ *
+ * 7×7 open. Start (0, 3). Two goals: (1, 0) at distance 4 and (6, 3) at
+ * distance 6. The nearer goal (1, 0) is the one optimal searches must end at.
+ */
+export const MULTI_GOAL_NEAREST: GridSnapshot = {
+  width: 7,
+  height: 7,
+  walls: new Set<string>(),
+  start: { x: 0, y: 3 },
+  goal: { x: 6, y: 3 },
+  goals: [
+    { x: 6, y: 3 },
+    { x: 1, y: 0 },
+  ],
+};
+
+/**
+ * ```
+ * S . . . G . .          y = 0  (nearest reachable goal at (4,0), dist 4)
+ * . . . . . . .
+ * . . . . . . .
+ * . . . . . . .
+ * . . . . . . .
+ * . . . . . . #
+ * . . . . . # G          (goal A at (6,6) boxed in by walls (6,5) & (5,6))
+ * ```
+ *
+ * 7×7. Goals are (4, 0) — reachable and the nearest — and (6, 6), which is
+ * unreachable (its only two in-grid neighbours (5,6) and (6,5) are walls).
+ * Proves an algorithm succeeds despite one goal being walled off, and that
+ * heuristics steer toward the REACHABLE (nearest) goal.
+ */
+export const MULTI_GOAL_WALLED_GOAL: GridSnapshot = {
+  width: 7,
+  height: 7,
+  walls: wallSet([
+    [6, 5],
+    [5, 6],
+  ]),
+  start: { x: 0, y: 0 },
+  goal: { x: 6, y: 6 },
+  goals: [
+    { x: 6, y: 6 },
+    { x: 4, y: 0 },
+  ],
+};
+
 // ── Utilities for test assertions ───────────────────────────────────────────
 
 /** Check that a path starts at `start` and ends at `goal`. */
@@ -158,6 +244,21 @@ export function pathEndpoints(path: Point[], start: Point, goal: Point): boolean
     last.x === goal.x &&
     last.y === goal.y
   );
+}
+
+/** Check that a path starts at `start` and ends at ANY of the given goals. */
+export function pathEndsAtAnyGoal(path: Point[], start: Point, goals: Point[]): boolean {
+  if (path.length < 2) return false;
+  const first = path[0]!;
+  const last = path[path.length - 1]!;
+  if (first.x !== start.x || first.y !== start.y) return false;
+  return goals.some((g) => g.x === last.x && g.y === last.y);
+}
+
+/** Check that a path ends at exactly the given goal node. */
+export function pathEndsAt(path: Point[], goal: Point): boolean {
+  const last = path[path.length - 1]!;
+  return last.x === goal.x && last.y === goal.y;
 }
 
 /** Check that each consecutive pair in a path is one cardinal step apart. */

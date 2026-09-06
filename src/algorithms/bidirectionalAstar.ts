@@ -34,6 +34,7 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
+import { goalPoints, isGoal, nearestGoal, nearestGoalDist } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -192,12 +193,12 @@ export function* bidirectionalAStar(
   let nodesExplored = 0;
 
   const start = grid.start;
-  const goal = grid.goal;
+  const goals = goalPoints(grid);
 
-  // If start === goal, we're done immediately.
-  if (start.x === goal.x && start.y === goal.y) {
+  // If start is one of the goals, we're done immediately.
+  if (isGoal(grid, start)) {
     const path = [start];
-    yield { kind: 'consider', node: start, heuristicTarget: goal };
+    yield { kind: 'consider', node: start, heuristicTarget: nearestGoal(grid, start) };
     yield { kind: 'visit', node: start };
     yield { kind: 'path', path };
     const result: AlgorithmResult = {
@@ -217,15 +218,18 @@ export function* bidirectionalAStar(
   const cameFromA = new Map<string, Point>();
   const closedA = new Set<string>();
   gA.set(key(start), 0);
-  openA.push({ point: start, f: manhattan(start, goal) });
+  openA.push({ point: start, f: nearestGoalDist(grid, start) });
 
-  // ── Goal side (B) ────────────────────────────────────────────────────────
+  // ── Goal side (B) — seeds from EVERY goal node ───────────────────────────
   const openB = new MinHeap();
   const gB = new Map<string, number>();
   const cameFromB = new Map<string, Point>();
   const closedB = new Set<string>();
-  gB.set(key(goal), 0);
-  openB.push({ point: goal, f: manhattan(goal, start) });
+  for (const g of goals) {
+    const gKey = key(g);
+    gB.set(gKey, 0);
+    openB.push({ point: g, f: manhattan(g, start) });
+  }
 
   // Best meeting point found so far (for optimal stopping).
   let bestMeet: Point | null = null;
@@ -258,7 +262,7 @@ export function* bidirectionalAStar(
 
       if (closedA.has(currentKey)) continue;
 
-      yield { kind: 'consider', node: current, heuristicTarget: goal };
+      yield { kind: 'consider', node: current, heuristicTarget: nearestGoal(grid, current) };
       closedA.add(currentKey);
       nodesExplored++;
       yield { kind: 'visit', node: current };
@@ -284,7 +288,7 @@ export function* bidirectionalAStar(
         if (tentativeG < bestG) {
           cameFromA.set(nbrKey, current);
           gA.set(nbrKey, tentativeG);
-          openA.push({ point: nbr, f: tentativeG + manhattan(nbr, goal) });
+          openA.push({ point: nbr, f: tentativeG + nearestGoalDist(grid, nbr) });
           frontierNodes.push(nbr);
 
           // Neighbor reached by both frontiers → meeting point.

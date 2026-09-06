@@ -30,7 +30,13 @@ export interface GridSnapshot {
   /** Optional map of "x,y" keys to traversal costs (default cost is 1). */
   costs?: Map<string, number>;
   start: Point;
+  /** Primary goal — must still be provided; always a member of `goals`. */
   goal: Point;
+  /**
+   * Optional set of goal nodes. Reaching ANY of them counts as success.
+   * Defaults to `[goal]` when omitted (single-goal behaviour).
+   */
+  goals?: Point[];
 }
 
 // ── Step events (yielded by generators) ─────────────────────────────────────

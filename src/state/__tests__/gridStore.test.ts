@@ -155,4 +155,104 @@ describe('Grid Store', () => {
     store.setShowCostLabels(false);
     expect(useGridStore.getState().showCostLabels).toBe(false);
   });
+
+  // ── Multi-goal ──────────────────────────────────────────────────────────
+
+  it('should include goals in the algorithm snapshot', () => {
+    const store = useGridStore.getState();
+    store.toggleGoal(4, 4);
+    const snapshot = store.getSnapshot();
+
+    expect(snapshot.goals).toHaveLength(2);
+    expect(snapshot.goals).toContainEqual(store.goal);
+    expect(snapshot.goals).toContainEqual({ x: 4, y: 4 });
+  });
+
+  it('should toggle a goal tile in, keeping primary goal synced as goals[0]', () => {
+    const store = useGridStore.getState();
+    store.toggleGoal(3, 7);
+
+    const state = useGridStore.getState();
+    expect(state.goals).toHaveLength(2);
+    expect(state.goals[0]).toEqual({ x: 9, y: 9 });
+    expect(state.goal).toEqual(state.goals[0]);
+    expect(state.goals[1]).toEqual({ x: 3, y: 7 });
+  });
+
+  it('should toggle a goal tile out, protecting the last remaining goal', () => {
+    const store = useGridStore.getState();
+    store.toggleGoal(3, 7);
+    store.toggleGoal(3, 7); // remove secondary
+    expect(useGridStore.getState().goals).toHaveLength(1);
+
+    // Attempting to remove the last goal is a no-op
+    store.toggleGoal(9, 9);
+    expect(useGridStore.getState().goals).toHaveLength(1);
+    expect(useGridStore.getState().goal).toEqual({ x: 9, y: 9 });
+  });
+
+  it('should not paint walls or cost on ANY goal tile', () => {
+    const store = useGridStore.getState();
+    store.toggleGoal(3, 7);
+
+    store.paintWall(9, 9);
+    store.paintWall(3, 7);
+    store.paintCost(3, 7, 8);
+
+    const state = useGridStore.getState();
+    expect(state.walls.has('9,9')).toBe(false);
+    expect(state.walls.has('3,7')).toBe(false);
+    expect(state.costs.has('3,7')).toBe(false);
+  });
+
+  it('should clear walls/cost beneath a newly toggled goal tile', () => {
+    const store = useGridStore.getState();
+    store.paintWall(2, 2);
+    store.paintCost(3, 3, 6);
+
+    store.toggleGoal(2, 2);
+    store.toggleGoal(3, 3);
+
+    const state = useGridStore.getState();
+    expect(state.walls.has('2,2')).toBe(false);
+    expect(state.costs.has('3,3')).toBe(false);
+    expect(state.goals).toContainEqual({ x: 2, y: 2 });
+    expect(state.goals).toContainEqual({ x: 3, y: 3 });
+  });
+
+  it('should replace all goals back to a single one via setGoal', () => {
+    const store = useGridStore.getState();
+    store.toggleGoal(1, 1);
+    store.toggleGoal(5, 5);
+
+    store.setGoal({ x: 8, y: 2 });
+
+    const state = useGridStore.getState();
+    expect(state.goals).toEqual([{ x: 8, y: 2 }]);
+    expect(state.goal).toEqual({ x: 8, y: 2 });
+  });
+
+  it('should load a preset with multiple goals (primary first)', () => {
+    const store = useGridStore.getState();
+    store.loadPreset([], { x: 0, y: 0 }, { x: 6, y: 6 }, 7, 7, undefined, [
+      { x: 6, y: 6 },
+      { x: 6, y: 0 },
+      { x: 0, y: 6 },
+    ]);
+
+    const state = useGridStore.getState();
+    expect(state.goal).toEqual({ x: 6, y: 6 });
+    expect(state.goals).toHaveLength(3);
+    expect(state.goals[0]).toEqual({ x: 6, y: 6 });
+  });
+
+  it('should reset goals when resizing the grid', () => {
+    const store = useGridStore.getState();
+    store.toggleGoal(2, 2);
+    store.setSize(30, 30);
+
+    const state = useGridStore.getState();
+    expect(state.goals).toEqual([{ x: 29, y: 29 }]);
+    expect(state.goal).toEqual({ x: 29, y: 29 });
+  });
 });

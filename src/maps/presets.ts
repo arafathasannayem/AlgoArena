@@ -32,8 +32,10 @@ export interface MapPreset {
   costs?: [number, number, number][];
   /** Recommended start point. */
   start: Point;
-  /** Recommended goal point. */
+  /** Recommended primary goal point (always `goals[0]`). */
   goal: Point;
+  /** All recommended goal points. Reaching any one counts as success (optional). */
+  goals?: Point[];
   /** Category tag: 'official' or 'custom'. */
   category?: 'official' | 'custom';
   /** Creation timestamp for custom presets. */

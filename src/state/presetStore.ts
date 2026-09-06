@@ -101,6 +101,8 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       }
     }
 
+    const goals = grid.goals.length > 1 ? grid.goals.map((g) => ({ ...g })) : undefined;
+
     const newPreset: MapPreset = {
       id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: cleanName,
@@ -111,6 +113,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       costs: costs.length > 0 ? costs : undefined,
       start: { ...grid.start },
       goal: { ...grid.goal },
+      goals,
       category: 'custom',
       createdAt: Date.now(),
     };
@@ -138,6 +141,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       preset.width,
       preset.height,
       preset.costs,
+      preset.goals,
     );
 
     // Relocate all placed agents to new start tile

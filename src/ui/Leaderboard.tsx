@@ -29,8 +29,14 @@ function getAgentPathCost(agent: Agent, costs: Map<string, number>): number {
 export function Leaderboard() {
   const agents = useAgentStore((s) => s.agents);
   const togglePathVisibility = useAgentStore((s) => s.togglePathVisibility);
-  const goal = useGridStore((s) => s.goal);
+  const goals = useGridStore((s) => s.goals);
   const costs = useGridStore((s) => s.costs);
+
+  // Distance to the closest goal (Manhattan)
+  const distToNearestGoal = useMemo(() => {
+    return (p: { x: number; y: number }) =>
+      Math.min(...goals.map((g) => Math.abs(p.x - g.x) + Math.abs(p.y - g.y)));
+  }, [goals]);
 
   // Sort agents primarily by goal reached / distance to goal
   const ranked = useMemo(() => {
@@ -52,15 +58,15 @@ export function Leaderboard() {
         return (a.result?.timeMs ?? 0) - (b.result?.timeMs ?? 0);
       }
 
-      // 2. Otherwise sort by Manhattan distance to goal
-      const distA = Math.abs(a.position.x - goal.x) + Math.abs(a.position.y - goal.y);
-      const distB = Math.abs(b.position.x - goal.x) + Math.abs(b.position.y - goal.y);
+      // 2. Otherwise sort by distance to the NEAREST goal
+      const distA = distToNearestGoal(a.position);
+      const distB = distToNearestGoal(b.position);
       if (distA !== distB) return distA - distB;
 
       // 3. Tie-break on nodes explored
       return a.visitedNodes.size - b.visitedNodes.size;
     });
-  }, [agents, goal, costs]);
+  }, [agents, distToNearestGoal, costs]);
 
   if (agents.length === 0) return null;
 
@@ -78,7 +84,7 @@ export function Leaderboard() {
         {ranked.map((agent, index) => {
           const meta = ALGORITHMS[agent.algorithmKey];
           const label = meta ? meta.label : agent.algorithmKey;
-          const dist = Math.abs(agent.position.x - goal.x) + Math.abs(agent.position.y - goal.y);
+          const dist = distToNearestGoal(agent.position);
           const nodesExplored = agent.result ? agent.result.nodesExplored : agent.visitedNodes.size;
 
           let rankColor = 'text-white/40';

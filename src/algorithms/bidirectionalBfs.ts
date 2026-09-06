@@ -35,6 +35,7 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
+import { goalPoints, isGoal } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -112,13 +113,14 @@ export function* bidirectionalBfs(
   const t0 = performance.now();
   let nodesExplored = 0;
 
-  // Frontier queues for each direction.
+  // Frontier queues for each direction. The goal side starts from EVERY goal
+  // node so the search converges on the closest reachable one.
   const queueFromStart: Point[] = [grid.start];
-  const queueFromGoal: Point[] = [grid.goal];
+  const queueFromGoal: Point[] = goalPoints(grid);
 
   // Visited sets — also used for meeting-point detection.
   const visitedA = new Set<string>([key(grid.start)]);
-  const visitedB = new Set<string>([key(grid.goal)]);
+  const visitedB = new Set<string>(queueFromGoal.map(key));
 
   // Predecessor maps for path reconstruction.
   const parentA = new Map<string, Point>(); // start side
@@ -134,8 +136,8 @@ export function* bidirectionalBfs(
     return [...fromStart, ...toGoal.slice(1)];
   }
 
-  // If start === goal, we're done immediately.
-  if (grid.start.x === grid.goal.x && grid.start.y === grid.goal.y) {
+  // If start is one of the goals, we're done immediately.
+  if (isGoal(grid, grid.start)) {
     const path = [grid.start];
     yield { kind: 'consider', node: grid.start };
     yield { kind: 'visit', node: grid.start };

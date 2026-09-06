@@ -30,8 +30,10 @@ export interface GridState {
   highCostValue: number;
   /** The start tile. */
   start: Point;
-  /** The goal tile. */
+  /** The primary goal tile (always `goals[0]`). */
   goal: Point;
+  /** All goal tiles. Reaching any one of them counts as success. */
+  goals: Point[];
   /** Currently selected editing tool. */
   activeTool: Tool;
   /** Whether to softly display path cost values directly on the tile design. */
@@ -57,13 +59,15 @@ export interface GridState {
   eraseCost: (x: number, y: number) => void;
   /** Move the start point. Removes wall/cost at new position if any. */
   setStart: (p: Point) => void;
-  /** Move the goal point. Removes wall/cost at new position if any. */
+  /** Replace all goals with a single goal point. Removes wall/cost at it if any. */
   setGoal: (p: Point) => void;
+  /** Toggle a goal tile in/out of the goal set. The last remaining goal is protected. */
+  toggleGoal: (x: number, y: number) => void;
   /** Switch the active editing tool. */
   setActiveTool: (tool: Tool) => void;
   /** Remove all walls and custom costs (keeps size, start, goal). */
   clearGrid: () => void;
-  /** Load a map preset (sets walls, start, goal, and resizes grid). */
+  /** Load a map preset (sets walls, start, goals, and resizes grid). */
   loadPreset: (
     walls: [number, number][],
     start: Point,
@@ -71,6 +75,7 @@ export interface GridState {
     width: number,
     height: number,
     costs?: [number, number, number][],
+    goals?: Point[],
   ) => void;
   /** Apply the currently active tool at grid position (x, y). */
   applyTool: (x: number, y: number) => void;
@@ -94,6 +99,7 @@ export const useGridStore = create<GridState>((set, get) => ({
   highCostValue: 5,
   start: { x: 0, y: 0 },
   goal: { x: 9, y: 9 },
+  goals: [{ x: 9, y: 9 }],
   activeTool: 'wall',
   showCostLabels: true,
 
@@ -108,14 +114,15 @@ export const useGridStore = create<GridState>((set, get) => ({
       costs: new Map<string, number>(),
       start: { x: 0, y: 0 },
       goal: { x: w - 1, y: h - 1 },
+      goals: [{ x: w - 1, y: h - 1 }],
     }),
 
   paintWall: (x, y) => {
-    const { walls, costs, start, goal, width, height } = get();
+    const { walls, costs, start, goals, width, height } = get();
     if (x < 0 || x >= width || y < 0 || y >= height) return;
     const k = wk(x, y);
-    // Don't paint walls on start or goal
-    if (k === wk(start.x, start.y) || k === wk(goal.x, goal.y)) return;
+    // Don't paint walls on start or any goal tile
+    if (k === wk(start.x, start.y) || goals.some((g) => k === wk(g.x, g.y))) return;
     if (walls.has(k)) return;
     const nextWalls = new Set(walls);
     nextWalls.add(k);
@@ -129,10 +136,10 @@ export const useGridStore = create<GridState>((set, get) => ({
   },
 
   paintCost: (x, y, cost) => {
-    const { walls, costs, start, goal, width, height, highCostValue } = get();
+    const { walls, costs, start, goals, width, height, highCostValue } = get();
     if (x < 0 || x >= width || y < 0 || y >= height) return;
     const k = wk(x, y);
-    if (k === wk(start.x, start.y) || k === wk(goal.x, goal.y)) return;
+    if (k === wk(start.x, start.y) || goals.some((g) => k === wk(g.x, g.y))) return;
     const assignedCost = cost ?? highCostValue;
     const nextCosts = new Map(costs);
     nextCosts.set(k, assignedCost);
@@ -194,22 +201,53 @@ export const useGridStore = create<GridState>((set, get) => ({
     nextWalls.delete(k);
     const nextCosts = costs.has(k) ? new Map(costs) : costs;
     nextCosts.delete(k);
-    set({ goal: p, walls: nextWalls, costs: nextCosts });
+    set({ goal: p, goals: [{ ...p }], walls: nextWalls, costs: nextCosts });
+  },
+
+  toggleGoal: (x, y) => {
+    const { walls, costs, goals, width, height } = get();
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
+    const k = wk(x, y);
+    const existing = goals.find((g) => k === wk(g.x, g.y));
+    const p = { x, y };
+
+    // Toggle off — but never remove the last remaining goal.
+    if (existing) {
+      if (goals.length === 1) return;
+      const nextGoals = goals.filter((g) => g !== existing);
+      set({ goals: nextGoals, goal: nextGoals[0]! });
+      return;
+    }
+
+    // Toggle on — clear any wall/cost beneath the new goal tile.
+    const nextWalls = walls.has(k) ? new Set(walls) : walls;
+    nextWalls.delete(k);
+    const nextCosts = costs.has(k) ? new Map(costs) : costs;
+    nextCosts.delete(k);
+    set({
+      goals: [...goals, p],
+      goal: goals[0]!,
+      walls: nextWalls,
+      costs: nextCosts,
+    });
   },
 
   setActiveTool: (tool) => set({ activeTool: tool }),
 
   clearGrid: () => set({ walls: new Set<string>(), costs: new Map<string, number>() }),
 
-  loadPreset: (walls, start, goal, width, height, costs) =>
-    set({
+  loadPreset: (walls, start, goal, width, height, costs, goals) => {
+    const resolved = goals && goals.length > 0 ? goals.map((g) => ({ ...g })) : [{ ...goal }];
+    return set({
       width,
       height,
       walls: new Set(walls.map(([x, y]) => wk(x, y))),
       costs: new Map(costs ? costs.map(([x, y, c]) => [wk(x, y), c]) : []),
       start,
-      goal,
-    }),
+      goal: resolved[0]!,
+      goals: resolved,
+    });
+  },
 
   applyTool: (x, y) => {
     const state = get();
@@ -227,13 +265,13 @@ export const useGridStore = create<GridState>((set, get) => ({
         state.setStart({ x, y });
         break;
       case 'goal':
-        state.setGoal({ x, y });
+        state.toggleGoal(x, y);
         break;
     }
   },
 
   getSnapshot: () => {
-    const { width, height, walls, costs, start, goal } = get();
+    const { width, height, walls, costs, start, goal, goals } = get();
     return {
       width,
       height,
@@ -241,6 +279,7 @@ export const useGridStore = create<GridState>((set, get) => ({
       costs: new Map(costs),
       start: { ...start },
       goal: { ...goal },
+      goals: goals.map((g) => ({ ...g })),
     };
   },
 }));

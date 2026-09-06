@@ -31,17 +31,13 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
+import { isGoal, nearestGoal, nearestGoalDist } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Encode a Point as a string key for Set/Map lookups. */
 function key(p: Point): string {
   return `${p.x},${p.y}`;
-}
-
-/** Manhattan distance — the heuristic used to order the frontier. */
-function manhattan(a: Point, b: Point): number {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
 /** Cardinal neighbor offsets (no diagonals). */
@@ -171,7 +167,7 @@ export function* greedyBestFirstSearch(
   const cameFrom = new Map<string, Point>();
   const closedSet = new Set<string>();
 
-  frontier.push({ point: grid.start, h: manhattan(grid.start, grid.goal) });
+  frontier.push({ point: grid.start, h: nearestGoalDist(grid, grid.start) });
 
   while (frontier.size > 0) {
     const entry = frontier.pop()!;
@@ -184,15 +180,15 @@ export function* greedyBestFirstSearch(
     }
 
     // Yield consider event — shows where the heuristic is pointing
-    yield { kind: 'consider', node: current, heuristicTarget: grid.goal };
+    yield { kind: 'consider', node: current, heuristicTarget: nearestGoal(grid, current) };
 
     // Mark as visited
     closedSet.add(currentKey);
     nodesExplored++;
     yield { kind: 'visit', node: current };
 
-    // Goal check
-    if (current.x === grid.goal.x && current.y === grid.goal.y) {
+    // Goal check — reaching ANY goal counts as success
+    if (isGoal(grid, current)) {
       const path = reconstructPath(cameFrom, current);
       yield { kind: 'path', path };
 
@@ -215,7 +211,7 @@ export function* greedyBestFirstSearch(
 
       // Greedy ordering uses ONLY the heuristic — no g(n) cost is tracked.
       cameFrom.set(nbrKey, current);
-      frontier.push({ point: nbr, h: manhattan(nbr, grid.goal) });
+      frontier.push({ point: nbr, h: nearestGoalDist(grid, nbr) });
       frontierNodes.push(nbr);
     }
 

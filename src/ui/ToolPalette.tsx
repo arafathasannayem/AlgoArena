@@ -49,7 +49,7 @@ const TOOLS: ToolDef[] = [
   { id: 'cost', label: 'High Cost', shortcut: 'C', icon: <Mountain size={16} /> },
   { id: 'eraser', label: 'Eraser', shortcut: 'E', icon: <Eraser size={16} /> },
   { id: 'start', label: 'Start Point', shortcut: 'S', icon: <Flag size={16} /> },
-  { id: 'goal', label: 'Goal Point', shortcut: 'G', icon: <Target size={16} /> },
+  { id: 'goal', label: 'Goal (Toggle)', shortcut: 'G', icon: <Target size={16} /> },
 ];
 
 interface ToolPaletteProps {
@@ -70,6 +70,7 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
   const setActiveTool = useGridStore((s) => s.setActiveTool);
   const highCostValue = useGridStore((s) => s.highCostValue);
   const setHighCostValue = useGridStore((s) => s.setHighCostValue);
+  const goalCount = useGridStore((s) => s.goals.length);
   const showCostLabels = useGridStore((s) => s.showCostLabels);
   const toggleCostLabels = useGridStore((s) => s.toggleCostLabels);
   const clearGrid = useGridStore((s) => s.clearGrid);
@@ -240,6 +241,11 @@ export function ToolPalette({ onOpenHelp }: ToolPaletteProps = {}) {
                 {t.id === 'cost' && (
                   <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
                     ×{highCostValue}
+                  </span>
+                )}
+                {t.id === 'goal' && goalCount > 1 && (
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                    ×{goalCount}
                   </span>
                 )}
                 <kbd className="text-[9px] font-mono font-semibold px-1 py-0.5 rounded bg-white/10 text-white/50">
