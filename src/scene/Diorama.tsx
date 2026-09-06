@@ -257,12 +257,17 @@ function DioramaScene() {
                     />
                   )}
 
-                  <NodeOverlay
-                    visitedNodes={agent.visitedNodes}
-                    frontierNodes={agent.frontierNodes}
-                    color={agent.color}
-                  />
-                  <PathTrail path={agent.currentPath} color={agent.color} />
+                  {agent.isPathVisible && (
+                    <>
+                      <NodeOverlay
+                        visitedNodes={agent.visitedNodes}
+                        frontierNodes={agent.frontierNodes}
+                        color={agent.color}
+                      />
+                      <PathTrail path={agent.currentPath} color={agent.color} />
+                    </>
+                  )}
+
                   {agent.heuristicTarget && (
                     <HeuristicRay
                       from={agent.scanPosition ?? agent.position}
