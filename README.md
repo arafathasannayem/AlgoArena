@@ -18,36 +18,42 @@ npm run build     # Production build
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 0 | Scaffolding (Vite 6 + React 19 + TS strict + Tailwind v4) | ✅ Done |
-| 1 | Algorithm engine (A* & BFS complete; 5 stubs with specs) | ✅ Done (Group TODOs) |
+| 1 | Algorithm engine (9 algorithms implemented, incl. bidirectional + multi-goal) | ✅ Done |
 | 2 | Grid state + map builder (Zustand, drag paint, presets) | ✅ Done |
 | 3 | Isometric diorama scene (R3F, orthographic camera, shadows) | ✅ Done |
 | 4 | Agents (animated pawn meshes, per-agent overlays) | ✅ Done |
 | 5 | Race orchestration (rAF scheduler, live speed slider) | ✅ Done |
 | 6 | Analytics (live standings leaderboard, post-race dashboard) | ✅ Done |
 | 7 | Visual polish (glassmorphism HUD, edge-anchored layout) | ✅ Done |
-| 8 | QA and ship (59 unit tests green, production build verified) | ✅ Done |
+| 8 | QA and ship (220 unit tests green, production build verified) | ✅ Done |
 
 ### Algorithm Implementation Status
 
-| Algorithm | Status | File | Tests |
-|-----------|--------|------|-------|
-| A* | ✅ Implemented | `src/algorithms/astar.ts` | 17 tests passing |
-| BFS | ✅ Implemented | `src/algorithms/bfs.ts` | 16 tests passing |
-| Dijkstra's | 🚧 TODO (Group) | `src/algorithms/dijkstra.ts` | Stubs & specs ready |
-| DFS | 🚧 TODO (Group) | `src/algorithms/dfs.ts` | Stubs & specs ready |
-| Greedy Best-First | 🚧 TODO (Group) | `src/algorithms/greedyBestFirst.ts` | Stubs & specs ready |
-| Hill Climbing | 🚧 TODO (Group) | `src/algorithms/hillClimbing.ts` | Stubs & specs ready |
-| Simulated Annealing | 🚧 TODO (Group) | `src/algorithms/simulatedAnnealing.ts` | Stubs & specs ready |
+| Algorithm | Status | File |
+|-----------|--------|------|
+| A* | ✅ Implemented | `src/algorithms/astar.ts` |
+| BFS | ✅ Implemented | `src/algorithms/bfs.ts` |
+| Greedy Best-First | ✅ Implemented | `src/algorithms/greedyBestFirst.ts` |
+| Hill Climbing | ✅ Implemented | `src/algorithms/hillClimbing.ts` |
+| Simulated Annealing | ✅ Implemented | `src/algorithms/simulatedAnnealing.ts` |
+| Bidirectional BFS | ✅ Implemented | `src/algorithms/bidirectionalBfs.ts` |
+| Bidirectional A* | ✅ Implemented | `src/algorithms/bidirectionalAstar.ts` |
+| Dijkstra's | 🚧 TODO | `src/algorithms/dijkstra.ts` |
+| DFS | 🚧 TODO | `src/algorithms/dfs.ts` |
+
+## Multi-Goal Support
+
+Every implemented algorithm treats reaching **any** goal node as success. Users toggle multiple goal beacons onto the grid with the Goal tool; agents race to the nearest reachable one. Bidirectional searches seed their backward frontier from *every* goal. The goal set is carried on `GridSnapshot.goals` (optional — single-goal grids are unaffected) with shared helpers in `src/algorithms/utils.ts`.
 
 ## Tech Stack
 
 - **Vite 6** + **React 19** + **TypeScript** (strict mode, `noUncheckedIndexedAccess`)
 - **@react-three/fiber v9** + **@react-three/drei** + **three.js**
 - **Tailwind CSS v4** (via `@tailwindcss/vite` plugin, `@theme` glassmorphism tokens)
-- **Zustand** for state management (`gridStore`, `agentStore`, `raceStore`)
+- **Zustand** for state management (`gridStore`, `agentStore`, `raceStore`, `presetStore`, `soundStore`)
 - **@react-spring/three** for smooth pawn movement animations
 - **lucide-react** for all icons
-- **Vitest** for unit test suites (59 tests passing)
+- **Vitest** for unit test suites (220 tests passing)
 
 ## Architecture
 
