@@ -37,10 +37,10 @@ describe('Algorithm Registry', () => {
     const keys = Object.keys(impl);
     expect(keys).toContain('astar');
     expect(keys).toContain('bfs');
+    expect(keys).toContain('greedy');
     // The rest are TODO
     expect(keys).not.toContain('dijkstra');
     expect(keys).not.toContain('dfs');
-    expect(keys).not.toContain('greedy');
     expect(keys).not.toContain('hillclimb');
     expect(keys).not.toContain('annealing');
   });
@@ -49,7 +49,7 @@ describe('Algorithm Registry', () => {
     const todos = getTodoAlgorithms();
     expect(todos).toContain('dijkstra');
     expect(todos).toContain('dfs');
-    expect(todos).toContain('greedy');
+    expect(todos).not.toContain('greedy');
     expect(todos).toContain('hillclimb');
     expect(todos).toContain('annealing');
     expect(todos).not.toContain('astar');
