@@ -51,7 +51,7 @@ export const ALGORITHMS: Record<string, AlgorithmEntry> = {
   dijkstra:  { label: "Dijkstra's",          color: '#22c55e', factory: dijkstraFactory,          implemented: false },
   dfs:       { label: 'DFS',                 color: '#a855f7', factory: dfsFactory,               implemented: false },
   greedy:    { label: 'Greedy Best-First',   color: '#f97316', factory: greedyBestFirstFactory,   implemented: true },
-  hillclimb: { label: 'Hill Climbing',       color: '#ef4444', factory: hillClimbingFactory,      implemented: false },
+  hillclimb: { label: 'Hill Climbing',       color: '#ef4444', factory: hillClimbingFactory,      implemented: true },
   annealing: { label: 'Simulated Annealing', color: '#14b8a6', factory: simulatedAnnealingFactory, implemented: false },
   'bidir-bfs': { label: 'Bidirectional BFS', color: '#ec4899', factory: bidirectionalBfsFactory, implemented: true },
   'bidir-astar': { label: 'Bidirectional A*', color: '#d946ef', factory: bidirectionalAStarFactory, implemented: true },

@@ -42,10 +42,10 @@ describe('Algorithm Registry', () => {
     expect(keys).toContain('greedy');
     expect(keys).toContain('bidir-bfs');
     expect(keys).toContain('bidir-astar');
+    expect(keys).toContain('hillclimb');
     // The rest are TODO
     expect(keys).not.toContain('dijkstra');
     expect(keys).not.toContain('dfs');
-    expect(keys).not.toContain('hillclimb');
     expect(keys).not.toContain('annealing');
   });
 
@@ -54,7 +54,7 @@ describe('Algorithm Registry', () => {
     expect(todos).toContain('dijkstra');
     expect(todos).toContain('dfs');
     expect(todos).not.toContain('greedy');
-    expect(todos).toContain('hillclimb');
+    expect(todos).not.toContain('hillclimb');
     expect(todos).toContain('annealing');
     expect(todos).not.toContain('astar');
     expect(todos).not.toContain('bfs');
