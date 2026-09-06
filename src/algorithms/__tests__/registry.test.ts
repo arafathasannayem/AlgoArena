@@ -11,9 +11,9 @@ import { describe, it, expect } from 'vitest';
 import { ALGORITHMS, getImplementedAlgorithms, getTodoAlgorithms } from '../index';
 
 describe('Algorithm Registry', () => {
-  it('should contain all 7 algorithms', () => {
+  it('should contain all 8 algorithms', () => {
     const keys = Object.keys(ALGORITHMS);
-    expect(keys).toHaveLength(7);
+    expect(keys).toHaveLength(8);
     expect(keys).toContain('astar');
     expect(keys).toContain('bfs');
     expect(keys).toContain('dijkstra');
@@ -21,6 +21,7 @@ describe('Algorithm Registry', () => {
     expect(keys).toContain('greedy');
     expect(keys).toContain('hillclimb');
     expect(keys).toContain('annealing');
+    expect(keys).toContain('bidir-bfs');
   });
 
   it('every entry should have label, color, factory, and implemented fields', () => {
@@ -38,6 +39,7 @@ describe('Algorithm Registry', () => {
     expect(keys).toContain('astar');
     expect(keys).toContain('bfs');
     expect(keys).toContain('greedy');
+    expect(keys).toContain('bidir-bfs');
     // The rest are TODO
     expect(keys).not.toContain('dijkstra');
     expect(keys).not.toContain('dfs');
@@ -54,6 +56,7 @@ describe('Algorithm Registry', () => {
     expect(todos).toContain('annealing');
     expect(todos).not.toContain('astar');
     expect(todos).not.toContain('bfs');
+    expect(todos).not.toContain('bidir-bfs');
   });
 
   it('all colors should be unique', () => {

@@ -21,6 +21,7 @@ import { dfsFactory } from './dfs';
 import { greedyBestFirstFactory } from './greedyBestFirst';
 import { hillClimbingFactory } from './hillClimbing';
 import { simulatedAnnealingFactory } from './simulatedAnnealing';
+import { bidirectionalBfsFactory } from './bidirectionalBfs';
 
 // Re-export types for convenience
 export type { AlgorithmFactory, AlgorithmGenerator, AlgorithmConfig } from './types';
@@ -51,6 +52,7 @@ export const ALGORITHMS: Record<string, AlgorithmEntry> = {
   greedy:    { label: 'Greedy Best-First',   color: '#f97316', factory: greedyBestFirstFactory,   implemented: true },
   hillclimb: { label: 'Hill Climbing',       color: '#ef4444', factory: hillClimbingFactory,      implemented: false },
   annealing: { label: 'Simulated Annealing', color: '#14b8a6', factory: simulatedAnnealingFactory, implemented: false },
+  'bidir-bfs': { label: 'Bidirectional BFS', color: '#ec4899', factory: bidirectionalBfsFactory, implemented: true },
 } as const;
 
 /**
