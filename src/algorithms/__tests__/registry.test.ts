@@ -43,10 +43,10 @@ describe('Algorithm Registry', () => {
     expect(keys).toContain('bidir-bfs');
     expect(keys).toContain('bidir-astar');
     expect(keys).toContain('hillclimb');
+    expect(keys).toContain('annealing');
     // The rest are TODO
     expect(keys).not.toContain('dijkstra');
     expect(keys).not.toContain('dfs');
-    expect(keys).not.toContain('annealing');
   });
 
   it('getTodoAlgorithms should return unimplemented algorithm keys', () => {
@@ -55,7 +55,7 @@ describe('Algorithm Registry', () => {
     expect(todos).toContain('dfs');
     expect(todos).not.toContain('greedy');
     expect(todos).not.toContain('hillclimb');
-    expect(todos).toContain('annealing');
+    expect(todos).not.toContain('annealing');
     expect(todos).not.toContain('astar');
     expect(todos).not.toContain('bfs');
     expect(todos).not.toContain('bidir-bfs');

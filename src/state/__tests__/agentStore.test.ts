@@ -37,6 +37,15 @@ describe('Agent Store', () => {
     expect(useAgentStore.getState().agents[0]!.showOverlay).toBe(true);
   });
 
+  it('should change an agent color with setColor', () => {
+    const store = useAgentStore.getState();
+    store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });
+    const id = useAgentStore.getState().agents[0]!.id;
+
+    store.setColor(id, '#ff00aa');
+    expect(useAgentStore.getState().agents[0]!.color).toBe('#ff00aa');
+  });
+
   it('should remove an agent by ID', () => {
     const store = useAgentStore.getState();
     store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });
@@ -57,11 +66,17 @@ describe('Agent Store', () => {
     const id = useAgentStore.getState().agents[0]!.id;
 
     // Consider event
-    store.applyStep(id, { kind: 'consider', node: { x: 1, y: 0 }, heuristicTarget: { x: 9, y: 9 } });
+    store.applyStep(id, { kind: 'consider', node: { x: 1, y: 0 }, heuristicTarget: { x: 9, y: 9 }, temperature: 88.5 });
     let agent = useAgentStore.getState().agents[0]!;
     expect(agent.scanPosition).toEqual({ x: 1, y: 0 });
     expect(agent.position).toEqual({ x: 0, y: 0 }); // Grounded on walkable path
     expect(agent.heuristicTarget).toEqual({ x: 9, y: 9 });
+    expect(agent.temperature).toBe(88.5);
+
+    // Consider without temperature (non-annealing algorithm) clears it
+    store.applyStep(id, { kind: 'consider', node: { x: 1, y: 1 } });
+    agent = useAgentStore.getState().agents[0]!;
+    expect(agent.temperature).toBeUndefined();
 
     // Advance pawn along path
     store.advancePawn(id, { x: 1, y: 0 });
@@ -98,6 +113,7 @@ describe('Agent Store', () => {
     store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });
     const id = useAgentStore.getState().agents[0]!.id;
     store.applyStep(id, { kind: 'visit', node: { x: 1, y: 1 } });
+    store.applyStep(id, { kind: 'consider', node: { x: 1, y: 1 }, temperature: 42 });
 
     store.resetAll({ x: 2, y: 2 });
     const agent = useAgentStore.getState().agents[0]!;
@@ -105,6 +121,7 @@ describe('Agent Store', () => {
     expect(agent.status).toBe('idle');
     expect(agent.visitedNodes.size).toBe(0);
     expect(agent.result).toBeUndefined();
+    expect(agent.temperature).toBeUndefined();
   });
 
   it('should track arrival order via monotonic enteredAt counter', () => {

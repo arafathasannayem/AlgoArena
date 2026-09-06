@@ -51,7 +51,13 @@ export interface GridSnapshot {
 export type StepEvent =
   | { kind: 'visit'; node: Point }
   | { kind: 'frontier'; nodes: Point[] }
-  | { kind: 'consider'; node: Point; heuristicTarget?: Point }
+  | {
+      kind: 'consider';
+      node: Point;
+      heuristicTarget?: Point;
+      /** Live temperature for Simulated Annealing (undefined for others). */
+      temperature?: number;
+    }
   | { kind: 'path'; path: Point[] }
   | { kind: 'done'; result: AlgorithmResult };
 
@@ -87,10 +93,11 @@ export type AlgorithmGenerator = Generator<StepEvent, AlgorithmResult, void>;
 
 /**
  * Per-algorithm configuration knobs (e.g. temperature schedule for Simulated
- * Annealing). Values are always numeric; undefined means "use default".
+ * Annealing). Values are numeric or flag-like booleans; undefined means "use
+ * default".
  */
 export interface AlgorithmConfig {
-  [key: string]: number | undefined;
+  [key: string]: number | boolean | undefined;
 }
 
 /**

@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 import { useAgentStore } from '../state/agentStore';
 import { useGridStore } from '../state/gridStore';
 import { ALGORITHMS } from '../algorithms';
-import { Trophy, CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { Trophy, CheckCircle2, XCircle, AlertTriangle, Flame, Loader2 } from 'lucide-react';
 import type { Agent } from '../state/agentStore';
 
 function getAgentPathCost(agent: Agent, costs: Map<string, number>): number {
@@ -112,6 +112,16 @@ export function Leaderboard() {
                   <span className="flex items-center gap-1 text-blue-400">
                     <Loader2 size={12} className="animate-spin" />
                     <span>{dist} left</span>
+                  </span>
+                )}
+
+                {agent.status === 'running' && agent.temperature !== undefined && (
+                  <span
+                    className="flex items-center gap-1 text-amber-400 font-mono"
+                    title="Live annealing temperature (freezes below 0.01)"
+                  >
+                    <Flame size={11} className="text-amber-500" />
+                    <span>{agent.temperature.toFixed(1)}</span>
                   </span>
                 )}
 

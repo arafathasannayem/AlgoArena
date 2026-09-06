@@ -41,6 +41,8 @@ export interface Agent {
   heuristicTarget?: Point;
   /** Whether this agent's visualization overlay is active. */
   showOverlay: boolean;
+  /** Live temperature for Simulated Annealing (undefined for other algorithms). */
+  temperature?: number;
 }
 
 export interface AgentState {
@@ -51,6 +53,8 @@ export interface AgentState {
   removeAgent: (id: string) => void;
   clearAgents: () => void;
   toggleOverlay: (id: string) => void;
+  /** Change an agent's color (pawn, trail, overlays, standings). */
+  setColor: (id: string, color: string) => void;
 
   /** Apply a step event from the race scheduler to an agent's visualization state. */
   applyStep: (agentId: string, event: StepEvent) => void;
@@ -107,6 +111,13 @@ export const useAgentStore = create<AgentState>((set) => ({
       ),
     })),
 
+  setColor: (agentId, color) =>
+    set((s) => ({
+      agents: s.agents.map((a) =>
+        a.id === agentId ? { ...a, color } : a,
+      ),
+    })),
+
   setRunning: (agentId) =>
     set((s) => ({
       agents: s.agents.map((a) =>
@@ -140,6 +151,7 @@ export const useAgentStore = create<AgentState>((set) => ({
               heuristicTarget: event.heuristicTarget
                 ? { ...event.heuristicTarget }
                 : undefined,
+              temperature: event.temperature,
             };
           }
           case 'visit': {
@@ -178,6 +190,7 @@ export const useAgentStore = create<AgentState>((set) => ({
         frontierNodes: [],
         currentPath: [],
         heuristicTarget: undefined,
+        temperature: undefined,
       })),
     })),
 }));
