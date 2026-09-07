@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 import { useAgentStore } from '../state/agentStore';
 import { useGridStore } from '../state/gridStore';
 import { ALGORITHMS } from '../algorithms';
-import { Trophy, CheckCircle2, XCircle, AlertTriangle, Flame, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Trophy, CheckCircle2, XCircle, AlertTriangle, Flame, Loader2 } from 'lucide-react';
 import type { Agent } from '../state/agentStore';
 
 function getAgentPathCost(agent: Agent, costs: Map<string, number>): number {
@@ -28,7 +28,6 @@ function getAgentPathCost(agent: Agent, costs: Map<string, number>): number {
 
 export function Leaderboard() {
   const agents = useAgentStore((s) => s.agents);
-  const togglePathVisibility = useAgentStore((s) => s.togglePathVisibility);
   const goals = useGridStore((s) => s.goals);
   const costs = useGridStore((s) => s.costs);
 
@@ -156,22 +155,6 @@ export function Leaderboard() {
                 {agent.status === 'idle' && (
                   <span className="text-glass-text/30">{dist} steps</span>
                 )}
-
-                <button
-                  onClick={() => togglePathVisibility(agent.id)}
-                  className={`p-1 rounded transition-colors ${
-                    agent.isPathVisible
-                      ? 'text-blue-400 hover:bg-white/10'
-                      : 'text-white/30 hover:bg-white/10'
-                  }`}
-                  title={
-                    agent.isPathVisible
-                      ? 'Hide explored nodes & final path'
-                      : 'Show explored nodes & final path'
-                  }
-                >
-                  {agent.isPathVisible ? <Eye size={13} /> : <EyeOff size={13} />}
-                </button>
               </div>
             </div>
           );
