@@ -63,6 +63,8 @@ export type StepEvent =
       heuristicTarget?: Point;
       /** Live temperature for Simulated Annealing (undefined for others). */
       temperature?: number;
+      /** Search direction for bidirectional algorithms ('forward' from start, 'backward' from goal). */
+      direction?: 'forward' | 'backward';
     }
   | { kind: 'path'; path: Point[] }
   | { kind: 'done'; result: AlgorithmResult };

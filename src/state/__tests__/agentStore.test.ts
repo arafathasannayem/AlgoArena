@@ -173,4 +173,57 @@ describe('Agent Store', () => {
     store.advancePawn(agents[0]!.id, { x: 1, y: 0 });
     expect(useAgentStore.getState().agents[0]!.enteredAt).toBe(samePositionEntered);
   });
+
+  it('should maintain separate forward and backward scanner plates during bidirectional search', () => {
+    const store = useAgentStore.getState();
+    store.addAgent('bidir-bfs', '#ec4899', { x: 0, y: 0 });
+    const id = useAgentStore.getState().agents[0]!.id;
+
+    // Start-side consider event (forward)
+    store.applyStep(id, {
+      kind: 'consider',
+      node: { x: 0, y: 1 },
+      direction: 'forward',
+    });
+
+    let agent = useAgentStore.getState().agents[0]!;
+    expect(agent.scanPosition).toEqual({ x: 0, y: 1 });
+    expect(agent.scanPositionBackward).toBeUndefined();
+
+    // Goal-side consider event (backward)
+    store.applyStep(id, {
+      kind: 'consider',
+      node: { x: 9, y: 8 },
+      direction: 'backward',
+      heuristicTarget: { x: 0, y: 0 },
+    });
+
+    agent = useAgentStore.getState().agents[0]!;
+    // Forward plate remains untouched on its side
+    expect(agent.scanPosition).toEqual({ x: 0, y: 1 });
+    // Backward plate updates on its side
+    expect(agent.scanPositionBackward).toEqual({ x: 9, y: 8 });
+    expect(agent.heuristicTargetBackward).toEqual({ x: 0, y: 0 });
+
+    // Subsequent start-side consider does not alter backward plate
+    store.applyStep(id, {
+      kind: 'consider',
+      node: { x: 1, y: 1 },
+      direction: 'forward',
+      heuristicTarget: { x: 9, y: 9 },
+    });
+
+    agent = useAgentStore.getState().agents[0]!;
+    expect(agent.scanPosition).toEqual({ x: 1, y: 1 });
+    expect(agent.heuristicTarget).toEqual({ x: 9, y: 9 });
+    expect(agent.scanPositionBackward).toEqual({ x: 9, y: 8 });
+    expect(agent.heuristicTargetBackward).toEqual({ x: 0, y: 0 });
+
+    // Reset clears both scanner plates
+    store.resetAll({ x: 0, y: 0 });
+    agent = useAgentStore.getState().agents[0]!;
+    expect(agent.scanPosition).toBeUndefined();
+    expect(agent.scanPositionBackward).toBeUndefined();
+    expect(agent.heuristicTargetBackward).toBeUndefined();
+  });
 });

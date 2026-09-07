@@ -198,7 +198,7 @@ export function* bidirectionalAStar(
   // If start is one of the goals, we're done immediately.
   if (isGoal(grid, start)) {
     const path = [start];
-    yield { kind: 'consider', node: start, heuristicTarget: nearestGoal(grid, start) };
+    yield { kind: 'consider', node: start, heuristicTarget: nearestGoal(grid, start), direction: 'forward' };
     yield { kind: 'visit', node: start };
     yield { kind: 'path', path };
     const result: AlgorithmResult = {
@@ -288,7 +288,7 @@ export function* bidirectionalAStar(
 
       if (closedA.has(currentKey)) continue;
 
-      yield { kind: 'consider', node: current, heuristicTarget: nearestGoal(grid, current) };
+      yield { kind: 'consider', node: current, heuristicTarget: nearestGoal(grid, current), direction: 'forward' };
       closedA.add(currentKey);
       nodesExplored++;
       yield { kind: 'visit', node: current };
@@ -349,7 +349,7 @@ export function* bidirectionalAStar(
 
       if (closedB.has(currentKey)) continue;
 
-      yield { kind: 'consider', node: current, heuristicTarget: start };
+      yield { kind: 'consider', node: current, heuristicTarget: start, direction: 'backward' };
       closedB.add(currentKey);
       nodesExplored++;
       yield { kind: 'visit', node: current };

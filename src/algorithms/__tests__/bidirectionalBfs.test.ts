@@ -156,6 +156,17 @@ describe('Bidirectional BFS', () => {
       }
     });
 
+    it('should yield consider events with direction for forward and backward frontiers', () => {
+      const { events } = run(OPEN_FIELD);
+      const considers = events.filter(
+        (e): e is StepEvent & { kind: 'consider' } => e.kind === 'consider',
+      );
+      const forwardConsiders = considers.filter((c) => c.direction === 'forward');
+      const backwardConsiders = considers.filter((c) => c.direction === 'backward');
+      expect(forwardConsiders.length).toBeGreaterThan(0);
+      expect(backwardConsiders.length).toBeGreaterThan(0);
+    });
+
     it('should yield frontier events', () => {
       const { events } = run(OPEN_FIELD);
       const frontiers = events.filter(

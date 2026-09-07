@@ -256,11 +256,23 @@ function DioramaScene() {
 
               {agent.showOverlay && (
                 <>
-                  {/* Active scout scanner reticle exploring nodes */}
+                  {/* Forward active scout scanner plate */}
                   {agent.scanPosition && agent.status === 'running' && (
                     <ScanReticle
+                      key={`scan-fwd-${agent.id}`}
                       position={agent.scanPosition}
                       color={agent.color}
+                      variant="forward"
+                    />
+                  )}
+
+                  {/* Backward active scout scanner plate (bidirectional search) */}
+                  {agent.scanPositionBackward && agent.status === 'running' && (
+                    <ScanReticle
+                      key={`scan-bwd-${agent.id}`}
+                      position={agent.scanPositionBackward}
+                      color={agent.color}
+                      variant="backward"
                     />
                   )}
 
@@ -275,10 +287,20 @@ function DioramaScene() {
                     </>
                   )}
 
+                  {/* Forward heuristic ray */}
                   {agent.heuristicTarget && (
                     <HeuristicRay
                       from={agent.scanPosition ?? agent.position}
                       to={agent.heuristicTarget}
+                      color={agent.color}
+                    />
+                  )}
+
+                  {/* Backward heuristic ray (bidirectional search) */}
+                  {agent.heuristicTargetBackward && (
+                    <HeuristicRay
+                      from={agent.scanPositionBackward ?? agent.position}
+                      to={agent.heuristicTargetBackward}
                       color={agent.color}
                     />
                   )}

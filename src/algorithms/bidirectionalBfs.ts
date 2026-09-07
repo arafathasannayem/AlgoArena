@@ -139,7 +139,7 @@ export function* bidirectionalBfs(
   // If start is one of the goals, we're done immediately.
   if (isGoal(grid, grid.start)) {
     const path = [grid.start];
-    yield { kind: 'consider', node: grid.start };
+    yield { kind: 'consider', node: grid.start, direction: 'forward' };
     yield { kind: 'visit', node: grid.start };
     yield { kind: 'path', path };
     const result: AlgorithmResult = {
@@ -166,7 +166,7 @@ export function* bidirectionalBfs(
         if (fullPath) break;
       }
 
-      yield { kind: 'consider', node: current };
+      yield { kind: 'consider', node: current, direction: 'forward' };
       nodesExplored++;
       yield { kind: 'visit', node: current };
 
@@ -205,7 +205,7 @@ export function* bidirectionalBfs(
         if (fullPath) break;
       }
 
-      yield { kind: 'consider', node: current };
+      yield { kind: 'consider', node: current, direction: 'backward' };
       nodesExplored++;
       yield { kind: 'visit', node: current };
 

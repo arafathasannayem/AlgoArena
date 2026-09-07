@@ -21,8 +21,10 @@ export interface Agent {
   color: string;
   /** Physical pawn position on the grid (stays on valid walkable paths). */
   position: Point;
-  /** Active scout scanner probe position evaluating candidate nodes. */
+  /** Active scout scanner probe position evaluating candidate nodes (forward search). */
   scanPosition?: Point;
+  /** Active scout scanner probe position evaluating candidate nodes (backward search in bidirectional algorithms). */
+  scanPositionBackward?: Point;
   /** Monotonic counter marking when this agent entered its current position. */
   enteredAt: number;
   /** Agent lifecycle status. */
@@ -37,8 +39,10 @@ export interface Agent {
   frontierNodes: Point[];
   /** Current best-known path. */
   currentPath: Point[];
-  /** Where the heuristic is pointing (A*, Greedy, etc.). */
+  /** Where the forward heuristic is pointing (A*, Greedy, bidirectional start frontier, etc.). */
   heuristicTarget?: Point;
+  /** Where the backward heuristic is pointing (Bidirectional A* goal frontier). */
+  heuristicTargetBackward?: Point;
   /** Whether this agent's visualization overlay is active. */
   showOverlay: boolean;
   /** Live temperature for Simulated Annealing (undefined for other algorithms). */
@@ -82,6 +86,7 @@ function createAgent(algorithmKey: string, color: string, start: Point): Agent {
     color,
     position: { ...start },
     scanPosition: undefined,
+    scanPositionBackward: undefined,
     enteredAt: entryCounter++,
     status: 'idle',
     visitedNodes: new Set(),
@@ -157,6 +162,15 @@ export const useAgentStore = create<AgentState>((set) => ({
 
         switch (event.kind) {
           case 'consider': {
+            if (event.direction === 'backward') {
+              return {
+                ...a,
+                scanPositionBackward: { ...event.node },
+                heuristicTargetBackward: event.heuristicTarget
+                  ? { ...event.heuristicTarget }
+                  : undefined,
+              };
+            }
             return {
               ...a,
               scanPosition: { ...event.node },
@@ -197,11 +211,13 @@ export const useAgentStore = create<AgentState>((set) => ({
         position: { ...start },
         enteredAt: entryCounter++,
         scanPosition: undefined,
+        scanPositionBackward: undefined,
         result: undefined,
         visitedNodes: new Set<string>(),
         frontierNodes: [],
         currentPath: [],
         heuristicTarget: undefined,
+        heuristicTargetBackward: undefined,
         temperature: undefined,
         isPathVisible: true,
       })),
