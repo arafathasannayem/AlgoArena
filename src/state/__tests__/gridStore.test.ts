@@ -191,6 +191,48 @@ describe('Grid Store', () => {
     expect(useGridStore.getState().goal).toEqual({ x: 9, y: 9 });
   });
 
+  it('should erase a goal with the eraser tool when multiple goals exist, protecting the last remaining goal', () => {
+    const store = useGridStore.getState();
+    store.toggleGoal(3, 7);
+    store.toggleGoal(5, 5);
+    expect(useGridStore.getState().goals).toHaveLength(3);
+
+    // Set eraser tool and apply on secondary goal (3, 7)
+    store.setActiveTool('eraser');
+    store.applyTool(3, 7);
+
+    let state = useGridStore.getState();
+    expect(state.goals).toHaveLength(2);
+    expect(state.goals.some((g) => g.x === 3 && g.y === 7)).toBe(false);
+
+    // Erase the primary goal (9, 9)
+    store.applyTool(9, 9);
+    state = useGridStore.getState();
+    expect(state.goals).toHaveLength(1);
+    expect(state.goals[0]).toEqual({ x: 5, y: 5 });
+    expect(state.goal).toEqual({ x: 5, y: 5 });
+
+    // Attempt to erase the last remaining goal (5, 5) with eraser tool
+    store.applyTool(5, 5);
+    state = useGridStore.getState();
+    expect(state.goals).toHaveLength(1);
+    expect(state.goals[0]).toEqual({ x: 5, y: 5 });
+    expect(state.goal).toEqual({ x: 5, y: 5 });
+  });
+
+  it('should erase goals directly via eraseGoal', () => {
+    const store = useGridStore.getState();
+    store.toggleGoal(2, 4);
+    expect(useGridStore.getState().goals).toHaveLength(2);
+
+    store.eraseGoal(2, 4);
+    expect(useGridStore.getState().goals).toHaveLength(1);
+
+    // Erasing last goal is a no-op
+    store.eraseGoal(9, 9);
+    expect(useGridStore.getState().goals).toHaveLength(1);
+  });
+
   it('should not paint walls or cost on ANY goal tile', () => {
     const store = useGridStore.getState();
     store.toggleGoal(3, 7);

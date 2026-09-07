@@ -53,10 +53,12 @@ export interface GridState {
   paintCost: (x: number, y: number, cost?: number) => void;
   /** Set the configurable high path cost value. */
   setHighCostValue: (cost: number) => void;
-  /** Remove a wall or high cost tile at (x, y). */
+  /** Remove a wall, high cost tile, or goal at (x, y). The last remaining goal is protected. */
   eraseWall: (x: number, y: number) => void;
   /** Remove high cost tile at (x, y). */
   eraseCost: (x: number, y: number) => void;
+  /** Remove a goal at (x, y). The last remaining goal is protected. */
+  eraseGoal: (x: number, y: number) => void;
   /** Move the start point. Removes wall/cost at new position if any. */
   setStart: (p: Point) => void;
   /** Replace all goals with a single goal point. Removes wall/cost at it if any. */
@@ -155,11 +157,14 @@ export const useGridStore = create<GridState>((set, get) => ({
   setHighCostValue: (cost) => set({ highCostValue: Math.max(2, Math.round(cost)) }),
 
   eraseWall: (x, y) => {
-    const { walls, costs } = get();
+    const { walls, costs, goals } = get();
     const k = wk(x, y);
     let changed = false;
     let nextWalls = walls;
     let nextCosts = costs;
+    let nextGoals = goals;
+    let nextGoal = get().goal;
+
     if (walls.has(k)) {
       nextWalls = new Set(walls);
       nextWalls.delete(k);
@@ -170,8 +175,17 @@ export const useGridStore = create<GridState>((set, get) => ({
       nextCosts.delete(k);
       changed = true;
     }
+
+    // Erase goal if present, protecting the last remaining goal
+    const goalIdx = goals.findIndex((g) => g.x === x && g.y === y);
+    if (goalIdx !== -1 && goals.length > 1) {
+      nextGoals = goals.filter((_, idx) => idx !== goalIdx);
+      nextGoal = nextGoals[0]!;
+      changed = true;
+    }
+
     if (changed) {
-      set({ walls: nextWalls, costs: nextCosts });
+      set({ walls: nextWalls, costs: nextCosts, goals: nextGoals, goal: nextGoal });
     }
   },
 
@@ -182,6 +196,15 @@ export const useGridStore = create<GridState>((set, get) => ({
     const nextCosts = new Map(costs);
     nextCosts.delete(k);
     set({ costs: nextCosts });
+  },
+
+  eraseGoal: (x, y) => {
+    const { goals } = get();
+    if (goals.length <= 1) return;
+    const existingIdx = goals.findIndex((g) => g.x === x && g.y === y);
+    if (existingIdx === -1) return;
+    const nextGoals = goals.filter((_, idx) => idx !== existingIdx);
+    set({ goals: nextGoals, goal: nextGoals[0]! });
   },
 
   setStart: (p) => {

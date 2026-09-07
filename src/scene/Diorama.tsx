@@ -221,7 +221,14 @@ function DioramaScene() {
 
         {tiles}
         {wallBlocks}
-        {goals.map((g) => <GoalGlow key={`goal-${g.x}-${g.y}`} x={g.x} y={g.y} />)}
+        {goals.map((g) => (
+          <GoalGlow
+            key={`goal-${g.x}-${g.y}`}
+            x={g.x}
+            y={g.y}
+            onClick={() => applyTool(g.x, g.y)}
+          />
+        ))}
 
         {/* Agents & their overlays */}
         {agents.map((agent) => {

@@ -20,7 +20,7 @@ import type { GridSnapshot, Point } from '../types';
 
 // ── Helper to build wall sets from coordinate arrays ────────────────────────
 
-function wallSet(coords: [number, number][]): Set<string> {
+export function wallSet(coords: [number, number][]): Set<string> {
   return new Set(coords.map(([x, y]) => `${x},${y}`));
 }
 

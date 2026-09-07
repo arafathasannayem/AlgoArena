@@ -23,9 +23,13 @@ import {
   WALL_DETOUR,
   U_TRAP,
   FULLY_BLOCKED,
+  MULTI_GOAL_OPEN,
+  MULTI_GOAL_WALLED_GOAL,
   pathEndpoints,
+  pathEndsAtAnyGoal,
   pathIsContiguous,
   pathAvoidsWalls,
+  wallSet,
 } from './fixtures';
 
 // ── Helper ──────────────────────────────────────────────────────────────────
@@ -250,6 +254,70 @@ describe('Bidirectional A*', () => {
       const passedThroughHighCost = result.path!.some((p) => p.x === 1 && p.y === 0);
       expect(passedThroughHighCost).toBe(false);
       expect(result.path).toHaveLength(5); // 4 steps + start = 5 nodes
+    });
+  });
+
+  // ── Multi-goal behavior ────────────────────────────────────────────────
+  describe('multi-goal behavior', () => {
+    it('should run bidirectional checks from all goal points (not picking only one ahead of time)', () => {
+      const { events, result } = run(MULTI_GOAL_OPEN);
+      expect(result.status).toBe('success');
+      expect(result.path).not.toBeNull();
+      expect(pathEndsAtAnyGoal(result.path!, MULTI_GOAL_OPEN.start, MULTI_GOAL_OPEN.goals!)).toBe(true);
+
+      // Verify that every goal point was visited and explored
+      const visitedCoords = new Set(
+        events
+          .filter((e): e is StepEvent & { kind: 'visit' } => e.kind === 'visit')
+          .map((e) => `${e.node.x},${e.node.y}`),
+      );
+
+      for (const g of MULTI_GOAL_OPEN.goals!) {
+        expect(visitedCoords.has(`${g.x},${g.y}`)).toBe(true);
+      }
+    });
+
+    it('should find the path to the reachable goal when a geometrically nearer goal is walled off', () => {
+      // Goal 1 at (2,0) is closer (dist 2) to start (0,0) but completely boxed in.
+      // Goal 2 at (0,4) is farther (dist 4) but completely open.
+      const boxedGrid = {
+        width: 5,
+        height: 5,
+        start: { x: 0, y: 0 },
+        goal: { x: 2, y: 0 },
+        goals: [
+          { x: 2, y: 0 }, // walled off
+          { x: 0, y: 4 }, // open and reachable
+        ],
+        walls: wallSet([
+          [1, 0],
+          [2, 1],
+          [3, 0],
+        ]),
+      };
+
+      const { events, result } = run(boxedGrid);
+      expect(result.status).toBe('success');
+      expect(result.path).not.toBeNull();
+      // Ends at the open goal (0, 4)
+      const last = result.path![result.path!.length - 1]!;
+      expect(last).toEqual({ x: 0, y: 4 });
+
+      // Both goals were checked
+      const visitedCoords = new Set(
+        events
+          .filter((e): e is StepEvent & { kind: 'visit' } => e.kind === 'visit')
+          .map((e) => `${e.node.x},${e.node.y}`),
+      );
+      expect(visitedCoords.has('2,0')).toBe(true);
+      expect(visitedCoords.has('0,4')).toBe(true);
+    });
+
+    it('should solve MULTI_GOAL_WALLED_GOAL fixture', () => {
+      const { result } = run(MULTI_GOAL_WALLED_GOAL);
+      expect(result.status).toBe('success');
+      expect(result.path).not.toBeNull();
+      expect(pathEndsAtAnyGoal(result.path!, MULTI_GOAL_WALLED_GOAL.start, MULTI_GOAL_WALLED_GOAL.goals!)).toBe(true);
     });
   });
 });

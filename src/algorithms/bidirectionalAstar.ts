@@ -220,15 +220,40 @@ export function* bidirectionalAStar(
   gA.set(key(start), 0);
   openA.push({ point: start, f: nearestGoalDist(grid, start) });
 
-  // ── Goal side (B) — seeds from EVERY goal node ───────────────────────────
-  const openB = new MinHeap();
+  // ── Goal side (B) — independent frontier queue per goal node ────────────
+  // Each goal gets its own MinHeap so that all goals run backward checks
+  // concurrently towards start, rather than letting a single geometrically
+  // closer goal starve the others.
+  const openBs: MinHeap[] = goals.map(() => new MinHeap());
   const gB = new Map<string, number>();
   const cameFromB = new Map<string, Point>();
   const closedB = new Set<string>();
-  for (const g of goals) {
+
+  for (let i = 0; i < goals.length; i++) {
+    const g = goals[i]!;
     const gKey = key(g);
     gB.set(gKey, 0);
-    openB.push({ point: g, f: manhattan(g, start) });
+    openBs[i]!.push({ point: g, f: manhattan(g, start) });
+  }
+
+  /** Whether any goal frontier still has nodes to expand. */
+  function hasOpenB(): boolean {
+    for (let i = 0; i < openBs.length; i++) {
+      if (openBs[i]!.size > 0) return true;
+    }
+    return false;
+  }
+
+  /** Lowest f-score across all active goal frontiers. */
+  function minOpenBF(): number {
+    let minF = Infinity;
+    for (let i = 0; i < openBs.length; i++) {
+      if (openBs[i]!.size > 0) {
+        const f = openBs[i]!.peekF();
+        if (f < minF) minF = f;
+      }
+    }
+    return minF;
   }
 
   // Best meeting point found so far (for optimal stopping).
@@ -252,8 +277,9 @@ export function* bidirectionalAStar(
 
   // Alternate which side expands next.
   let turnA = true;
+  let goalIndex = 0;
 
-  while (openA.size > 0 && openB.size > 0) {
+  while (openA.size > 0 && hasOpenB()) {
     // ── Expand one node from the start side ────────────────────────────────
     if (turnA && openA.size > 0) {
       const entry = openA.pop()!;
@@ -271,7 +297,7 @@ export function* bidirectionalAStar(
       const gBhere = gB.get(currentKey);
       if (gBhere !== undefined) {
         considerMeeting(current, (gA.get(currentKey) ?? 0) + gBhere);
-        if (openA.peekF() + openB.peekF() >= bestCost) break;
+        if (openA.peekF() + minOpenBF() >= bestCost) break;
       }
 
       const currentG = gA.get(currentKey) ?? Infinity;
@@ -305,9 +331,19 @@ export function* bidirectionalAStar(
       yield { kind: 'path', path: bestMeet ? joinAt(bestMeet) : reconstructFrom(cameFromA, current) };
     }
 
-    // ── Expand one node from the goal side ─────────────────────────────────
-    if (!turnA && openB.size > 0) {
-      const entry = openB.pop()!;
+    // ── Expand one node from the goal side (round-robin among goals) ────────
+    if (!turnA && hasOpenB()) {
+      let attempts = 0;
+      while (openBs[goalIndex]!.size === 0 && attempts < goals.length) {
+        goalIndex = (goalIndex + 1) % goals.length;
+        attempts++;
+      }
+
+      const currentGoalIdx = goalIndex;
+      const activeHeap = openBs[currentGoalIdx]!;
+      goalIndex = (goalIndex + 1) % goals.length;
+
+      const entry = activeHeap.pop()!;
       const current = entry.point;
       const currentKey = key(current);
 
@@ -322,7 +358,7 @@ export function* bidirectionalAStar(
       const gAhere = gA.get(currentKey);
       if (gAhere !== undefined) {
         considerMeeting(current, gAhere + (gB.get(currentKey) ?? 0));
-        if (openA.peekF() + openB.peekF() >= bestCost) break;
+        if (openA.peekF() + minOpenBF() >= bestCost) break;
       }
 
       const currentG = gB.get(currentKey) ?? Infinity;
@@ -339,7 +375,7 @@ export function* bidirectionalAStar(
         if (tentativeG < bestG) {
           cameFromB.set(nbrKey, current);
           gB.set(nbrKey, tentativeG);
-          openB.push({ point: nbr, f: tentativeG + manhattan(nbr, start) });
+          openBs[currentGoalIdx]!.push({ point: nbr, f: tentativeG + manhattan(nbr, start) });
           frontierNodes.push(nbr);
 
           // Neighbor reached by both frontiers → meeting point.
@@ -353,17 +389,17 @@ export function* bidirectionalAStar(
       if (frontierNodes.length > 0) {
         yield { kind: 'frontier', nodes: frontierNodes };
       }
-      yield { kind: 'path', path: bestMeet ? joinAt(bestMeet) : reconstructFrom(cameFromB, current) };
+      yield { kind: 'path', path: bestMeet ? joinAt(bestMeet) : reconstructToward(cameFromB, current) };
     }
 
     // Optional stop: no remaining candidate can beat the best path found.
-    if (bestMeet !== null && openA.peekF() + openB.peekF() >= bestCost) {
+    if (bestMeet !== null && openA.peekF() + minOpenBF() >= bestCost) {
       break;
     }
 
     // Symmetric alternation (skip if the other side emptied this round).
     if (turnA && openA.size === 0) turnA = false;
-    else if (!turnA && openB.size === 0) turnA = true;
+    else if (!turnA && !hasOpenB()) turnA = true;
     else turnA = !turnA;
   }
 
