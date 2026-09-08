@@ -57,6 +57,10 @@ export interface AgentState {
   removeAgent: (id: string) => void;
   clearAgents: () => void;
   toggleOverlay: (id: string) => void;
+  /** Toggle all agents' visual overlays on/off together. */
+  toggleAllOverlays: () => void;
+  /** Explicitly set visual overlay visibility for all agents. */
+  setAllOverlays: (show: boolean) => void;
   /** Change an agent's color (pawn, trail, overlays, standings). */
   setColor: (id: string, color: string) => void;
 
@@ -114,6 +118,19 @@ export const useAgentStore = create<AgentState>((set) => ({
       agents: s.agents.map((a) =>
         a.id === id ? { ...a, showOverlay: !a.showOverlay } : a,
       ),
+    })),
+
+  toggleAllOverlays: () =>
+    set((s) => {
+      const anyVisible = s.agents.some((a) => a.showOverlay);
+      return {
+        agents: s.agents.map((a) => ({ ...a, showOverlay: !anyVisible })),
+      };
+    }),
+
+  setAllOverlays: (show) =>
+    set((s) => ({
+      agents: s.agents.map((a) => ({ ...a, showOverlay: show })),
     })),
 
   setColor: (agentId, color) =>

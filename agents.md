@@ -37,8 +37,8 @@ Algorithm Arena is a browser-based pathfinding visualizer where users race diffe
 - **Phase 4 (Agents)**: `agentStore.ts`, `AgentPawn.tsx` (camel 3D models with team-colored saddles and non-overlapping cell clustering), `NodeOverlay`, `PathTrail`, `HeuristicRay`, `ScanReticle`
 - **Phase 5 (Race Scheduler)**: `raceStore.ts`, rAF scheduler, two-phase execution (Scout exploration sweep followed by physical path runner sprint), mid-race speed controls
 - **Phase 6 (Analytics)**: `Leaderboard.tsx` (live standings with distance and cost), `ResultsDashboard.tsx` (comparative stats, ranked standings, 1-click clipboard summary)
-- **Phase 7 (Visual Polish & Audio)**: Web Audio API sound synthesizer (`src/utils/sound.ts`, `soundStore.ts`), global keyboard hotkeys (`useKeyboardShortcuts.ts`), player manual (`HelpModal.tsx`), Game Start Menu (`StartMenu.tsx`), Preset Chooser screen (`PresetChooserModal.tsx`, `MiniMapPreview.tsx`), Save Preset dialog (`SavePresetModal.tsx`)
-- **Phase 8 (QA & Ship)**: 90 unit tests passing across 10 test files, clean typecheck, clean lint, production build verified
+- **Phase 7 (Visual Polish & Audio)**: Web Audio API sound synthesizer (`src/utils/sound.ts`, `soundStore.ts`), global keyboard hotkeys (`useKeyboardShortcuts.ts`), player manual (`HelpModal.tsx`), Title Screen launcher (`TitleScreen.tsx`), Pause Menu (`PauseMenu.tsx`), TopBar telemetry (`TopBar.tsx`), Racer Dock sidebar (`RacerDock.tsx`), Bottom Console tool & playback bar (`BottomConsole.tsx`), Preset Chooser screen (`PresetChooserModal.tsx`, `MiniMapPreview.tsx`), Save Preset dialog (`SavePresetModal.tsx`)
+- **Phase 8 (QA & Ship)**: 258 unit tests passing across 17 test files, clean typecheck, clean lint, production build verified
 
 ## 3. How to Pick Up Work
 
@@ -142,7 +142,8 @@ AlgoArena/
     │       ├── agentStore.test.ts   # 5 tests
     │       ├── raceStore.test.ts    # 4 tests
     │       ├── cameraStore.test.ts  # 6 tests
-    │       └── presetStore.test.ts  # 6 tests
+    │       ├── presetStore.test.ts  # 6 tests
+    │       └── gameMenuStore.test.ts# 7 tests
     ├── scene/                       # ⭐ React Three Fiber
     │   ├── Diorama.tsx              # Main canvas + diorama pedestal + lighting
     │   ├── CameraController.tsx     # Animated camera transitions, zoom, and orientation
@@ -156,20 +157,18 @@ AlgoArena/
     │   ├── ScanReticle.tsx          # Scout sweep evaluation indicator
     │   ├── SquareClusterIndicator.tsx # 4+ agent cluster overflow indicator
     │   └── clusterUtils.ts          # Non-overlapping pawn grid layout helpers
-    ├── ui/                          # ⭐ Tailwind CSS Glassmorphic HUD & Menus
-    │   ├── StartMenu.tsx            # Title screen launcher & game onboarding
+    ├── ui/                          # ⭐ Compact Indie Game HUD & Tactical Menus
+    │   ├── TitleScreen.tsx          # Cinematic title launcher & sandbox gate
+    │   ├── PauseMenu.tsx            # In-game tactile pause menu & settings
+    │   ├── TopBar.tsx               # Compact top telemetry, map chip & audio
+    │   ├── RacerDock.tsx            # Unified collapsible racer sidebar & standings
+    │   ├── BottomConsole.tsx        # Docked bottom editing tools & playback controls
     │   ├── PresetChooserModal.tsx   # Fullscreen preset browser with search & tabs
     │   ├── MiniMapPreview.tsx       # SVG vector thumbnail generator for presets
     │   ├── SavePresetModal.tsx      # Modal to capture & save custom maps
-    │   ├── ToolPalette.tsx          # Wall/cost/eraser/start/goal tools + presets
-    │   ├── GridSizeControl.tsx      # 10×10 / 20×20 / 30×30 selector
-    │   ├── AgentPanel.tsx           # Add/remove agents & overlay toggles
-    │   ├── SpeedSlider.tsx          # Play/pause/step & live speed slider
-    │   ├── CameraControls.tsx       # Floating zoom in/out & view angle controls
-    │   ├── Leaderboard.tsx          # Live ranked standings with distance & cost
     │   ├── ResultsDashboard.tsx     # Post-race comparative analytics & copy summary
     │   ├── HelpModal.tsx            # Player manual, tile rules & hotkey legend
-    │   └── Hud.tsx                  # Root HUD container managing overlay layering
+    │   └── Hud.tsx                  # Root HUD container orchestrating layers
     ├── hooks/
     │   └── useKeyboardShortcuts.ts  # Global hotkeys listener
     ├── utils/

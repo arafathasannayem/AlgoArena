@@ -28,6 +28,8 @@ import { playClick, playStepTick } from '../utils/sound';
 
 interface UseKeyboardShortcutsOptions {
   onToggleHelp?: () => void;
+  isHelpOpen?: boolean;
+  onCloseHelp?: () => void;
 }
 
 export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}): void {
@@ -48,15 +50,56 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}):
       const key = e.key.toLowerCase();
 
       switch (key) {
-        case ' ': {
+        case 'escape': {
           e.preventDefault();
-          const { isStartMenuOpen, closeStartMenu } = useGameMenuStore.getState();
-          if (isStartMenuOpen) {
-            closeStartMenu();
+          const menuStore = useGameMenuStore.getState();
+
+          // If a modal is open, close modal
+          if (options.isHelpOpen) {
+            options.onCloseHelp?.();
             playClick();
             break;
           }
+          if (menuStore.isPresetChooserOpen) {
+            menuStore.closePresetChooser();
+            break;
+          }
+          if (menuStore.isSavePresetOpen) {
+            menuStore.closeSavePreset();
+            break;
+          }
 
+          // If in pause menu, close pause menu (resumes race if it was running)
+          if (menuStore.isPauseMenuOpen) {
+            menuStore.closePauseMenu();
+            break;
+          }
+
+          // If on title screen, enter sandbox
+          if (menuStore.isTitleScreenOpen) {
+            menuStore.closeTitleScreen();
+            break;
+          }
+
+          // Otherwise, open tactical pause menu
+          menuStore.openPauseMenu();
+          break;
+        }
+
+        case ' ': {
+          const menuStore = useGameMenuStore.getState();
+          if (menuStore.isPauseMenuOpen) {
+            e.preventDefault();
+            menuStore.closePauseMenu();
+            break;
+          }
+          if (menuStore.isTitleScreenOpen) {
+            e.preventDefault();
+            menuStore.closeTitleScreen();
+            break;
+          }
+
+          e.preventDefault();
           const { status, startRace, pauseRace } = useRaceStore.getState();
           const agentsCount = useAgentStore.getState().agents.length;
           if (agentsCount === 0) return;
@@ -145,8 +188,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}):
 
         case 'm': {
           e.preventDefault();
-          useGameMenuStore.getState().toggleStartMenu();
-          playClick();
+          useGameMenuStore.getState().togglePauseMenu();
           break;
         }
 
