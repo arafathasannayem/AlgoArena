@@ -23,7 +23,6 @@ describe('Agent Store', () => {
     expect(agents[0]!.position).toEqual({ x: 0, y: 0 });
     expect(agents[0]!.status).toBe('idle');
     expect(agents[0]!.showOverlay).toBe(true);
-    expect(agents[0]!.isPathVisible).toBe(true);
   });
 
   it('should toggle agent overlay visibility', () => {
@@ -36,33 +35,6 @@ describe('Agent Store', () => {
 
     store.toggleOverlay(id);
     expect(useAgentStore.getState().agents[0]!.showOverlay).toBe(true);
-  });
-
-  it('should toggle path visibility for one agent independently', () => {
-    const store = useAgentStore.getState();
-    store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });
-    store.addAgent('bfs', '#eab308', { x: 0, y: 0 });
-    const firstId = useAgentStore.getState().agents[0]!.id;
-
-    store.togglePathVisibility(firstId);
-    const agents = useAgentStore.getState().agents;
-    expect(agents[0]!.isPathVisible).toBe(false);
-    expect(agents[1]!.isPathVisible).toBe(true);
-
-    store.togglePathVisibility(firstId);
-    expect(useAgentStore.getState().agents[0]!.isPathVisible).toBe(true);
-  });
-
-  it('should reset isPathVisible to true on resetAll', () => {
-    const store = useAgentStore.getState();
-    store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });
-    const id = useAgentStore.getState().agents[0]!.id;
-
-    store.togglePathVisibility(id);
-    expect(useAgentStore.getState().agents[0]!.isPathVisible).toBe(false);
-
-    store.resetAll({ x: 2, y: 2 });
-    expect(useAgentStore.getState().agents[0]!.isPathVisible).toBe(true);
   });
 
   it('should change an agent color with setColor', () => {

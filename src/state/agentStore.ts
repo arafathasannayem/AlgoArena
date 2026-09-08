@@ -47,8 +47,6 @@ export interface Agent {
   showOverlay: boolean;
   /** Live temperature for Simulated Annealing (undefined for other algorithms). */
   temperature?: number;
-  /** Whether this agent's explored nodes and final path are drawn on the grid. */
-  isPathVisible: boolean;
 }
 
 export interface AgentState {
@@ -59,8 +57,6 @@ export interface AgentState {
   removeAgent: (id: string) => void;
   clearAgents: () => void;
   toggleOverlay: (id: string) => void;
-  /** Toggle whether a finished agent's explored nodes/final path are drawn. */
-  togglePathVisibility: (id: string) => void;
   /** Change an agent's color (pawn, trail, overlays, standings). */
   setColor: (id: string, color: string) => void;
 
@@ -93,7 +89,6 @@ function createAgent(algorithmKey: string, color: string, start: Point): Agent {
     frontierNodes: [],
     currentPath: [],
     showOverlay: true,
-    isPathVisible: true,
   };
 }
 
@@ -118,13 +113,6 @@ export const useAgentStore = create<AgentState>((set) => ({
     set((s) => ({
       agents: s.agents.map((a) =>
         a.id === id ? { ...a, showOverlay: !a.showOverlay } : a,
-      ),
-    })),
-
-  togglePathVisibility: (id) =>
-    set((s) => ({
-      agents: s.agents.map((a) =>
-        a.id === id ? { ...a, isPathVisible: !a.isPathVisible } : a,
       ),
     })),
 
@@ -219,7 +207,6 @@ export const useAgentStore = create<AgentState>((set) => ({
         heuristicTarget: undefined,
         heuristicTargetBackward: undefined,
         temperature: undefined,
-        isPathVisible: true,
       })),
     })),
 }));

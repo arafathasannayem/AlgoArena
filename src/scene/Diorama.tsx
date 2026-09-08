@@ -276,16 +276,12 @@ function DioramaScene() {
                     />
                   )}
 
-                  {agent.isPathVisible && (
-                    <>
-                      <NodeOverlay
-                        visitedNodes={agent.visitedNodes}
-                        frontierNodes={agent.frontierNodes}
-                        color={agent.color}
-                      />
-                      <PathTrail path={agent.currentPath} color={agent.color} />
-                    </>
-                  )}
+                  <NodeOverlay
+                    visitedNodes={agent.visitedNodes}
+                    frontierNodes={agent.frontierNodes}
+                    color={agent.color}
+                  />
+                  <PathTrail path={agent.currentPath} color={agent.color} />
 
                   {/* Forward heuristic ray */}
                   {agent.heuristicTarget && (
