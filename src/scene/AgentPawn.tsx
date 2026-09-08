@@ -1,20 +1,22 @@
 /**
- * AgentPawn — Animated Camel caravan agent pawn with colored top saddle.
+ * AgentPawn — Minifigure-style brick racer pawn.
  *
- * Uses the camel.glb 3D asset with:
- * - Color-coded top saddle blanket and caravan pack for instant team identification
- * - Ground team energy aura ring
- * - Spring position lerp with heading direction turn & gait bob
+ * Implements Brick Racer authentic minifig token aesthetics:
+ * - Blocky torso in algorithm racer color
+ * - Iconic yellow cylindrical head with top stud
+ * - Sturdy leg block and team aura ground ring
+ * - Discrete hop movement between cells (no smooth sliding)
+ * - Celebratory spin upon reaching the goal
  *
  * @module scene/AgentPawn
  */
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { animated, useSpring } from '@react-spring/three';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
-import { useGLTF, Clone } from '@react-three/drei';
 import type { Point } from '../algorithms/types';
+import { useAgentStore } from '../state/agentStore';
 
 interface AgentPawnProps {
   position: Point;
@@ -27,9 +29,6 @@ interface AgentPawnProps {
   onClick: () => void;
 }
 
-const CAMEL_URL = '/3d-assets/camel.glb';
-const DRACO_URL = '/draco/';
-
 export function AgentPawn({
   position,
   color,
@@ -41,16 +40,22 @@ export function AgentPawn({
   onClick,
 }: AgentPawnProps) {
   const modelRef = useRef<Group>(null);
-  const { scene: camelScene } = useGLTF(CAMEL_URL, DRACO_URL);
+  const [isHopping, setIsHopping] = useState(false);
 
-  const { posX, posZ, s } = useSpring({
+  // Check agent result status for victory spin
+  const agents = useAgentStore((s) => s.agents);
+  const isDoneSuccess = agents.some(
+    (a) => a.position.x === position.x && a.position.y === position.y && a.result?.status === 'success'
+  );
+
+  const { posX, posZ, hopY, s } = useSpring({
     posX: position.x + offsetX,
     posZ: position.y + offsetZ,
+    hopY: isHopping ? 0.22 : 0,
     s: scale,
-    config: { tension: 220, friction: 20 },
+    config: { tension: 320, friction: 18 },
   });
 
-  // Track heading direction to turn camel towards travel direction
   const lastPos = useRef(position);
   const targetRotY = useRef(0);
   const currentRotY = useRef(0);
@@ -61,27 +66,39 @@ export function AgentPawn({
       const dz = position.y - lastPos.current.y;
       targetRotY.current = Math.atan2(dx, dz);
       lastPos.current = position;
+
+      // Trigger discrete hop
+      setIsHopping(true);
+      const timer = setTimeout(() => setIsHopping(false), 140);
+      return () => clearTimeout(timer);
     }
   }, [position]);
 
-  // Subtle idle breathing/gait bob and rotation lerp
   useFrame(({ clock }) => {
     if (!modelRef.current) return;
-    const t = clock.getElapsedTime() + (position.x * 0.7 + position.y * 0.3);
-    modelRef.current.position.y = Math.sin(t * 3.0) * 0.015;
+    const t = clock.getElapsedTime();
 
-    // Smoothly interpolate rotation to face heading
-    let diff = targetRotY.current - currentRotY.current;
-    while (diff < -Math.PI) diff += Math.PI * 2;
-    while (diff > Math.PI) diff -= Math.PI * 2;
-    currentRotY.current += diff * 0.15;
-    modelRef.current.rotation.y = currentRotY.current;
+    if (isDoneSuccess) {
+      // Celebratory victory spin!
+      modelRef.current.rotation.y += 0.12;
+      modelRef.current.position.y = Math.sin(t * 8) * 0.04;
+    } else {
+      // Face travel heading
+      let diff = targetRotY.current - currentRotY.current;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      currentRotY.current += diff * 0.25;
+      modelRef.current.rotation.y = currentRotY.current;
+
+      // Idle thinking bounce (2px)
+      modelRef.current.position.y = Math.sin(t * 4.0) * 0.012;
+    }
   });
 
   return (
     <animated.group
       position-x={posX}
-      position-y={0.08}
+      position-y={hopY.to((y) => 0.08 + y)}
       position-z={posZ}
       scale={s}
       onClick={(e) => {
@@ -90,9 +107,9 @@ export function AgentPawn({
       }}
     >
       <group ref={modelRef}>
-        {/* Ground team aura halo */}
+        {/* Team Color Aura Base Ring */}
         <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.26, 0.36, 24]} />
+          <ringGeometry args={[0.22, 0.32, 24]} />
           <meshStandardMaterial
             color={color}
             emissive={color}
@@ -102,66 +119,50 @@ export function AgentPawn({
           />
         </mesh>
 
-        {/* 3D Camel Model */}
-        <group position={[0, 0.25, 0]}>
-          <Clone
-            object={camelScene}
-            scale={[0.22, 0.22, 0.22]}
-            castShadow={castShadow}
-            receiveShadow={receiveShadow}
-          />
-        </group>
+        {/* ── Minifigure Brick Geometry ── */}
 
-        {/* Colored Caravan Saddle & Pack atop camel's hump to differentiate agents */}
-        {/* Saddle blanket draped over the hump */}
-        <mesh position={[0, 0.35, 0.02]} castShadow={castShadow}>
-          <boxGeometry args={[0.2, 0.1, 0.26]} />
-          <meshStandardMaterial
-            color={color}
-            roughness={0.4}
-            metalness={0.1}
-          />
+        {/* Legs / Base Block */}
+        <mesh position={[0, 0.08, 0]} castShadow={castShadow} receiveShadow={receiveShadow}>
+          <boxGeometry args={[0.26, 0.16, 0.16]} />
+          <meshStandardMaterial color="#05131D" roughness={0.35} metalness={0.05} />
         </mesh>
 
-        {/* Saddle bedroll pack resting on the top */}
-        <mesh
-          position={[0, 0.41, 0.02]}
-          rotation={[0, 0, Math.PI / 2]}
-          castShadow={castShadow}
-        >
-          <cylinderGeometry args={[0.065, 0.065, 0.22, 16]} />
+        {/* Torso in Algorithm's Canonical Racer Color */}
+        <mesh position={[0, 0.25, 0]} castShadow={castShadow} receiveShadow={receiveShadow}>
+          <boxGeometry args={[0.3, 0.22, 0.18]} />
           <meshStandardMaterial
             color={color}
-            emissive={color}
-            emissiveIntensity={0.5}
             roughness={0.3}
-            metalness={0.2}
+            metalness={0.06}
           />
         </mesh>
 
-        {/* Gold saddle strap accents */}
-        <mesh position={[0, 0.33, -0.1]} castShadow={castShadow}>
-          <boxGeometry args={[0.21, 0.02, 0.03]} />
-          <meshStandardMaterial color="#d97706" metalness={0.8} roughness={0.2} />
-        </mesh>
-        <mesh position={[0, 0.33, 0.14]} castShadow={castShadow}>
-          <boxGeometry args={[0.21, 0.02, 0.03]} />
-          <meshStandardMaterial color="#d97706" metalness={0.8} roughness={0.2} />
+        {/* Neck Stud */}
+        <mesh position={[0, 0.38, 0]}>
+          <cylinderGeometry args={[0.07, 0.07, 0.04, 16]} />
+          <meshStandardMaterial color="#F2CD37" roughness={0.3} />
         </mesh>
 
-        {/* Illuminated top crest gem */}
-        <mesh position={[0, 0.48, 0.02]}>
-          <sphereGeometry args={[0.045, 16, 16]} />
+        {/* Iconic Minifigure Yellow Head */}
+        <mesh position={[0, 0.46, 0]} castShadow={castShadow}>
+          <cylinderGeometry args={[0.11, 0.11, 0.13, 16]} />
           <meshStandardMaterial
-            color="#ffffff"
-            emissive={color}
-            emissiveIntensity={1.8}
-            roughness={0.1}
+            color="#F2CD37"
+            roughness={0.25}
+            metalness={0.05}
+          />
+        </mesh>
+
+        {/* Head Top LEGO Stud */}
+        <mesh position={[0, 0.545, 0]}>
+          <cylinderGeometry args={[0.06, 0.06, 0.04, 12]} />
+          <meshStandardMaterial
+            color="#F2CD37"
+            roughness={0.2}
+            metalness={0.1}
           />
         </mesh>
       </group>
     </animated.group>
   );
 }
-
-useGLTF.preload(CAMEL_URL, DRACO_URL);

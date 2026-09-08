@@ -191,7 +191,7 @@ export function playGoalChime(): void {
   });
 }
 
-/** Tactile placement tap for painting walls/tiles */
+/** Tactile brick click for wall placement */
 export function playPlace(): void {
   const vol = getMasterVolume();
   if (vol <= 0) return;
@@ -201,22 +201,23 @@ export function playPlace(): void {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
 
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(320, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.05);
+  // Plastic click: short high impulse falling sharply
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(1400, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.035);
 
-  gain.gain.setValueAtTime(0.1 * vol, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+  gain.gain.setValueAtTime(0.14 * vol, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
 
   osc.connect(gain);
   gain.connect(ctx.destination);
 
   osc.start();
-  osc.stop(ctx.currentTime + 0.05);
+  osc.stop(ctx.currentTime + 0.035);
 }
 
-/** Soft tick for step advance */
-export function playStepTick(): void {
+/** Plastic plate snap on visited/frontier node exploration */
+export function playSnap(): void {
   const vol = getMasterVolume();
   if (vol <= 0) return;
   const ctx = getAudioContext();
@@ -226,10 +227,10 @@ export function playStepTick(): void {
   const gain = ctx.createGain();
 
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(600, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.02);
+  osc.frequency.setValueAtTime(1800, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.02);
 
-  gain.gain.setValueAtTime(0.04 * vol, ctx.currentTime);
+  gain.gain.setValueAtTime(0.05 * vol, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.02);
 
   osc.connect(gain);
@@ -237,4 +238,29 @@ export function playStepTick(): void {
 
   osc.start();
   osc.stop(ctx.currentTime + 0.02);
+}
+
+/** Soft pop for racer hop and step advance */
+export function playStepTick(): void {
+  const vol = getMasterVolume();
+  if (vol <= 0) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  // Hollow plastic pop
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(480, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(240, ctx.currentTime + 0.025);
+
+  gain.gain.setValueAtTime(0.06 * vol, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.025);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start();
+  osc.stop(ctx.currentTime + 0.025);
 }

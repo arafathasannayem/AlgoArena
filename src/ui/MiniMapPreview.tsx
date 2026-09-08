@@ -1,8 +1,8 @@
 /**
- * MiniMapPreview — Crisp SVG vector thumbnail for map presets.
+ * MiniMapPreview — SVG vector thumbnail for map presets with Brick Racer styling.
  *
- * Renders a miniature overhead schematic of walls, rough terrain costs,
- * start point, and goal beacon for instant visual recognition in menus.
+ * Renders an overhead schematic with baseplate green (#237841) floor,
+ * brick walls (#582A12), warm gold start (#AA7F2E), and bright yellow goals (#F2CD37).
  *
  * @module ui/MiniMapPreview
  */
@@ -27,11 +27,11 @@ export function MiniMapPreview({ preset, className = '', size = 120 }: MiniMapPr
       width={totalWidth}
       height={totalHeight}
       viewBox={`0 0 ${totalWidth} ${totalHeight}`}
-      className={`rounded-lg bg-slate-950 border border-white/10 shrink-0 select-none ${className}`}
+      className={`rounded-lg border border-[#05131D] shrink-0 select-none ${className}`}
       aria-label={`${preset.name} mini-map preview`}
     >
-      {/* Background Grid Pattern / Subtle border */}
-      <rect x={0} y={0} width={totalWidth} height={totalHeight} fill="#090d16" />
+      {/* Baseplate green floor */}
+      <rect x={0} y={0} width={totalWidth} height={totalHeight} fill="#237841" />
 
       {/* Rough Terrain Cost Tiles (Amber) */}
       {costs &&
@@ -42,12 +42,12 @@ export function MiniMapPreview({ preset, className = '', size = 120 }: MiniMapPr
             y={y * cellSize}
             width={cellSize}
             height={cellSize}
-            fill="#d97706"
-            fillOpacity={0.65}
+            fill="#FE8A18"
+            fillOpacity={0.7}
           />
         ))}
 
-      {/* Wall Monoliths (Slate) */}
+      {/* Stacked Brick Walls (Reddish Brown) */}
       {walls.map(([x, y]) => (
         <rect
           key={`wall-${x}-${y}`}
@@ -55,27 +55,33 @@ export function MiniMapPreview({ preset, className = '', size = 120 }: MiniMapPr
           y={y * cellSize + 0.5}
           width={Math.max(1, cellSize - 1)}
           height={Math.max(1, cellSize - 1)}
-          fill="#94a3b8"
+          fill="#582A12"
+          stroke="#05131D"
+          strokeWidth={0.5}
           rx={cellSize > 8 ? 1 : 0}
         />
       ))}
 
-      {/* Start Point (Cyan Aura) */}
+      {/* Start Point (Warm Gold Disc) */}
       <circle
         cx={(start.x + 0.5) * cellSize}
         cy={(start.y + 0.5) * cellSize}
-        r={Math.max(2, cellSize * 0.45)}
-        fill="#38bdf8"
+        r={Math.max(2, cellSize * 0.42)}
+        fill="#AA7F2E"
+        stroke="#05131D"
+        strokeWidth={0.5}
       />
 
-      {/* Goal Points (Amber Auras) — one per goal node */}
+      {/* Goal Points (Bright Yellow) */}
       {goals.map((g, i) => (
         <circle
           key={`goal-${i}-${g.x}-${g.y}`}
           cx={(g.x + 0.5) * cellSize}
           cy={(g.y + 0.5) * cellSize}
-          r={Math.max(2, cellSize * 0.45)}
-          fill="#fbbf24"
+          r={Math.max(2, cellSize * 0.42)}
+          fill="#F2CD37"
+          stroke="#05131D"
+          strokeWidth={0.5}
         />
       ))}
     </svg>

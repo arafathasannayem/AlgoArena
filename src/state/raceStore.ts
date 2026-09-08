@@ -19,6 +19,8 @@ export interface RaceState {
   status: 'idle' | 'running' | 'finished';
   /** Delay per step in ms (smaller = faster). */
   speed: number;
+  /** Number of discrete ticks executed in current race. */
+  stepCount: number;
   /** Whether the post-race results modal is currently visible. */
   showResults: boolean;
 
@@ -27,6 +29,7 @@ export interface RaceState {
   pauseRace: () => void;
   resumeRace: () => void;
   resetRace: () => void;
+  stepForward: () => void;
   setSpeed: (ms: number) => void;
   dismissResults: () => void;
   tick: () => void;
@@ -90,6 +93,7 @@ function runScheduler() {
 export const useRaceStore = create<RaceState>((set) => ({
   status: 'idle',
   speed: 60, // 60ms delay per step default
+  stepCount: 0,
   showResults: false,
 
   setSpeed: (ms: number) => {
@@ -98,6 +102,17 @@ export const useRaceStore = create<RaceState>((set) => ({
 
   dismissResults: () => {
     set({ showResults: false });
+  },
+
+  stepForward: () => {
+    const state = useRaceStore.getState();
+    if (state.status === 'idle') {
+      if (activeAgentIds.size === 0 && runnerQueues.size === 0) {
+        state.startRace();
+        state.pauseRace();
+      }
+      state.tick();
+    }
   },
 
   startRace: () => {
@@ -130,11 +145,11 @@ export const useRaceStore = create<RaceState>((set) => ({
     }
 
     if (activeAgentIds.size === 0) {
-      set({ status: 'idle', showResults: false });
+      set({ status: 'idle', showResults: false, stepCount: 0 });
       return;
     }
 
-    set({ status: 'running', showResults: false });
+    set({ status: 'running', showResults: false, stepCount: 0 });
     runScheduler();
   },
 
@@ -156,10 +171,12 @@ export const useRaceStore = create<RaceState>((set) => ({
     runnerQueues.clear();
     const gridStore = useGridStore.getState();
     useAgentStore.getState().resetAll(gridStore.start);
-    set({ status: 'idle', showResults: false });
+    set({ status: 'idle', showResults: false, stepCount: 0 });
   },
 
   tick: () => {
+    set((s) => ({ stepCount: s.stepCount + 1 }));
+
     // If no agents are searching and no pawns are running, finish race
     if (activeAgentIds.size === 0 && runnerQueues.size === 0) {
       stopLoop();

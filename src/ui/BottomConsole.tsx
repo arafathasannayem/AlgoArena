@@ -1,329 +1,201 @@
 /**
- * BottomConsole — Docked dual-mode tactical bottom console.
+ * BottomConsole — Bottom Timeline Scrubber & Playback Transport.
  *
- * Auto-switches between:
- * 1. Editing Mode (when idle): Compact tool ribbon (Wall, Cost, Eraser, Start, Goal),
- *    cost stepper, clear grid, map presets, save arena, and Start Race button.
- * 2. Playback Mode (when running / paused mid-race): Play/Pause, Step, Reset,
- *    and speed multiplier chips.
+ * Implements Section 5.5 of the UI/UX Guidelines:
+ * - Fixed at bottom center, Dark Bluish Grey (#595D60) with 3px black border.
+ * - Chunky circular brick buttons: Reset (⏮), Play/Pause (▶/⏸ in Brick Red), Step (⏭ in Brick Blue).
+ * - Step counter (Step X).
+ * - Stud progress track (filled studs = Brick Yellow, unfilled = Light Bluish Grey).
+ * - 5-notch discrete stud speed selector.
  *
  * @module ui/BottomConsole
  */
 
-import { useGridStore, type Tool } from '../state/gridStore';
+import { useMemo } from 'react';
 import { useRaceStore } from '../state/raceStore';
 import { useAgentStore } from '../state/agentStore';
-import { useGameMenuStore } from '../state/gameMenuStore';
-import { playClick, playStartFanfare, playStepTick } from '../utils/sound';
+import { playClick, playSnap, playStartFanfare, playStepTick } from '../utils/sound';
 import {
-  Square,
-  Mountain,
-  Eraser,
-  Flag,
-  Target,
-  Trash2,
-  Map,
-  Save,
   Play,
   Pause,
   RotateCcw,
   StepForward,
-  FastForward,
 } from 'lucide-react';
 
-interface ToolDef {
-  id: Tool;
-  label: string;
-  shortcut: string;
-  icon: React.ReactNode;
-}
-
-const TOOLS: ToolDef[] = [
-  { id: 'wall', label: 'Wall', shortcut: 'W', icon: <Square size={14} /> },
-  { id: 'cost', label: 'Rough', shortcut: 'C', icon: <Mountain size={14} /> },
-  { id: 'eraser', label: 'Eraser', shortcut: 'E', icon: <Eraser size={14} /> },
-  { id: 'start', label: 'Start', shortcut: 'S', icon: <Flag size={14} /> },
-  { id: 'goal', label: 'Goal', shortcut: 'G', icon: <Target size={14} /> },
-];
-
-const SPEED_PRESETS = [
+const SPEED_NOTCHES = [
   { label: '0.5x', delay: 150 },
-  { label: '1x', delay: 50 },
-  { label: '2x', delay: 25 },
-  { label: '5x', delay: 10 },
+  { label: '1x', delay: 80 },
+  { label: '2x', delay: 40 },
+  { label: '5x', delay: 15 },
   { label: 'MAX', delay: 5 },
 ] as const;
 
-const COST_PRESETS = [2, 3, 5, 10, 25];
-
 export function BottomConsole() {
-  const activeTool = useGridStore((s) => s.activeTool);
-  const setActiveTool = useGridStore((s) => s.setActiveTool);
-  const highCostValue = useGridStore((s) => s.highCostValue);
-  const setHighCostValue = useGridStore((s) => s.setHighCostValue);
-  const goalsCount = useGridStore((s) => s.goals.length);
-  const clearGrid = useGridStore((s) => s.clearGrid);
-
-  const openPresetChooser = useGameMenuStore((s) => s.openPresetChooser);
-  const openSavePreset = useGameMenuStore((s) => s.openSavePreset);
-
   const raceStatus = useRaceStore((s) => s.status);
+  const isRunning = raceStatus === 'running';
   const speed = useRaceStore((s) => s.speed);
   const setSpeed = useRaceStore((s) => s.setSpeed);
+  const stepCount = useRaceStore((s) => s.stepCount);
   const startRace = useRaceStore((s) => s.startRace);
   const pauseRace = useRaceStore((s) => s.pauseRace);
   const resetRace = useRaceStore((s) => s.resetRace);
-  const tick = useRaceStore((s) => s.tick);
+  const stepForward = useRaceStore((s) => s.stepForward);
 
-  const agentsCount = useAgentStore((s) => s.agents.length);
-  const canStart = agentsCount > 0;
+  const agents = useAgentStore((s) => s.agents);
+  const canPlay = agents.length > 0;
 
-  const isRunning = raceStatus === 'running';
-  const anyExplored = useAgentStore((s) => s.agents.some((a) => a.visitedNodes.size > 1));
-  const isMidRace = isRunning || (raceStatus === 'idle' && anyExplored);
+  // Active speed notch index (0..4)
+  const currentNotchIndex = useMemo(() => {
+    let closestIdx = 1;
+    let minDiff = Infinity;
+    SPEED_NOTCHES.forEach((notch, idx) => {
+      const diff = Math.abs(speed - notch.delay);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = idx;
+      }
+    });
+    return closestIdx;
+  }, [speed]);
 
   const handlePlayToggle = () => {
     if (isRunning) {
       pauseRace();
       playClick();
     } else {
-      if (!canStart) return;
+      if (!canPlay) return;
       startRace();
       playStartFanfare();
     }
   };
 
+  const handleReset = () => {
+    resetRace();
+    playClick();
+  };
+
+  const handleStep = () => {
+    if (!isRunning) {
+      stepForward();
+      playStepTick();
+    }
+  };
+
+  // 12-stud progress track representation
+  const TOTAL_TRACK_STUDS = 12;
+  const filledStudsCount = useMemo(() => {
+    if (raceStatus === 'finished') return TOTAL_TRACK_STUDS;
+    if (stepCount === 0) return 0;
+    // Visually cycle or fill based on active step count
+    return Math.min(TOTAL_TRACK_STUDS, Math.max(1, Math.floor((stepCount % (TOTAL_TRACK_STUDS * 4)) / 4) + 1));
+  }, [raceStatus, stepCount]);
+
   return (
-    <footer className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto select-none">
-      <div className="bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-2xl px-3 py-2 flex items-center gap-2.5 shadow-2xl text-slate-200">
-        {isMidRace ? (
-          /* ── Playback Controls (Mid-Race or Paused Mid-Race) ── */
-          <>
-            {/* Status Indicator */}
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-mono font-bold tracking-wider">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'
+    <footer className="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-auto select-none">
+      <div className="bg-[#595D60] border-[3px] border-[#05131D] rounded-2xl px-4 py-2 flex items-center gap-3.5 shadow-[0_6px_0_rgba(5,19,29,0.35)] text-[#F4F4F4]">
+        {/* Playback Transport Buttons */}
+        <div className="flex items-center gap-1.5">
+          {/* Reset (⏮) */}
+          <button
+            onClick={handleReset}
+            disabled={!canPlay && stepCount === 0}
+            className="w-9 h-9 rounded-full bg-[#0055BF] hover:bg-[#0047a3] text-[#F4F4F4] brick-btn flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_3px_0_#05131D]"
+            title="Reset Race [R]"
+            aria-label="Reset Race"
+          >
+            <RotateCcw size={15} />
+          </button>
+
+          {/* Play / Pause (▶ / ⏸) — Chunky Brick Red */}
+          <button
+            onClick={handlePlayToggle}
+            disabled={!canPlay}
+            className="w-10 h-10 rounded-full bg-[#C91A09] hover:bg-[#b01607] text-[#F4F4F4] brick-btn flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_0_#05131D]"
+            title={isRunning ? 'Pause [Space]' : 'Start [Space]'}
+            aria-label={isRunning ? 'Pause' : 'Start'}
+          >
+            {isRunning ? (
+              <Pause size={18} />
+            ) : (
+              <Play size={18} className="fill-current translate-x-0.5" />
+            )}
+          </button>
+
+          {/* Step Forward (⏭) — Brick Blue */}
+          <button
+            onClick={handleStep}
+            disabled={isRunning || !canPlay}
+            className="w-9 h-9 rounded-full bg-[#0055BF] hover:bg-[#0047a3] text-[#F4F4F4] brick-btn flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_3px_0_#05131D]"
+            title="Step 1 Tick [→]"
+            aria-label="Step Forward"
+          >
+            <StepForward size={15} />
+          </button>
+        </div>
+
+        {/* Step Counter Badge */}
+        <div className="px-2.5 py-1 rounded-lg bg-[#05131D]/60 border-2 border-[#05131D] font-mono text-xs font-bold text-[#F4F4F4] shrink-0">
+          <span className="text-[#A3A2A4] mr-1">STEP</span>
+          <span>{stepCount}</span>
+        </div>
+
+        {/* Stud Progress Track (Section 5.5) */}
+        <div
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#05131D]/40 border-2 border-[#05131D]"
+          title="Race timeline progress track"
+        >
+          {Array.from({ length: TOTAL_TRACK_STUDS }).map((_, i) => {
+            const isFilled = i < filledStudsCount;
+            return (
+              <div
+                key={i}
+                className={`w-2.5 h-2.5 rounded-full border border-[#05131D] transition-colors duration-100 ${
+                  isFilled
+                    ? 'bg-[#F2CD37] shadow-[0_1px_0_#05131D]'
+                    : 'bg-[#A3A2A4]/50'
                 }`}
               />
-              <span className="text-white/80">{isRunning ? 'RACING' : 'PAUSED'}</span>
-            </div>
+            );
+          })}
+        </div>
 
-            {/* Play / Pause */}
-            <button
-              onClick={handlePlayToggle}
-              className={`p-2 rounded-xl text-white font-bold transition-transform active:scale-95 shadow-md flex items-center gap-1.5 ${
-                isRunning
-                  ? 'bg-slate-800 hover:bg-slate-700 text-white border border-white/20'
-                  : 'bg-emerald-600 hover:bg-emerald-500'
-              }`}
-              title={isRunning ? 'Pause [Space]' : 'Resume [Space]'}
-            >
-              {isRunning ? <Pause size={15} /> : <Play size={15} />}
-              <span className="text-xs">{isRunning ? 'Pause' : 'Resume'}</span>
-            </button>
+        {/* 5-Notch Discrete Stud Speed Selector (Section 5.5) */}
+        <div className="flex items-center gap-2 pl-1 border-l-2 border-[#05131D]/30">
+          <span className="text-[10px] font-mono font-bold tracking-wider text-[#A3A2A4] uppercase hidden md:inline">
+            Speed
+          </span>
 
-            {/* Step 1 Tick */}
-            <button
-              onClick={() => {
-                if (!isRunning) {
-                  tick();
-                  playStepTick();
-                }
-              }}
-              disabled={isRunning}
-              className={`p-2 rounded-xl border transition-colors flex items-center gap-1 ${
-                isRunning
-                  ? 'opacity-30 border-transparent text-slate-500 cursor-not-allowed'
-                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300 hover:text-white'
-              }`}
-              title="Advance 1 Step [→]"
-            >
-              <StepForward size={14} />
-              <span className="text-xs">Step</span>
-            </button>
+          <div className="flex items-center gap-1">
+            {SPEED_NOTCHES.map((notch, idx) => {
+              const isSelected = idx <= currentNotchIndex;
+              const isExact = idx === currentNotchIndex;
 
-            {/* Reset */}
-            <button
-              onClick={() => {
-                resetRace();
-                playClick();
-              }}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-colors flex items-center gap-1"
-              title="Reset Race [R]"
-            >
-              <RotateCcw size={14} />
-              <span className="text-xs">Reset</span>
-            </button>
+              return (
+                <button
+                  key={notch.label}
+                  onClick={() => {
+                    setSpeed(notch.delay);
+                    playSnap();
+                  }}
+                  className={`w-5 h-5 rounded-md border-2 border-[#05131D] flex items-center justify-center transition-all cursor-pointer ${
+                    isExact
+                      ? 'bg-[#F2CD37] text-[#05131D] font-bold shadow-[0_2px_0_#05131D] -translate-y-0.5'
+                      : isSelected
+                        ? 'bg-[#F2CD37]/70 text-[#05131D]'
+                        : 'bg-[#A3A2A4]/40 text-[#A3A2A4] hover:bg-[#A3A2A4]/60'
+                  }`}
+                  title={`Speed: ${notch.label}`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-current" />
+                </button>
+              );
+            })}
+          </div>
 
-            <span className="w-px h-5 bg-white/10 mx-1" />
-
-            {/* Speed Multipliers */}
-            <div className="flex items-center gap-1">
-              <FastForward size={13} className="text-slate-500 mr-1" />
-              {SPEED_PRESETS.map((preset) => {
-                const isActive = Math.abs(speed - preset.delay) <= 2;
-                return (
-                  <button
-                    key={preset.label}
-                    onClick={() => {
-                      setSpeed(preset.delay);
-                      playClick();
-                    }}
-                    className={`px-2 py-1 rounded-lg text-[11px] font-mono font-bold transition-colors ${
-                      isActive
-                        ? 'bg-white/20 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          /* ── Editing & Map Building Controls (Idle / Standby) ── */
-          <>
-            {/* Tool Palette Chips */}
-            <div className="flex items-center gap-1">
-              {TOOLS.map((t) => {
-                const isActive = activeTool === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      setActiveTool(t.id);
-                      playClick();
-                    }}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                      isActive
-                        ? t.id === 'cost'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                          : 'bg-white/20 text-white border border-white/25 shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-white/10 border border-transparent'
-                    }`}
-                    title={`${t.label} Tool [${t.shortcut}]`}
-                  >
-                    {t.icon}
-                    <span>{t.label}</span>
-
-                    {t.id === 'cost' && (
-                      <span className="text-[9px] font-mono font-bold px-1 rounded bg-amber-400/20 text-amber-300">
-                        ×{highCostValue}
-                      </span>
-                    )}
-                    {t.id === 'goal' && goalsCount > 1 && (
-                      <span className="text-[9px] font-mono font-bold px-1 rounded bg-amber-400/20 text-amber-300">
-                        ×{goalsCount}
-                      </span>
-                    )}
-
-                    <kbd className="text-[9px] font-mono opacity-50 ml-0.5">
-                      {t.shortcut}
-                    </kbd>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Inline Cost Multiplier Selector (when Rough Cost tool is selected) */}
-            {activeTool === 'cost' && (
-              <div className="flex items-center gap-1 pl-1.5 border-l border-amber-500/30">
-                {COST_PRESETS.map((val) => (
-                  <button
-                    key={val}
-                    onClick={() => {
-                      setHighCostValue(val);
-                      playClick();
-                    }}
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-colors ${
-                      highCostValue === val
-                        ? 'bg-amber-500 text-slate-950 shadow-sm'
-                        : 'text-amber-400/70 hover:text-amber-300 hover:bg-white/10'
-                    }`}
-                  >
-                    {val}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <span className="w-px h-5 bg-white/10 mx-0.5" />
-
-            {/* Utility Actions */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => {
-                  clearGrid();
-                  playClick();
-                }}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-red-400 hover:bg-white/10 transition-colors"
-                title="Clear all walls and costs"
-              >
-                <Trash2 size={14} />
-              </button>
-
-              <button
-                onClick={() => {
-                  openPresetChooser();
-                  playClick();
-                }}
-                className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                title="Browse Map Presets [P]"
-              >
-                <Map size={13} className="text-blue-400" />
-                <span>Maps</span>
-                <kbd className="text-[9px] font-mono opacity-50">P</kbd>
-              </button>
-
-              <button
-                onClick={() => {
-                  openSavePreset();
-                  playClick();
-                }}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                title="Save Map Layout"
-              >
-                <Save size={14} />
-              </button>
-            </div>
-
-            <span className="w-px h-5 bg-white/10 mx-0.5" />
-
-            {/* Reset Action */}
-            <button
-              onClick={() => {
-                resetRace();
-                playClick();
-              }}
-              className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
-              title="Reset Race [R]"
-            >
-              <RotateCcw size={13} />
-              <span>Reset</span>
-              <kbd className="text-[9px] font-mono opacity-50">R</kbd>
-            </button>
-
-            {/* Primary Action: Start */}
-            <button
-              onClick={handlePlayToggle}
-              disabled={!canStart}
-              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-md ${
-                canStart
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40'
-                  : 'bg-white/5 border border-white/10 text-slate-500 cursor-not-allowed'
-              }`}
-              title={canStart ? 'Start [Space]' : 'Add racers to start line first'}
-            >
-              <Play size={13} />
-              <span>Start</span>
-              <kbd className="text-[9px] font-mono opacity-60 bg-black/20 px-1 rounded">
-                Space
-              </kbd>
-            </button>
-          </>
-        )}
+          <span className="font-mono text-[10px] font-bold text-[#F2CD37] w-8 text-right">
+            {SPEED_NOTCHES[currentNotchIndex]?.label}
+          </span>
+        </div>
       </div>
     </footer>
   );

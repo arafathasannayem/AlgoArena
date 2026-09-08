@@ -1,8 +1,9 @@
 /**
- * PathTrail — Visualization of the current best-known path.
+ * PathTrail — Gold stud shortest-path trail for Brick Racer.
  *
- * Renders glowing neon energy nodes along the path with emissive cores
- * to create an illuminated circuit trail across the diorama.
+ * Implements Section 6.5:
+ * - Solid gold stud trail (warm gold #AA7F2E to bright yellow #F2CD37)
+ * - Raised cylindrical gold studs on path tiles with emissive glow
  *
  * @module scene/PathTrail
  */
@@ -20,28 +21,53 @@ export function PathTrail({ path, color }: PathTrailProps) {
   return (
     <group>
       {path.map((p, i) => (
-        <group key={`p-${i}`} position={[p.x, 0.14, p.y]}>
-          {/* Outer glowing energy disc */}
+        <group key={`pt-${i}`} position={[p.x, 0.09, p.y]}>
+          {/* Gold Stud Mount Plate */}
           <mesh>
-            <cylinderGeometry args={[0.15, 0.15, 0.03, 16]} />
+            <cylinderGeometry args={[0.22, 0.22, 0.04, 16]} />
             <meshStandardMaterial
-              color={color}
-              emissive={color}
-              emissiveIntensity={0.9}
-              transparent
-              opacity={0.75}
+              color="#F2CD37"
+              emissive="#AA7F2E"
+              emissiveIntensity={0.8}
+              roughness={0.2}
+              metalness={0.4}
             />
           </mesh>
 
-          {/* Inner bright energy core */}
-          <mesh position={[0, 0.02, 0]}>
-            <sphereGeometry args={[0.05, 12, 12]} />
+          {/* Glowing Gold Stud Head */}
+          <mesh position={[0, 0.03, 0]}>
+            <cylinderGeometry args={[0.13, 0.13, 0.04, 16]} />
             <meshStandardMaterial
-              color="#ffffff"
-              emissive={color}
-              emissiveIntensity={1.5}
+              color="#F2CD37"
+              emissive="#F2CD37"
+              emissiveIntensity={1.2}
+              roughness={0.15}
+              metalness={0.5}
             />
           </mesh>
+
+          {/* Connecting Team Color Line Segment */}
+          {i > 0 && path[i - 1] && (
+            <mesh
+              position={[
+                (path[i - 1]!.x - p.x) / 2,
+                -0.005,
+                (path[i - 1]!.y - p.y) / 2,
+              ]}
+              rotation={[
+                0,
+                Math.atan2(path[i - 1]!.x - p.x, path[i - 1]!.y - p.y),
+                0,
+              ]}
+            >
+              <boxGeometry args={[0.1, 0.02, 0.85]} />
+              <meshStandardMaterial
+                color={color}
+                emissive={color}
+                emissiveIntensity={0.6}
+              />
+            </mesh>
+          )}
         </group>
       ))}
     </group>

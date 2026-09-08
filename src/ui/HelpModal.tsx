@@ -1,10 +1,12 @@
 /**
- * HelpModal — In-game player manual, algorithm compendium, and keyboard reference.
+ * HelpModal — Brick Racer Field Manual, Algorithm Compendium & Keyboard Reference.
  *
- * Provides players with:
- * - Complete keyboard shortcut legend
- * - Tile mechanics explanation (Regular, Wall, High Cost, Start, Goal)
- * - Algorithm profiles and search characteristics
+ * Implements Section 4.3 & Section 0 of the UI/UX Guidelines:
+ * - Brick White (#F4F4F4) card with 3px black border and hard offset drop shadow.
+ * - Top header with 4 raised LEGO studs and circular close button.
+ * - Complete keyboard shortcut legend.
+ * - Tile mechanics (Stud Baseplate, Stacked Brick Walls, Rough Studs, Start/Goal).
+ * - 7 algorithm racer profiles with their canonical colors.
  *
  * @module ui/HelpModal
  */
@@ -15,13 +17,14 @@ import {
   Keyboard,
   Compass,
   Zap,
-  MapPin,
   Flag,
   Mountain,
   Square,
   BookOpen,
+  Target,
 } from 'lucide-react';
 import { ALGORITHMS } from '../algorithms';
+import { playClick } from '../utils/sound';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -43,169 +46,174 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 bg-black/60 backdrop-blur-md z-[120] flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 bg-[#05131D]/65 backdrop-blur-sm z-[120] flex items-center justify-center p-4 overflow-y-auto select-none animate-in fade-in duration-150"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-slate-900/95 border border-glass-border rounded-panel p-6 max-w-2xl w-full text-glass-text shadow-2xl flex flex-col gap-5 my-8 max-h-[85vh] overflow-y-auto"
+        className="bg-[#F4F4F4] border-[3px] border-[#05131D] rounded-3xl p-6 max-w-2xl w-full text-[#05131D] shadow-[0_10px_0_rgba(5,19,29,0.35)] flex flex-col gap-4 my-8 max-h-[85vh] overflow-y-auto relative"
       >
+        {/* 4 Raised Studs Header Affordance (§4.3) */}
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+        </div>
+
+        {/* Circular Reddish-Brown 1x1 Round Close Button */}
+        <button
+          onClick={() => {
+            onClose();
+            playClick();
+          }}
+          className="absolute right-4 top-4 w-7 h-7 rounded-full bg-[#582A12] hover:bg-[#6e3618] border-2 border-[#05131D] text-[#F4F4F4] flex items-center justify-center shadow-[0_2px_0_#05131D] active:translate-y-0.5 cursor-pointer"
+          title="Close [Esc]"
+        >
+          <X size={14} />
+        </button>
+
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-glass-border pb-3">
-          <div className="flex items-center gap-2">
-            <BookOpen size={18} className="text-slate-300" />
-            <h2 className="text-base font-semibold tracking-wide text-white">
-              Reference Guide & Shortcuts
-            </h2>
+        <div className="flex items-center gap-2.5 border-b-2 border-[#05131D]/15 pb-3">
+          <div className="p-2 rounded-xl bg-[#0055BF] text-[#F4F4F4] border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+            <BookOpen size={20} />
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-            title="Close Guide [Esc]"
-          >
-            <X size={18} />
-          </button>
+          <div>
+            <h2 className="text-lg font-black text-[#05131D] uppercase font-display">
+              Field Manual & Rules
+            </h2>
+            <p className="text-xs text-[#595D60] font-semibold">
+              Brick mechanics, algorithm profiles, and hotkeys
+            </p>
+          </div>
         </div>
 
         {/* Hotkeys Section */}
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-blue-400">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#0055BF] font-display">
             <Keyboard size={15} />
             <span>Hotkeys & Controls</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Play / Pause</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Play / Pause</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 Space
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Reset Race</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Reset Race</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 R
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Step 1 Tick</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Step 1 Tick</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 → or .
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Wall Tool</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Wall Brush</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 W
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Cost Tool</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Cost Tool</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 C
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Eraser Tool</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Eraser</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 E
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Set Start</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Start Stud</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 S
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Toggle Goal</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Goal Stud</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 G
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Isometric View</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">3D Isometric</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 I
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Top-Down 2D</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">2D Top-Down</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 T
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Zoom In/Out</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
-                + / -
-              </kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Main Menu</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
-                M
-              </kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Map Presets</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Map Presets</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
                 P
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">This Guide</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
-                ? or H
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
+              <span className="font-bold text-[#595D60]">Pause Menu</span>
+              <kbd className="px-1.5 py-0.5 rounded-md bg-[#05131D]/10 text-[#05131D] font-mono text-[10px] font-bold border border-[#05131D]/20">
+                Esc
               </kbd>
             </div>
           </div>
         </div>
 
         {/* Tile Mechanics */}
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#AA7F2E] font-display">
             <Compass size={15} />
-            <span>Tile Types & Mechanics</span>
+            <span>Brick Board Elements</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex gap-2.5">
-              <Flag size={18} className="text-blue-400 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-2xl bg-white border-2 border-[#05131D] flex gap-2.5 shadow-[0_2px_0_#05131D]">
+              <Flag size={18} className="text-[#0055BF] shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-white">Start Pad</span>
-                <p className="text-[11px] text-white/60">
-                  Where agents spawn. Click grid with Start tool to relocate.
+                <span className="font-bold text-[#05131D] font-display">Start Pad (Gold Disc)</span>
+                <p className="text-[11px] text-[#595D60] font-medium">
+                  Where racers spawn. Click grid with Start tool to relocate.
                 </p>
               </div>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex gap-2.5">
-              <MapPin size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-2xl bg-white border-2 border-[#05131D] flex gap-2.5 shadow-[0_2px_0_#05131D]">
+              <Target size={18} className="text-[#F2CD37] shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-white">Goal Beacons</span>
-                <p className="text-[11px] text-white/60">
-                  Target destinations. Agents win by reaching ANY beacon. Toggle tiles
-                  with the Goal tool to place multiple goals.
+                <span className="font-bold text-[#05131D] font-display">Goal Flag (Bright Yellow)</span>
+                <p className="text-[11px] text-[#595D60] font-medium">
+                  The finish line with checkered flag. Racers win by reaching ANY goal.
                 </p>
               </div>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex gap-2.5">
-              <Square size={18} className="text-slate-400 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-2xl bg-white border-2 border-[#05131D] flex gap-2.5 shadow-[0_2px_0_#05131D]">
+              <Square size={18} className="text-[#582A12] shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-white">Boulders (Walls)</span>
-                <p className="text-[11px] text-white/60">
-                  Impassable sandstone boulders that block agent movement.
+                <span className="font-bold text-[#05131D] font-display">Stacked Bricks (Walls)</span>
+                <p className="text-[11px] text-[#595D60] font-medium">
+                  Impassable stacked ABS bricks (1–3 layers) that block racer movement.
                 </p>
               </div>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex gap-2.5">
-              <Mountain size={18} className="text-amber-500 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-2xl bg-white border-2 border-[#05131D] flex gap-2.5 shadow-[0_2px_0_#05131D]">
+              <Mountain size={18} className="text-[#FE8A18] shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-white">Rough Terrain</span>
-                <p className="text-[11px] text-white/60">
-                  Traversable desert scrub with higher travel cost (×2 to ×99). Cost-aware algorithms detour around it, while unweighted algorithms traverse directly.
+                <span className="font-bold text-[#05131D] font-display">Rough Studs (Cost Terrain)</span>
+                <p className="text-[11px] text-[#595D60] font-medium">
+                  Higher travel cost tiles (×2 to ×25). Cost-aware algorithms detour around it.
                 </p>
               </div>
             </div>
@@ -213,43 +221,34 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         </div>
 
         {/* Algorithm Profiles */}
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-400">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#237841] font-display">
             <Zap size={15} />
-            <span>Search Algorithm Profiles</span>
+            <span>The 7 Algorithm Racers</span>
           </div>
 
-          <div className="flex flex-col gap-2 text-xs">
+          <div className="flex flex-col gap-1.5 text-xs">
             {Object.entries(ALGORITHMS).map(([key, item]) => (
               <div
                 key={key}
-                className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex items-center justify-between gap-3"
+                className="p-2.5 rounded-xl bg-white border-2 border-[#05131D] flex items-center justify-between gap-3 shadow-[0_2px_0_#05131D]"
               >
                 <div className="flex items-center gap-2">
                   <span
-                    className="w-3 h-3 rounded-full shrink-0 shadow-sm"
+                    className="w-3.5 h-3.5 rounded-full shrink-0 border border-[#05131D] shadow-sm"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="font-semibold text-white">{item.label}</span>
-                  {item.implemented ? (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">
-                      ACTIVE
-                    </span>
-                  ) : (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">
-                      TODO
-                    </span>
-                  )}
+                  <span className="font-bold text-[#05131D] font-display">{item.label}</span>
                 </div>
 
-                <div className="text-[11px] text-white/60 text-right">
-                  {key === 'astar' && 'Shortest cost-optimal path using Manhattan heuristic.'}
-                  {key === 'bfs' && 'Unweighted level-by-level search (fewest step count).'}
-                  {key === 'dijkstra' && 'Uniform-cost search without heuristic.'}
-                  {key === 'dfs' && 'Depth-first search exploring deep branches first.'}
-                  {key === 'greedy' && 'Fast heuristic-greedy search without cost.'}
-                  {key === 'hillclimb' && 'Local gradient ascent; subject to traps.'}
-                  {key === 'annealing' && 'Probabilistic thermal search to escape local traps.'}
+                <div className="text-[11px] text-[#595D60] font-medium text-right">
+                  {key === 'astar' && 'Shortest cost-optimal path using Manhattan distance heuristic.'}
+                  {key === 'bfs' && 'Unweighted level-by-level search (guarantees fewest steps).'}
+                  {key === 'dijkstra' && 'Uniform-cost search exploring lowest-cost path without heuristic.'}
+                  {key === 'dfs' && 'Depth-first search exploring deep corridors first.'}
+                  {key === 'greedy' && 'Fast heuristic-greedy search rushing toward the goal.'}
+                  {key === 'hillClimbing' && 'Local gradient descent, subject to traps.'}
+                  {key === 'simulatedAnnealing' && 'Thermal probabilistic search able to escape traps.'}
                 </div>
               </div>
             ))}
@@ -257,12 +256,15 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end pt-2 border-t border-glass-border">
+        <div className="flex justify-end pt-2 border-t-2 border-[#05131D]/15">
           <button
-            onClick={onClose}
-            className="px-4 py-1.5 bg-white/10 hover:bg-white/15 text-white border border-white/10 rounded-lg text-xs font-medium transition-colors"
+            onClick={() => {
+              onClose();
+              playClick();
+            }}
+            className="brick-btn px-4 py-1.5 bg-[#0055BF] hover:bg-[#0047a3] text-[#F4F4F4] rounded-xl text-xs font-bold shadow-[0_2px_0_#05131D] cursor-pointer"
           >
-            Close
+            Got it!
           </button>
         </div>
       </div>

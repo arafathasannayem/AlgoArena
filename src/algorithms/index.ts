@@ -46,15 +46,15 @@ export interface AlgorithmEntry {
  * Colors come from the init.md §3 spec and must not be changed ad-hoc.
  */
 export const ALGORITHMS: Record<string, AlgorithmEntry> = {
-  astar:     { label: 'A*',                  color: '#3b82f6', factory: aStarSearch,              implemented: true },
-  bfs:       { label: 'BFS',                 color: '#eab308', factory: breadthFirstSearch,       implemented: true },
-  dijkstra:  { label: "Dijkstra's",          color: '#22c55e', factory: dijkstraFactory,          implemented: false },
-  dfs:       { label: 'DFS',                 color: '#a855f7', factory: dfsFactory,               implemented: false },
-  greedy:    { label: 'Greedy Best-First',   color: '#f97316', factory: greedyBestFirstFactory,   implemented: true },
-  hillclimb: { label: 'Hill Climbing',       color: '#ef4444', factory: hillClimbingFactory,      implemented: true },
-  annealing: { label: 'Simulated Annealing', color: '#14b8a6', factory: simulatedAnnealingFactory, implemented: true },
-  'bidir-bfs': { label: 'Bidirectional BFS', color: '#ec4899', factory: bidirectionalBfsFactory, implemented: true },
-  'bidir-astar': { label: 'Bidirectional A*', color: '#d946ef', factory: bidirectionalAStarFactory, implemented: true },
+  astar:     { label: 'A*',                  color: '#C91A09', factory: aStarSearch,              implemented: true },
+  bfs:       { label: 'BFS',                 color: '#F2CD37', factory: breadthFirstSearch,       implemented: true },
+  dijkstra:  { label: "Dijkstra's",          color: '#0055BF', factory: dijkstraFactory,          implemented: false },
+  dfs:       { label: 'DFS',                 color: '#4B9F4A', factory: dfsFactory,               implemented: false },
+  greedy:    { label: 'Greedy Best-First',   color: '#FE8A18', factory: greedyBestFirstFactory,   implemented: true },
+  hillclimb: { label: 'Hill Climbing',       color: '#923978', factory: hillClimbingFactory,      implemented: true },
+  annealing: { label: 'Simulated Annealing', color: '#36AEBF', factory: simulatedAnnealingFactory, implemented: true },
+  'bidir-bfs': { label: 'Bidirectional BFS', color: '#E5A91E', factory: bidirectionalBfsFactory, implemented: true },
+  'bidir-astar': { label: 'Bidirectional A*', color: '#9E1507', factory: bidirectionalAStarFactory, implemented: true },
 } as const;
 
 /**

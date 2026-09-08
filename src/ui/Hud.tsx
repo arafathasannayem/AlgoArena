@@ -13,6 +13,7 @@
 
 import { useState } from 'react';
 import { TopBar } from './TopBar';
+import { ToolDock } from './ToolDock';
 import { RacerDock } from './RacerDock';
 import { BottomConsole } from './BottomConsole';
 import { ResultsDashboard } from './ResultsDashboard';
@@ -53,6 +54,7 @@ export function Hud() {
         {!isTitleScreenOpen && (
           <>
             <TopBar onOpenHelp={() => setIsHelpOpen(true)} />
+            <ToolDock />
             <RacerDock />
             <BottomConsole />
             <ResultsDashboard />

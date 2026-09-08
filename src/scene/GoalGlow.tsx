@@ -1,15 +1,17 @@
 /**
- * GoalGlow — Game-grade emissive beacon and floating crystal at the goal tile.
+ * GoalGlow — Bright Yellow goal brick with checkered-flag accessory.
  *
- * Renders an animated floating octahedron gem, counter-rotating energy rings,
- * and a vertical celestial beacon beam to give the goal unmistakable presence.
+ * Implements Section 6.4:
+ * - Bright Yellow brick base with gold stud
+ * - Checkered goal flag with subtle vertical bob (~4px, 2s loop)
+ * - Concentric yellow ground beacon rings
  *
  * @module scene/GoalGlow
  */
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { Mesh, Group } from 'three';
+import type { Group } from 'three';
 import { useAgentStore } from '../state/agentStore';
 
 interface GoalGlowProps {
@@ -19,14 +21,12 @@ interface GoalGlowProps {
 }
 
 export function GoalGlow({ x, y, onClick }: GoalGlowProps) {
-  const groupRef = useRef<Group>(null);
-  const crystalRef = useRef<Mesh>(null);
-  const ringRef = useRef<Mesh>(null);
-  const innerRingRef = useRef<Mesh>(null);
+  const flagGroupRef = useRef<Group>(null);
+  const ringRef = useRef<Group>(null);
 
   const agents = useAgentStore((s) => s.agents);
 
-  // Has any agent, visited search node, or scout scanner reached the goal?
+  // Check if any agent has reached this goal
   const isGoalReached = agents.some(
     (a) =>
       (a.position.x === x && a.position.y === y) ||
@@ -36,89 +36,83 @@ export function GoalGlow({ x, y, onClick }: GoalGlowProps) {
   );
 
   useFrame(({ clock }) => {
-    if (isGoalReached) return;
     const t = clock.getElapsedTime();
 
-    // Floating gem bobbing and spinning
-    if (crystalRef.current) {
-      crystalRef.current.position.y = 0.55 + Math.sin(t * 2) * 0.08;
-      crystalRef.current.rotation.y = t * 1.5;
-      crystalRef.current.rotation.z = Math.sin(t * 1.2) * 0.15;
+    // Subtle ~4px vertical bob animation (2s loop)
+    if (flagGroupRef.current) {
+      flagGroupRef.current.position.y = 0.12 + Math.sin(t * Math.PI) * 0.035;
     }
 
-    // Ground energy rings rotating in opposite directions
     if (ringRef.current) {
-      ringRef.current.rotation.z = t * 0.8;
-      const pulse = 0.9 + 0.1 * Math.sin(t * 3);
+      const pulse = 0.95 + 0.08 * Math.sin(t * 3);
       ringRef.current.scale.set(pulse, pulse, 1);
-    }
-    if (innerRingRef.current) {
-      innerRingRef.current.rotation.z = -t * 1.2;
     }
   });
 
   return (
     <group
-      ref={groupRef}
       position={[x, 0, y]}
       onClick={(e) => {
         e.stopPropagation();
         onClick?.();
       }}
     >
-      {/* Outer pulsing ground beacon ring */}
-      <mesh ref={ringRef} position={[0, 0.11, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.32, 0.44, 32]} />
-        <meshStandardMaterial
-          color="#f59e0b"
-          emissive="#f59e0b"
-          emissiveIntensity={isGoalReached ? 0.3 : 1.2}
-          transparent
-          opacity={isGoalReached ? 0.25 : 0.8}
-        />
-      </mesh>
+      {/* Yellow Radiant Ground Beacon Ring */}
+      <group ref={ringRef} position={[0, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh>
+          <ringGeometry args={[0.3, 0.44, 24]} />
+          <meshStandardMaterial
+            color="#F2CD37"
+            emissive="#F2CD37"
+            emissiveIntensity={isGoalReached ? 0.4 : 1.2}
+            transparent
+            opacity={isGoalReached ? 0.35 : 0.85}
+          />
+        </mesh>
+      </group>
 
-      {/* Inner counter-rotating ring */}
-      <mesh ref={innerRingRef} position={[0, 0.115, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.18, 0.24, 24]} />
-        <meshStandardMaterial
-          color="#fbbf24"
-          emissive="#fbbf24"
-          emissiveIntensity={isGoalReached ? 0.4 : 1.5}
-          transparent
-          opacity={isGoalReached ? 0.3 : 0.9}
-        />
-      </mesh>
+      {/* Flag Group with 2s Vertical Bob */}
+      <group ref={flagGroupRef}>
+        {/* Yellow Goal Brick Mount */}
+        <mesh position={[0, 0.05, 0]}>
+          <boxGeometry args={[0.3, 0.1, 0.3]} />
+          <meshStandardMaterial color="#F2CD37" roughness={0.3} metalness={0.08} />
+        </mesh>
 
-      {/* Floating rotating diamond crystal & celestial beam — vanishes once node reaches it */}
-      {!isGoalReached && (
-        <>
-          <mesh ref={crystalRef} position={[0, 0.55, 0]}>
-            <octahedronGeometry args={[0.2, 0]} />
-            <meshStandardMaterial
-              color="#fef08a"
-              emissive="#f59e0b"
-              emissiveIntensity={1.0}
-              roughness={0.15}
-              metalness={0.8}
-              transparent
-              opacity={0.95}
-            />
-          </mesh>
+        {/* Flag Pole */}
+        <mesh position={[0, 0.35, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.5, 12]} />
+          <meshStandardMaterial color="#05131D" roughness={0.4} metalness={0.1} />
+        </mesh>
 
-          {/* Vertical light column beacon */}
-          <mesh position={[0, 0.5, 0]}>
-            <cylinderGeometry args={[0.04, 0.12, 0.9, 16]} />
-            <meshStandardMaterial
-              color="#f59e0b"
-              emissive="#f59e0b"
-              emissiveIntensity={0.6}
-              transparent
-              opacity={0.25}
-            />
-          </mesh>
-        </>
-      )}
+        {/* Pole Finial Gold Stud */}
+        <mesh position={[0, 0.61, 0]}>
+          <sphereGeometry args={[0.035, 12, 12]} />
+          <meshStandardMaterial color="#F2CD37" emissive="#F2CD37" emissiveIntensity={0.6} />
+        </mesh>
+
+        {/* Checkered Goal Flag */}
+        <mesh position={[0.13, 0.5, 0]}>
+          <boxGeometry args={[0.24, 0.16, 0.02]} />
+          <meshStandardMaterial
+            color="#F4F4F4"
+            roughness={0.35}
+            metalness={0.05}
+          />
+        </mesh>
+
+        {/* Black Checker Square 1 */}
+        <mesh position={[0.07, 0.54, 0.012]}>
+          <boxGeometry args={[0.11, 0.07, 0.005]} />
+          <meshStandardMaterial color="#05131D" roughness={0.4} />
+        </mesh>
+
+        {/* Black Checker Square 2 */}
+        <mesh position={[0.19, 0.46, 0.012]}>
+          <boxGeometry args={[0.11, 0.07, 0.005]} />
+          <meshStandardMaterial color="#05131D" roughness={0.4} />
+        </mesh>
+      </group>
     </group>
   );
 }

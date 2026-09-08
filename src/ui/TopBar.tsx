@@ -1,24 +1,27 @@
 /**
- * TopBar — Unified compact top command bar.
+ * TopBar — Brick Racer Command Header.
  *
- * Consolidates:
- * - Current map badge & inline grid size quick-selector (10×10, 20×20, 30×30)
- * - Tactile PAUSE [ESC] command button with live status pulse
- * - Camera controls (3D Isometric vs 2D Top-Down, zoom in/out)
- * - Audio mute toggle and field manual shortcut
+ * Implements Section 5.2 of the UI/UX Guidelines:
+ * - Fixed height ~56px, Dark Bluish Grey (#595D60) background, 3px black bottom border.
+ * - Left side: 7 fixed racer chips in canonical order (A*, Dij, BFS, DFS, Gdy, Hill, SA),
+ *   dimming to 40% when done.
+ * - Right side: Race timer (mono numerals), bouncy Brick Yellow Stud Counter badge,
+ *   camera controls, sound toggle, and tactile Pause [ESC] button.
  *
  * @module ui/TopBar
  */
 
+import { useState, useEffect, useMemo } from 'react';
 import { useGridStore } from '../state/gridStore';
 import { useRaceStore } from '../state/raceStore';
+import { useAgentStore } from '../state/agentStore';
 import { useCameraStore } from '../state/cameraStore';
 import { useSoundStore } from '../state/soundStore';
 import { useGameMenuStore } from '../state/gameMenuStore';
-import { playClick } from '../utils/sound';
+import { ALGORITHMS } from '../algorithms';
+import { playClick, playSnap } from '../utils/sound';
 import {
   Pause,
-  Play,
   Compass,
   Grid,
   ZoomIn,
@@ -26,23 +29,34 @@ import {
   Volume2,
   VolumeX,
   HelpCircle,
+  Timer,
 } from 'lucide-react';
 
-const SIZES = [10, 20, 30] as const;
+const RACER_CHIPS = [
+  { key: 'astar', short: 'A*', label: 'A* Search', color: '#C91A09' },
+  { key: 'dijkstra', short: 'Dij', label: "Dijkstra's", color: '#0055BF' },
+  { key: 'bfs', short: 'BFS', label: 'Breadth-First', color: '#F2CD37' },
+  { key: 'dfs', short: 'DFS', label: 'Depth-First', color: '#4B9F4A' },
+  { key: 'greedy', short: 'Gdy', label: 'Greedy Best-First', color: '#FE8A18' },
+  { key: 'hillClimbing', short: 'Hill', label: 'Hill Climbing', color: '#923978' },
+  { key: 'simulatedAnnealing', short: 'SA', label: 'Simulated Annealing', color: '#36AEBF' },
+] as const;
 
 interface TopBarProps {
   onOpenHelp?: () => void;
 }
 
 export function TopBar({ onOpenHelp }: TopBarProps = {}) {
-  const currentMapTitle = useGameMenuStore((s) => s.currentMapTitle);
   const openPauseMenu = useGameMenuStore((s) => s.openPauseMenu);
 
   const raceStatus = useRaceStore((s) => s.status);
   const isRunning = raceStatus === 'running';
+  const stepCount = useRaceStore((s) => s.stepCount);
 
-  const width = useGridStore((s) => s.width);
-  const setSize = useGridStore((s) => s.setSize);
+  const agents = useAgentStore((s) => s.agents);
+  const toggleOverlay = useAgentStore((s) => s.toggleOverlay);
+  const addAgent = useAgentStore((s) => s.addAgent);
+  const start = useGridStore((s) => s.start);
 
   const isTopDown = useCameraStore((s) => s.isTopDown);
   const triggerResetCamera = useCameraStore((s) => s.triggerReset);
@@ -53,163 +67,212 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
   const soundEnabled = useSoundStore((s) => s.enabled);
   const toggleSound = useSoundStore((s) => s.toggleSound);
 
+  // Timer tracking
+  const [elapsedSec, setElapsedSec] = useState(0);
+
+  useEffect(() => {
+    if (!isRunning) return;
+    const t0 = Date.now();
+    const interval = window.setInterval(() => {
+      setElapsedSec(Math.floor((Date.now() - t0) / 1000));
+    }, 500);
+    return () => window.clearInterval(interval);
+  }, [isRunning]);
+
+  const activeElapsed = raceStatus === 'idle' && stepCount === 0 ? 0 : elapsedSec;
+
+  const formattedTime = useMemo(() => {
+    const mins = Math.floor(activeElapsed / 60);
+    const secs = activeElapsed % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }, [activeElapsed]);
+
+  // Total studs explored across all racers
+  const totalStuds = useMemo(() => {
+    return agents.reduce((acc, a) => acc + a.visitedNodes.size, 0);
+  }, [agents]);
+
+  // Fast lookup of placed agents by algorithmKey
+  const agentByAlgKey = useMemo(() => {
+    const map = new Map<string, typeof agents[0]>();
+    for (const a of agents) {
+      map.set(a.algorithmKey, a);
+    }
+    return map;
+  }, [agents]);
+
   return (
-    <header className="fixed top-3 inset-x-3 z-20 pointer-events-none flex items-center justify-between gap-2 select-none">
-      {/* Left: Map Title & Grid Size Pills */}
-      <div className="pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl px-3 py-1.5 flex items-center gap-3 shadow-xl">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <span className="text-xs font-bold text-white tracking-wide uppercase font-sans truncate max-w-[140px] sm:max-w-[200px]">
-            {currentMapTitle}
-          </span>
+    <header className="fixed top-0 inset-x-0 h-14 bg-[#595D60] border-b-[3px] border-[#05131D] z-30 flex items-center justify-between px-3 text-[#F4F4F4] shadow-md select-none">
+      {/* Left side: 7 fixed racer chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
+        {RACER_CHIPS.map((chip) => {
+          const agent = agentByAlgKey.get(chip.key);
+          const isPlaced = !!agent;
+          const isDone = agent?.status === 'done';
+          const isSelected = agent?.showOverlay ?? false;
+
+          return (
+            <button
+              key={chip.key}
+              onClick={() => {
+                if (agent) {
+                  toggleOverlay(agent.id);
+                  playClick();
+                } else {
+                  const entry = ALGORITHMS[chip.key];
+                  if (entry) {
+                    addAgent(chip.key, entry.color, start);
+                    playSnap();
+                  }
+                }
+              }}
+              title={
+                isPlaced
+                  ? `${chip.label} (${agent.status}) — Click to toggle overlay`
+                  : `${chip.label} — Click to add racer to board`
+              }
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-full border-2 transition-all font-sans font-bold text-xs ${
+                isPlaced
+                  ? isDone
+                    ? 'opacity-40 border-[#05131D] bg-[#05131D]/40 text-[#F4F4F4]'
+                    : isSelected
+                      ? 'border-[#F2CD37] bg-[#05131D]/80 text-[#F4F4F4] ring-2 ring-[#F2CD37]/50'
+                      : 'border-[#05131D] bg-[#05131D]/60 text-[#F4F4F4] hover:bg-[#05131D]/80'
+                  : 'opacity-35 border-dashed border-[#A3A2A4] bg-transparent text-[#A3A2A4] hover:opacity-75'
+              }`}
+            >
+              {/* Torso colored stud pip */}
+              <span
+                className="w-3.5 h-3.5 rounded-full border-2 border-[#05131D] shadow-sm shrink-0"
+                style={{ backgroundColor: chip.color }}
+              />
+              <span className="text-[11px] font-bold tracking-tight">
+                {chip.short}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Right side: Timer, Stud Counter, Controls & Pause */}
+      <div className="flex items-center gap-2 pl-2">
+        {/* Race Timer */}
+        <div
+          className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#05131D]/50 border-2 border-[#05131D] font-mono text-xs font-bold text-[#F4F4F4]"
+          title="Elapsed Race Time"
+        >
+          <Timer size={13} className="text-[#F2CD37]" />
+          <span>{formattedTime}</span>
         </div>
 
-        {/* Grid Size Selector (hidden during active race) */}
-        {!isRunning && (
-          <div className="flex items-center gap-1 pl-2 border-l border-white/10">
-            {SIZES.map((s) => (
-              <button
-                key={s}
-                onClick={() => {
-                  setSize(s, s);
-                  playClick();
-                }}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-colors ${
-                  width === s
-                    ? 'bg-white/20 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-white/10'
-                }`}
-                title={`Change grid size to ${s}×${s}`}
-              >
-                {s}×{s}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Center: Tactile Pause / Menu Pill */}
-      <div className="pointer-events-auto">
-        <button
-          onClick={openPauseMenu}
-          className={`group backdrop-blur-md border rounded-xl px-3.5 py-1.5 flex items-center gap-2 shadow-xl transition-all active:scale-95 ${
-            isRunning
-              ? 'bg-slate-900/90 border-emerald-500/30 text-white hover:bg-slate-800 hover:border-emerald-500/50'
-              : 'bg-slate-900/80 border-white/10 text-slate-200 hover:text-white hover:bg-white/10'
-          }`}
-          title="Pause Game [ESC]"
+        {/* Brick Yellow Stud Counter Badge with bounce animation */}
+        <div
+          key={totalStuds}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#F2CD37] border-2 border-[#05131D] text-[#05131D] font-bold text-xs shadow-[0_2px_0_#05131D] animate-in zoom-in-95 duration-100"
+          title="Total board studs explored across all racers"
         >
-          {/* Pulsing Status Pip */}
-          <span
-            className={`w-2 h-2 rounded-full ${
-              isRunning
-                ? 'bg-emerald-400 animate-pulse'
-                : 'bg-slate-400'
-            }`}
-          />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#AA7F2E] border border-[#05131D] shrink-0" />
+          <span className="font-mono">{totalStuds}</span>
+          <span className="text-[10px] uppercase font-display tracking-wider hidden md:inline">studs</span>
+        </div>
 
-          <div className="flex items-center gap-1.5 font-bold text-xs tracking-wider uppercase font-mono">
-            {isRunning ? <Pause size={12} className="text-emerald-400" /> : <Play size={12} className="opacity-80" />}
-            <span>Pause</span>
-          </div>
+        <div className="h-6 w-[2px] bg-[#05131D]/30 mx-0.5 hidden sm:block" />
 
-          <kbd className="text-[9px] font-mono font-bold px-1 py-0.2 rounded bg-white/10 text-white/70 ml-0.5 group-hover:bg-white/20">
-            ESC
-          </kbd>
-        </button>
-      </div>
-
-      {/* Right: Camera Presets, Zoom, Sound, and Manual */}
-      <div className="pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl px-2 py-1 flex items-center gap-1 shadow-xl">
-        {/* Camera Perspective: 3D Iso / 2D Top */}
-        <div className="flex items-center bg-white/5 rounded-lg p-0.5 mr-1">
+        {/* Camera controls */}
+        <div className="hidden sm:flex items-center gap-1 bg-[#05131D]/30 rounded-lg p-0.5 border border-[#05131D]/50">
           <button
             onClick={() => {
               triggerResetCamera();
               playClick();
             }}
-            className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors flex items-center gap-1 ${
+            className={`p-1.5 rounded transition-colors ${
               !isTopDown
-                ? 'bg-white/20 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#F4F4F4] text-[#05131D] font-bold shadow-sm'
+                : 'text-[#A3A2A4] hover:text-[#F4F4F4]'
             }`}
-            title="Reset to Isometric 3D View [I]"
+            title="Reset Isometric 3D View [I]"
           >
-            <Compass size={12} />
-            <span className="hidden sm:inline">3D</span>
+            <Compass size={13} />
           </button>
           <button
             onClick={() => {
               triggerTopDown('top');
               playClick();
             }}
-            className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors flex items-center gap-1 ${
+            className={`p-1.5 rounded transition-colors ${
               isTopDown
-                ? 'bg-white/20 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#F4F4F4] text-[#05131D] font-bold shadow-sm'
+                : 'text-[#A3A2A4] hover:text-[#F4F4F4]'
             }`}
-            title="Switch to Top-Down 2D View [T]"
+            title="Top-Down 2D View [T]"
           >
-            <Grid size={12} />
-            <span className="hidden sm:inline">2D</span>
+            <Grid size={13} />
+          </button>
+          <button
+            onClick={() => {
+              triggerZoomOut();
+              playClick();
+            }}
+            className="p-1.5 rounded text-[#A3A2A4] hover:text-[#F4F4F4] transition-colors"
+            title="Zoom Out [-]"
+          >
+            <ZoomOut size={13} />
+          </button>
+          <button
+            onClick={() => {
+              triggerZoomIn();
+              playClick();
+            }}
+            className="p-1.5 rounded text-[#A3A2A4] hover:text-[#F4F4F4] transition-colors"
+            title="Zoom In [+]"
+          >
+            <ZoomIn size={13} />
           </button>
         </div>
 
-        {/* Zoom Out */}
-        <button
-          onClick={() => {
-            triggerZoomOut();
-            playClick();
-          }}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-          title="Zoom Out [-]"
-        >
-          <ZoomOut size={13} />
-        </button>
-
-        {/* Zoom In */}
-        <button
-          onClick={() => {
-            triggerZoomIn();
-            playClick();
-          }}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-          title="Zoom In [+]"
-        >
-          <ZoomIn size={13} />
-        </button>
-
-        <span className="w-px h-3.5 bg-white/10 mx-0.5" />
-
-        {/* Audio Mute Toggle */}
+        {/* Audio Toggle */}
         <button
           onClick={() => {
             toggleSound();
             playClick();
           }}
-          className={`p-1.5 rounded-lg transition-colors ${
-            soundEnabled
-              ? 'text-amber-400 hover:text-amber-300 hover:bg-white/10'
-              : 'text-slate-500 hover:text-slate-300 hover:bg-white/10'
+          className={`p-1.5 rounded-lg border-2 border-[#05131D] bg-[#05131D]/50 transition-colors ${
+            soundEnabled ? 'text-[#F2CD37] hover:text-white' : 'text-[#A3A2A4]'
           }`}
-          title={soundEnabled ? 'Audio Mute (Click to Silence)' : 'Audio Unmute (Click to Enable)'}
+          title={soundEnabled ? 'Mute Sound (Click to Silence)' : 'Unmute Sound'}
         >
           {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
         </button>
 
-        {/* Help Manual */}
+        {/* Field Manual Help */}
         {onOpenHelp && (
           <button
             onClick={() => {
               onOpenHelp();
               playClick();
             }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg border-2 border-[#05131D] bg-[#05131D]/50 text-[#A3A2A4] hover:text-[#F4F4F4] transition-colors"
             title="Field Manual & Controls [?]"
           >
             <HelpCircle size={13} />
           </button>
         )}
+
+        {/* Tactile Pause Button [ESC] */}
+        <button
+          onClick={() => {
+            openPauseMenu();
+            playClick();
+          }}
+          className="brick-btn bg-[#F4F4F4] text-[#05131D] px-2.5 py-1 rounded-lg flex items-center gap-1.5 ml-1 text-xs cursor-pointer font-bold"
+          title="Pause Menu [ESC]"
+        >
+          <Pause size={12} className="text-[#C91A09]" />
+          <span>PAUSE</span>
+          <kbd className="text-[9px] font-mono font-bold px-1 py-0.2 rounded bg-[#05131D]/10 text-[#05131D]/80">
+            ESC
+          </kbd>
+        </button>
       </div>
     </header>
   );
