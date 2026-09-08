@@ -7,7 +7,7 @@ A browser-based, isometric-diorama pathfinding visualizer. Users paint a maze on
 ```bash
 npm install
 npm run dev       # Start dev server
-npm test          # Run unit tests (251 tests passing)
+npm test          # Run unit tests (258 tests passing)
 npm run typecheck # TypeScript strict check
 npm run lint      # ESLint
 npm run build     # Production build
@@ -25,11 +25,16 @@ npm run build     # Production build
   - *Twin Chambers*: Dual fortress courtyards with open north bridge vs high-cost south passage.
   - *Islands & Stepping Stones*: Open desert dotted with boulder formations and scattered scrub patches.
 - **Custom Map Saving (LocalStorage)**: Design custom walls and rough terrain layouts, name and save them directly in browser storage, preview them with vector mini-maps, and reload them anytime.
-- **Game Start Menu Launcher**: Cinematic game title screen before entering the arena, with 1-click Quick Match (A* vs BFS), Map Preset Browser, Arena Sandbox mode, and player reference manual.
+- **Indie Game UI & Tactical Pause System**:
+  - *Title Screen Launcher*: Atmospheric game launcher featuring 1-click Quick Match (A* vs BFS), Map Preset Archives, Arena Sandbox Mode, and Field Manual.
+  - *Tactical Pause Menu*: Triggered via `Esc`, `M`, or TopBar pause button. Freezes active rAF race execution, displays map & racer telemetry, and provides quick restart, volume slider, map archives, and return to title screen.
+  - *TopBar Command Deck*: Streamlined header bar with live race status badge, current map title chip, volume popover, camera angle/zoom toggles, and hotkey legend.
+  - *RacerDock Sidebar*: Unified, collapsible left drawer merging agent roster configuration, visual overlay toggles (frontier, visited, path, rays), and live distance/cost standings.
+  - *BottomConsole*: Docked bottom toolbar that seamlessly transitions between world-editing tools (boulder, scrub, eraser, start, goal, grid size) when idle, and playback controls (speed slider, step, pause, abort) when racing.
 - **Preset Chooser Screen**: Fullscreen map browser with real-time SVG vector mini-map thumbnails, obstacle statistics, and search/filter tabs (All, Curated, My Saved).
-- **Audio Synthesizer**: Procedural Web Audio API sound effects for placement, step ticks, start fanfares, and goal chimes with global mute toggle.
-- **Keyboard Navigation**: Global hotkeys for playback (`Space`), reset (`R`), step (`→`), tools (`W`, `C`, `E`, `S`, `G`), camera view presets (`I`, `T`), zoom (`+`, `-`), main menu (`M`), preset browser (`P`), and manual (`?`).
-- **Restrained UI / Zero AI Slop**: Clean, distraction-free glassmorphic HUD without artificial gradients or emojis; editing toolbox and grid chooser automatically hide during active races to maintain an unobstructed view.
+- **Audio Synthesizer & Master Volume**: Procedural Web Audio API sound synthesizer for placement, step ticks, fanfares, and goal chimes with volume slider and global mute toggle.
+- **Keyboard Navigation**: Global hotkeys for pause menu (`Esc`), playback (`Space`), reset (`R`), step (`→`), tools (`W`, `C`, `E`, `S`, `G`), camera view presets (`I`, `T`), zoom (`+`, `-`), main menu (`M`), preset browser (`P`), and manual (`?`).
+- **Restrained UI / Zero AI Slop**: Clean, distraction-free tabletop palette without artificial gradients or emojis; zero clutter with docked, collapsible zones.
 
 ## Project Status
 
@@ -42,8 +47,8 @@ npm run build     # Production build
 | 4 | Agents (camel pawns, saddle team colors, per-agent overlays, heuristic rays) | Completed |
 | 5 | Race orchestration (rAF scheduler, live speed slider, search vs run phases) | Completed |
 | 6 | Analytics (live standings leaderboard, post-race comparative dashboard) | Completed |
-| 7 | Visual polish & Audio (Web Audio synth, Start Menu, Preset Chooser, hotkeys) | Completed |
-| 8 | QA and ship (251 unit tests green, clean typecheck, clean lint, production build) | Completed |
+| 7 | Visual polish & Audio (Web Audio synth, Title Screen, Pause Menu, compact HUD) | Completed |
+| 8 | QA and ship (258 unit tests green, clean typecheck, clean lint, production build) | Completed |
 
 ### Algorithm Implementation Status
 
@@ -71,7 +76,7 @@ Every implemented algorithm treats reaching **any** goal node as success. Users 
 - **Zustand** for state management (`gridStore`, `agentStore`, `raceStore`, `presetStore`, `gameMenuStore`, `soundStore`, `cameraStore`)
 - **@react-spring/three** for smooth pawn movement animations
 - **lucide-react** for clean UI icons
-- **Vitest** for unit test suites (251 tests passing)
+- **Vitest** for unit test suites (258 tests passing)
 
 ## Architecture
 

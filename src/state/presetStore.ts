@@ -13,6 +13,7 @@ import { PRESETS } from '../maps/presets';
 import { useGridStore } from './gridStore';
 import { useAgentStore } from './agentStore';
 import { useRaceStore } from './raceStore';
+import { useGameMenuStore } from './gameMenuStore';
 import { playClick, playPlace } from '../utils/sound';
 
 const STORAGE_KEY = 'algoarena_custom_presets';
@@ -143,6 +144,9 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       preset.costs,
       preset.goals,
     );
+
+    // Update active map title in menu store
+    useGameMenuStore.getState().setCurrentMapTitle(preset.name);
 
     // Relocate all placed agents to new start tile
     useAgentStore.getState().resetAll(preset.start);
