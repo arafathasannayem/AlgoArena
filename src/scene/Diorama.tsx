@@ -44,6 +44,7 @@ function DioramaScene() {
 
   const agents = useAgentStore((s) => s.agents);
   const toggleOverlay = useAgentStore((s) => s.toggleOverlay);
+  const showExploredNodes = useAgentStore((s) => s.showExploredNodes);
   const isTopDown = useCameraStore((s) => s.isTopDown);
 
   const currentTheme = useThemeStore((s) => s.currentTheme);
@@ -214,10 +215,15 @@ function DioramaScene() {
               <boxGeometry args={[width + 0.3, 0.1, height + 0.3]} />
               <meshStandardMaterial color={currentTheme.pedestalColor} roughness={0.35} metalness={0.05} />
             </mesh>
-            {/* Heavy table/display foundation block */}
+            {/* Light display plinth foundation block */}
             <mesh position={[0, -0.28, 0]} receiveShadow>
               <boxGeometry args={[width + 0.7, 0.38, height + 0.7]} />
-              <meshStandardMaterial color="#05131D" roughness={0.5} metalness={0.1} />
+              <meshStandardMaterial color="#E0E3E7" roughness={0.4} metalness={0.05} />
+            </mesh>
+            {/* Base outline edge */}
+            <mesh position={[0, -0.48, 0]} receiveShadow>
+              <boxGeometry args={[width + 0.76, 0.04, height + 0.76]} />
+              <meshStandardMaterial color="#05131D" roughness={0.6} metalness={0.1} />
             </mesh>
             {/* Tactile colored strata band */}
             <mesh position={[0, -0.08, 0]}>
@@ -296,11 +302,13 @@ function DioramaScene() {
                     />
                   )}
 
-                  <NodeOverlay
-                    visitedNodes={agent.visitedNodes}
-                    frontierNodes={agent.frontierNodes}
-                    color={agent.color}
-                  />
+                  {showExploredNodes && (
+                    <NodeOverlay
+                      visitedNodes={agent.visitedNodes}
+                      frontierNodes={agent.frontierNodes}
+                      color={agent.color}
+                    />
+                  )}
                   <PathTrail path={agent.currentPath} color={agent.color} />
 
                   {/* Forward heuristic ray */}

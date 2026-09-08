@@ -37,6 +37,7 @@ import {
   Grid,
   Eye,
   EyeOff,
+  Layers,
   ChevronDown,
   X,
 } from 'lucide-react';
@@ -64,6 +65,8 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
   const toggleCostLabels = useGridStore((s) => s.toggleCostLabels);
 
   const agentsCount = useAgentStore((s) => s.agents.length);
+  const showExploredNodes = useAgentStore((s) => s.showExploredNodes);
+  const toggleExploredNodes = useAgentStore((s) => s.toggleExploredNodes);
 
   const isTopDown = useCameraStore((s) => s.isTopDown);
   const triggerResetCamera = useCameraStore((s) => s.triggerReset);
@@ -323,21 +326,21 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
                       />
                     </div>
 
-                    {/* SFX and Tile Numbers Row */}
-                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#05131D]/10">
+                    {/* Visual & Audio Toggles Row */}
+                    <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-[#05131D]/10">
                       <button
                         onClick={() => {
                           toggleSound();
                           playSnap();
                         }}
-                        className={`p-2 rounded-xl flex items-center justify-between text-xs font-bold border-2 border-[#05131D] cursor-pointer ${
+                        className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 text-[11px] font-bold border-2 border-[#05131D] cursor-pointer ${
                           soundEnabled
                             ? 'bg-[#F2CD37] text-[#05131D]'
                             : 'bg-[#A3A2A4] text-[#05131D]'
                         }`}
                       >
+                        {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
                         <span>Audio FX</span>
-                        {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
                       </button>
 
                       <button
@@ -345,14 +348,29 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
                           toggleCostLabels();
                           playSnap();
                         }}
-                        className={`p-2 rounded-xl flex items-center justify-between text-xs font-bold border-2 border-[#05131D] cursor-pointer ${
+                        className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 text-[11px] font-bold border-2 border-[#05131D] cursor-pointer ${
                           showCostLabels
                             ? 'bg-[#F2CD37] text-[#05131D]'
                             : 'bg-[#A3A2A4] text-[#05131D]'
                         }`}
                       >
+                        {showCostLabels ? <Eye size={14} /> : <EyeOff size={14} />}
                         <span>Cost Badges</span>
-                        {showCostLabels ? <Eye size={13} /> : <EyeOff size={13} />}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          toggleExploredNodes();
+                          playSnap();
+                        }}
+                        className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 text-[11px] font-bold border-2 border-[#05131D] cursor-pointer ${
+                          showExploredNodes
+                            ? 'bg-[#F2CD37] text-[#05131D]'
+                            : 'bg-[#A3A2A4] text-[#05131D]'
+                        }`}
+                      >
+                        {showExploredNodes ? <Layers size={14} /> : <EyeOff size={14} />}
+                        <span>Explored</span>
                       </button>
                     </div>
 

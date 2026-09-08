@@ -26,6 +26,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
+  Layers,
   Swords,
   Mountain,
   Play,
@@ -57,6 +58,8 @@ export function RacerDock() {
   const removeAgent = useAgentStore((s) => s.removeAgent);
   const toggleOverlay = useAgentStore((s) => s.toggleOverlay);
   const toggleAllOverlays = useAgentStore((s) => s.toggleAllOverlays);
+  const showExploredNodes = useAgentStore((s) => s.showExploredNodes);
+  const toggleExploredNodes = useAgentStore((s) => s.toggleExploredNodes);
 
   const start = useGridStore((s) => s.start);
   const goals = useGridStore((s) => s.goals);
@@ -280,14 +283,14 @@ export function RacerDock() {
             Visuals
           </span>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {/* Toggle All Overlays */}
             <button
               onClick={() => {
                 toggleAllOverlays();
                 playClick();
               }}
-              className={`px-2 py-0.5 rounded-lg flex items-center gap-1 font-bold border transition-colors cursor-pointer ${
+              className={`px-1.5 py-0.5 rounded-lg flex items-center gap-1 font-bold border transition-colors cursor-pointer ${
                 allOverlaysVisible
                   ? 'bg-[#0055BF]/15 text-[#0055BF] border-[#0055BF]/30'
                   : someOverlaysVisible
@@ -304,13 +307,34 @@ export function RacerDock() {
               <span>Overlays</span>
             </button>
 
+            {/* Toggle Explored Nodes without hiding path trail */}
+            <button
+              onClick={() => {
+                toggleExploredNodes();
+                playClick();
+              }}
+              className={`px-1.5 py-0.5 rounded-lg flex items-center gap-1 font-bold border transition-colors cursor-pointer ${
+                showExploredNodes
+                  ? 'bg-[#237841]/15 text-[#237841] border-[#237841]/30'
+                  : 'bg-[#F4F4F4] text-[#595D60] hover:text-[#05131D] border-[#A3A2A4]'
+              }`}
+              title={
+                showExploredNodes
+                  ? 'Hide explored nodes (keep path trail & waypoints)'
+                  : 'Show explored nodes'
+              }
+            >
+              <Layers size={11} className={showExploredNodes ? 'text-[#237841]' : 'text-[#595D60]'} />
+              <span>{showExploredNodes ? 'Nodes' : 'Path'}</span>
+            </button>
+
             {/* Toggle Tile Cost Numbers */}
             <button
               onClick={() => {
                 toggleCostLabels();
                 playClick();
               }}
-              className={`px-2 py-0.5 rounded-lg flex items-center gap-1 font-bold border transition-colors cursor-pointer ${
+              className={`px-1.5 py-0.5 rounded-lg flex items-center gap-1 font-bold border transition-colors cursor-pointer ${
                 showCostLabels
                   ? 'bg-[#F2CD37]/30 text-[#AA7F2E] border-[#AA7F2E]'
                   : 'bg-[#F4F4F4] text-[#595D60] hover:text-[#05131D] border-[#A3A2A4]'

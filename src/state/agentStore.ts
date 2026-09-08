@@ -51,6 +51,12 @@ export interface Agent {
 
 export interface AgentState {
   agents: Agent[];
+  /** Whether to render visited and frontier explored plates on the grid (default true). */
+  showExploredNodes: boolean;
+  /** Toggle visibility of visited and frontier explored plates. */
+  toggleExploredNodes: () => void;
+  /** Explicitly set visibility of visited and frontier explored plates. */
+  setShowExploredNodes: (show: boolean) => void;
 
   // Actions
   addAgent: (algorithmKey: string, color: string, start: Point) => void;
@@ -100,6 +106,10 @@ function createAgent(algorithmKey: string, color: string, start: Point): Agent {
 
 export const useAgentStore = create<AgentState>((set) => ({
   agents: [],
+  showExploredNodes: true,
+  toggleExploredNodes: () =>
+    set((s) => ({ showExploredNodes: !s.showExploredNodes })),
+  setShowExploredNodes: (show) => set({ showExploredNodes: show }),
 
   addAgent: (algorithmKey, color, start) =>
     set((s) => ({

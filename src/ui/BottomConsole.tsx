@@ -92,7 +92,7 @@ export function BottomConsole() {
 
   return (
     <footer className="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-auto select-none">
-      <div className="bg-[#595D60] border-[3px] border-[#05131D] rounded-2xl px-4 py-2 flex items-center gap-3.5 shadow-[0_6px_0_rgba(5,19,29,0.35)] text-[#F4F4F4]">
+      <div className="bg-[#F4F4F4] border-[3px] border-[#05131D] rounded-2xl px-4 py-2 flex items-center gap-3.5 shadow-[0_6px_0_rgba(5,19,29,0.35)] text-[#05131D]">
         {/* Playback Transport Buttons */}
         <div className="flex items-center gap-1.5">
           {/* Reset (⏮) */}
@@ -134,14 +134,14 @@ export function BottomConsole() {
         </div>
 
         {/* Step Counter Badge */}
-        <div className="px-2.5 py-1 rounded-lg bg-[#05131D]/60 border-2 border-[#05131D] font-mono text-xs font-bold text-[#F4F4F4] shrink-0">
-          <span className="text-[#A3A2A4] mr-1">STEP</span>
+        <div className="px-2.5 py-1 rounded-lg bg-white border-2 border-[#05131D] font-mono text-xs font-bold text-[#05131D] shrink-0 shadow-sm">
+          <span className="text-[#595D60] mr-1">STEP</span>
           <span>{stepCount}</span>
         </div>
 
         {/* Stud Progress Track (Section 5.5) */}
         <div
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#05131D]/40 border-2 border-[#05131D]"
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E0E3E7] border-2 border-[#05131D]"
           title="Race timeline progress track"
         >
           {Array.from({ length: TOTAL_TRACK_STUDS }).map((_, i) => {
@@ -152,7 +152,7 @@ export function BottomConsole() {
                 className={`w-2.5 h-2.5 rounded-full border border-[#05131D] transition-colors duration-100 ${
                   isFilled
                     ? 'bg-[#F2CD37] shadow-[0_1px_0_#05131D]'
-                    : 'bg-[#A3A2A4]/50'
+                    : 'bg-[#A3A2A4]/60'
                 }`}
               />
             );
@@ -160,8 +160,8 @@ export function BottomConsole() {
         </div>
 
         {/* 5-Notch Discrete Stud Speed Selector (Section 5.5) */}
-        <div className="flex items-center gap-2 pl-1 border-l-2 border-[#05131D]/30">
-          <span className="text-[10px] font-mono font-bold tracking-wider text-[#A3A2A4] uppercase hidden md:inline">
+        <div className="flex items-center gap-2 pl-1 border-l-2 border-[#05131D]/20">
+          <span className="text-[10px] font-mono font-bold tracking-wider text-[#595D60] uppercase hidden md:inline">
             Speed
           </span>
 
@@ -182,7 +182,7 @@ export function BottomConsole() {
                       ? 'bg-[#F2CD37] text-[#05131D] font-bold shadow-[0_2px_0_#05131D] -translate-y-0.5'
                       : isSelected
                         ? 'bg-[#F2CD37]/70 text-[#05131D]'
-                        : 'bg-[#A3A2A4]/40 text-[#A3A2A4] hover:bg-[#A3A2A4]/60'
+                        : 'bg-[#E0E3E7] text-[#595D60] hover:bg-[#D0D4D9]'
                   }`}
                   title={`Speed: ${notch.label}`}
                 >
@@ -192,7 +192,7 @@ export function BottomConsole() {
             })}
           </div>
 
-          <span className="font-mono text-[10px] font-bold text-[#F2CD37] w-8 text-right">
+          <span className="font-mono text-[10px] font-bold text-[#05131D] w-8 text-right">
             {SPEED_NOTCHES[currentNotchIndex]?.label}
           </span>
         </div>

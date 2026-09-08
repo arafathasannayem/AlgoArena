@@ -27,13 +27,13 @@
   --state-path-gold: #F2CD37;
 
   /* Surfaces & text */
-  --surface-panel: #595D60;
-  --surface-panel-raised: #6C6E68;
+  --surface-panel: #F4F4F4;
+  --surface-panel-raised: #FFFFFF;
   --surface-card: #F4F4F4;
-  --surface-overlay: rgba(5, 19, 29, 0.65);
+  --surface-overlay: rgba(5, 19, 29, 0.5);
   --text-primary: #05131D;
   --text-inverse: #F4F4F4;
-  --text-muted: #A3A2A4;
+  --text-muted: #595D60;
   --border-strong: #05131D;
   --border-soft: #A3A2A4;
 }
@@ -48,10 +48,10 @@
   --color-brick-black: #05131D;
   --color-brick-white: #F4F4F4;
 
-  --color-surface-panel: #595D60;
-  --color-surface-panel-raised: #6C6E68;
+  --color-surface-panel: #F4F4F4;
+  --color-surface-panel-raised: #FFFFFF;
   --color-surface-card: #F4F4F4;
-  --color-board-base: #3E4348;
+  --color-board-base: #EAE6DE;
 
   --color-racer-astar: #C91A09;
   --color-racer-dijkstra: #0055BF;

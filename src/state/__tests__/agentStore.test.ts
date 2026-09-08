@@ -61,6 +61,20 @@ describe('Agent Store', () => {
     expect(useAgentStore.getState().agents[1]!.showOverlay).toBe(false);
   });
 
+  it('should toggle and set showExploredNodes independently', () => {
+    const store = useAgentStore.getState();
+    expect(store.showExploredNodes).toBe(true);
+
+    store.toggleExploredNodes();
+    expect(useAgentStore.getState().showExploredNodes).toBe(false);
+
+    store.toggleExploredNodes();
+    expect(useAgentStore.getState().showExploredNodes).toBe(true);
+
+    store.setShowExploredNodes(false);
+    expect(useAgentStore.getState().showExploredNodes).toBe(false);
+  });
+
   it('should change an agent color with setColor', () => {
     const store = useAgentStore.getState();
     store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });

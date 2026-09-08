@@ -102,7 +102,7 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
   }, [agents]);
 
   return (
-    <header className="fixed top-0 inset-x-0 h-14 bg-[#595D60] border-b-[3px] border-[#05131D] z-30 flex items-center justify-between px-3 text-[#F4F4F4] shadow-md select-none">
+    <header className="fixed top-0 inset-x-0 h-14 bg-[#F4F4F4] border-b-[3px] border-[#05131D] z-30 flex items-center justify-between px-3 text-[#05131D] shadow-md select-none">
       {/* Left side: 7 fixed racer chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
         {RACER_CHIPS.map((chip) => {
@@ -131,14 +131,14 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
                   ? `${chip.label} (${agent.status}) — Click to toggle overlay`
                   : `${chip.label} — Click to add racer to board`
               }
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-full border-2 transition-all font-sans font-bold text-xs ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border-2 transition-all font-sans font-bold text-xs cursor-pointer ${
                 isPlaced
                   ? isDone
-                    ? 'opacity-40 border-[#05131D] bg-[#05131D]/40 text-[#F4F4F4]'
+                    ? 'opacity-40 border-[#05131D] bg-[#E8E8E8] text-[#595D60]'
                     : isSelected
-                      ? 'border-[#F2CD37] bg-[#05131D]/80 text-[#F4F4F4] ring-2 ring-[#F2CD37]/50'
-                      : 'border-[#05131D] bg-[#05131D]/60 text-[#F4F4F4] hover:bg-[#05131D]/80'
-                  : 'opacity-35 border-dashed border-[#A3A2A4] bg-transparent text-[#A3A2A4] hover:opacity-75'
+                      ? 'border-[#05131D] bg-white text-[#05131D] ring-2 ring-[#0055BF] shadow-[0_2px_0_#05131D]'
+                      : 'border-[#05131D] bg-white text-[#05131D] hover:bg-[#E8E8E8] shadow-[0_2px_0_#05131D]'
+                  : 'opacity-35 border-dashed border-[#A3A2A4] bg-transparent text-[#595D60] hover:opacity-75'
               }`}
             >
               {/* Torso colored stud pip */}
@@ -158,10 +158,10 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
       <div className="flex items-center gap-2 pl-2">
         {/* Race Timer */}
         <div
-          className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#05131D]/50 border-2 border-[#05131D] font-mono text-xs font-bold text-[#F4F4F4]"
+          className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border-2 border-[#05131D] font-mono text-xs font-bold text-[#05131D] shadow-[0_2px_0_#05131D]"
           title="Elapsed Race Time"
         >
-          <Timer size={13} className="text-[#F2CD37]" />
+          <Timer size={13} className="text-[#AA7F2E]" />
           <span>{formattedTime}</span>
         </div>
 
@@ -176,19 +176,19 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
           <span className="text-[10px] uppercase font-display tracking-wider hidden md:inline">studs</span>
         </div>
 
-        <div className="h-6 w-[2px] bg-[#05131D]/30 mx-0.5 hidden sm:block" />
+        <div className="h-6 w-[2px] bg-[#05131D]/15 mx-0.5 hidden sm:block" />
 
-        {/* Camera controls */}
-        <div className="hidden sm:flex items-center gap-1 bg-[#05131D]/30 rounded-lg p-0.5 border border-[#05131D]/50">
+        {/* Camera controls in light container */}
+        <div className="hidden sm:flex items-center gap-1 bg-white rounded-xl p-0.5 border-2 border-[#05131D] shadow-[0_2px_0_#05131D]">
           <button
             onClick={() => {
               triggerResetCamera();
               playClick();
             }}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               !isTopDown
-                ? 'bg-[#F4F4F4] text-[#05131D] font-bold shadow-sm'
-                : 'text-[#A3A2A4] hover:text-[#F4F4F4]'
+                ? 'bg-[#0055BF] text-[#F4F4F4] font-bold shadow-sm'
+                : 'text-[#595D60] hover:text-[#05131D]'
             }`}
             title="Reset Isometric 3D View [I]"
           >
@@ -199,10 +199,10 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
               triggerTopDown('top');
               playClick();
             }}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               isTopDown
-                ? 'bg-[#F4F4F4] text-[#05131D] font-bold shadow-sm'
-                : 'text-[#A3A2A4] hover:text-[#F4F4F4]'
+                ? 'bg-[#0055BF] text-[#F4F4F4] font-bold shadow-sm'
+                : 'text-[#595D60] hover:text-[#05131D]'
             }`}
             title="Top-Down 2D View [T]"
           >
@@ -213,7 +213,7 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
               triggerZoomOut();
               playClick();
             }}
-            className="p-1.5 rounded text-[#A3A2A4] hover:text-[#F4F4F4] transition-colors"
+            className="p-1.5 rounded-lg text-[#595D60] hover:text-[#05131D] transition-colors cursor-pointer"
             title="Zoom Out [-]"
           >
             <ZoomOut size={13} />
@@ -223,7 +223,7 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
               triggerZoomIn();
               playClick();
             }}
-            className="p-1.5 rounded text-[#A3A2A4] hover:text-[#F4F4F4] transition-colors"
+            className="p-1.5 rounded-lg text-[#595D60] hover:text-[#05131D] transition-colors cursor-pointer"
             title="Zoom In [+]"
           >
             <ZoomIn size={13} />
@@ -236,12 +236,12 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
             toggleSound();
             playClick();
           }}
-          className={`p-1.5 rounded-lg border-2 border-[#05131D] bg-[#05131D]/50 transition-colors ${
-            soundEnabled ? 'text-[#F2CD37] hover:text-white' : 'text-[#A3A2A4]'
+          className={`p-1.5 rounded-xl border-2 border-[#05131D] bg-white transition-colors shadow-[0_2px_0_#05131D] cursor-pointer ${
+            soundEnabled ? 'text-[#AA7F2E]' : 'text-[#A3A2A4]'
           }`}
           title={soundEnabled ? 'Mute Sound (Click to Silence)' : 'Unmute Sound'}
         >
-          {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+          {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
         </button>
 
         {/* Field Manual Help */}
@@ -251,10 +251,10 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
               onOpenHelp();
               playClick();
             }}
-            className="p-1.5 rounded-lg border-2 border-[#05131D] bg-[#05131D]/50 text-[#A3A2A4] hover:text-[#F4F4F4] transition-colors"
+            className="p-1.5 rounded-xl border-2 border-[#05131D] bg-white text-[#595D60] hover:text-[#05131D] transition-colors shadow-[0_2px_0_#05131D] cursor-pointer"
             title="Field Manual & Controls [?]"
           >
-            <HelpCircle size={13} />
+            <HelpCircle size={14} />
           </button>
         )}
 
@@ -264,7 +264,7 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
             openPauseMenu();
             playClick();
           }}
-          className="brick-btn bg-[#F4F4F4] text-[#05131D] px-2.5 py-1 rounded-lg flex items-center gap-1.5 ml-1 text-xs cursor-pointer font-bold"
+          className="brick-btn bg-white hover:bg-[#E8E8E8] text-[#05131D] px-2.5 py-1 rounded-xl flex items-center gap-1.5 ml-1 text-xs cursor-pointer font-bold shadow-[0_2px_0_#05131D]"
           title="Pause Menu [ESC]"
         >
           <Pause size={12} className="text-[#C91A09]" />
