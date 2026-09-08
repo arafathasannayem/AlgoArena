@@ -19,6 +19,7 @@ import { OrthographicCamera } from '@react-three/drei';
 import { useGridStore } from '../state/gridStore';
 import { useAgentStore, type Agent } from '../state/agentStore';
 import { useCameraStore } from '../state/cameraStore';
+import { useThemeStore } from '../state/themeStore';
 import { Tile } from './Tile';
 import { Wall } from './Wall';
 import { GoalGlow } from './GoalGlow';
@@ -44,6 +45,8 @@ function DioramaScene() {
   const agents = useAgentStore((s) => s.agents);
   const toggleOverlay = useAgentStore((s) => s.toggleOverlay);
   const isTopDown = useCameraStore((s) => s.isTopDown);
+
+  const currentTheme = useThemeStore((s) => s.currentTheme);
 
   // Group agents by current cell position to handle multi-agent clustering
   const { agentOffsets, cellClusters } = useMemo(() => {
@@ -164,16 +167,17 @@ function DioramaScene() {
       {/* Interactive Orbit, Pan & Zoom Camera Controller */}
       <CameraController defaultZoom={zoom} />
 
-      {/* Lighting rig — radiant warm desert sun in 3D, clear overhead in 2D */}
+      {/* Lighting rig — Three-point toy photography setup */}
       <ambientLight
-        color={isTopDown ? '#ffffff' : '#fef3c7'}
-        intensity={isTopDown ? 0.95 : 0.5}
+        color={isTopDown ? '#ffffff' : '#FFF3D6'}
+        intensity={isTopDown ? 0.95 : 0.65}
       />
+      {/* Warm key light */}
       <directionalLight
         castShadow={!isTopDown}
         position={isTopDown ? [0, 50, 0] : [22, 36, 18]}
-        intensity={isTopDown ? 0.6 : 1.6}
-        color={isTopDown ? '#ffffff' : '#fffbeb'}
+        intensity={isTopDown ? 0.6 : 1.7}
+        color={isTopDown ? '#ffffff' : '#FFF3D6'}
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-25}
         shadow-camera-right={25}
@@ -183,39 +187,55 @@ function DioramaScene() {
         shadow-camera-far={120}
         shadow-bias={-0.0005}
       />
+      {/* Cool fill light to soften shadows */}
+      {!isTopDown && (
+        <directionalLight
+          position={[-18, 22, -14]}
+          intensity={0.45}
+          color="#CFE8FF"
+        />
+      )}
+      {/* Subtle rim light for racer plastic highlights */}
+      {!isTopDown && (
+        <directionalLight
+          position={[-6, 12, 24]}
+          intensity={0.35}
+          color="#FFFFFF"
+        />
+      )}
 
       {/* Grid container — centered at origin */}
       <group position={[offsetX, 0, offsetZ]}>
-        {/* Diorama Desert Mesa Pedestal Base (underneath the grid in 3D mode) */}
+        {/* Diorama Baseplate Pedestal Base (underneath the grid in 3D mode) */}
         {!isTopDown && (
           <group position={[(width - 1) / 2, 0, (height - 1) / 2]}>
-            {/* Upper desert sandstone rim */}
+            {/* Upper brick plate rim */}
             <mesh position={[0, -0.05, 0]} receiveShadow>
               <boxGeometry args={[width + 0.3, 0.1, height + 0.3]} />
-              <meshStandardMaterial color="#c29b68" roughness={0.85} metalness={0.05} />
+              <meshStandardMaterial color={currentTheme.pedestalColor} roughness={0.35} metalness={0.05} />
             </mesh>
-            {/* Deep red canyon bedrock block */}
+            {/* Heavy table/display foundation block */}
             <mesh position={[0, -0.28, 0]} receiveShadow>
               <boxGeometry args={[width + 0.7, 0.38, height + 0.7]} />
-              <meshStandardMaterial color="#7c3f25" roughness={0.92} metalness={0.05} />
+              <meshStandardMaterial color="#05131D" roughness={0.5} metalness={0.1} />
             </mesh>
-            {/* Warm desert amber strata line */}
+            {/* Tactile colored strata band */}
             <mesh position={[0, -0.08, 0]}>
               <boxGeometry args={[width + 0.32, 0.02, height + 0.32]} />
-              <meshStandardMaterial color="#f59e0b" emissive="#d97706" emissiveIntensity={0.4} />
+              <meshStandardMaterial color={currentTheme.wallColor} emissive={currentTheme.wallColor} emissiveIntensity={0.25} />
             </mesh>
           </group>
         )}
 
-        {/* Start Position Soft Oasis Halo */}
-        <mesh position={[start.x, 0.11, start.y]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.34, 0.44, 24]} />
+        {/* Start Position Warm Gold 2x2 Disc Halo */}
+        <mesh position={[start.x, 0.08, start.y]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.32, 0.44, 24]} />
           <meshStandardMaterial
-            color="#38bdf8"
-            emissive="#0284c7"
-            emissiveIntensity={0.9}
+            color="#AA7F2E"
+            emissive="#F2CD37"
+            emissiveIntensity={0.7}
             transparent
-            opacity={0.65}
+            opacity={0.8}
           />
         </mesh>
 

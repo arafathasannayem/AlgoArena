@@ -1,21 +1,22 @@
 /**
- * Tile — Desert-themed grid tile mesh with role-specific detailing.
+ * Tile — Brick Racer baseplate tile with cylinder studs.
  *
- * Implements tactile tabletop desert board aesthetics:
- * - Regular tiles: Sun-baked desert sand slabs with subtle sandstone bevels
- * - Start tile: Desert oasis spring pool with cyan water and stone perimeter
- * - Goal tile: Ancient golden sun-altar platform
- * - High cost tile: Jagged rough desert badlands/scree with scattered boulders
- * - Softly written cost number inscribed directly on the terrain design (no modal elements)
+ * Implements authentic LEGO Party!-inspired brick diorama aesthetics:
+ * - Baseplate tile with central raised cylinder stud and ABS plastic gloss
+ * - Start tile: Warm Gold brick plate with flag mount
+ * - Goal tile: Bright Yellow brick plate
+ * - High-cost tile: Dark textured rough plate with legible cost number
+ * - Theming: Dynamically reflects active board skin (Classic, Castle, Space, City)
  *
  * @module scene/Tile
  */
 
 import { useRef } from 'react';
-import { type Mesh } from 'three';
-import { Text, useGLTF, Clone } from '@react-three/drei';
+import type { Mesh } from 'three';
+import { Text } from '@react-three/drei';
 import { useRaceStore } from '../state/raceStore';
 import { useGridStore } from '../state/gridStore';
+import { useThemeStore } from '../state/themeStore';
 import { playPlace } from '../utils/sound';
 
 interface TileProps {
@@ -31,20 +32,12 @@ interface TileProps {
 
 const TILE_HEIGHT = 0.08;
 const TILE_SIZE = 0.96;
+const STUD_RADIUS = 0.22;
+const STUD_HEIGHT = 0.05;
 
-const SCRUB_URL = '/3d-assets/desert-scrub.glb';
-const DRACO_URL = '/draco/';
-
-// Desert Palette
-const COLOR_TILE_BASE = '#c89b6b';
-const COLOR_TILE_TOP = '#ebd5b3';
-const COLOR_START = '#0284c7';
-const COLOR_START_GLOW = '#38bdf8';
-const COLOR_GOAL = '#d97706';
-const COLOR_GOAL_GLOW = '#fbbf24';
-const COLOR_WALL_FOUNDATION = '#1e3a1a';
-const COLOR_ROUGH_TERRAIN_BED = '#4a2810';
-const COLOR_ROUGH_TERRAIN_SURFACE = '#783d19';
+// Canonical Semantic Brick Colors
+const COLOR_START = '#AA7F2E';      // Warm Gold brick
+const COLOR_GOAL = '#F2CD37';       // Bright Yellow brick
 
 export function Tile({
   x,
@@ -60,6 +53,8 @@ export function Tile({
   const showResults = useRaceStore((s) => s.showResults);
   const isRunning = useRaceStore((s) => s.status === 'running');
   const showCostLabels = useGridStore((s) => s.showCostLabels);
+  const theme = useThemeStore((s) => s.currentTheme);
+
   const isHighCost = cost !== undefined && cost > 1 && !isStart && !isGoal && !isWall;
 
   const handleClick = () => {
@@ -68,9 +63,27 @@ export function Tile({
     onClick();
   };
 
+  // Determine base tile color
+  let tileColor = theme.baseplateColor;
+  let studColor = theme.studColor;
+
+  if (isWall) {
+    tileColor = theme.pedestalColor;
+    studColor = theme.pedestalColor;
+  } else if (isStart) {
+    tileColor = COLOR_START;
+    studColor = '#d4af37';
+  } else if (isGoal) {
+    tileColor = COLOR_GOAL;
+    studColor = '#ffe066';
+  } else if (isHighCost) {
+    tileColor = theme.roughCostColor;
+    studColor = theme.roughCostColor;
+  }
+
   return (
     <group position={[x, 0, y]}>
-      {/* Base slab */}
+      {/* Baseplate cell brick */}
       <mesh
         ref={meshRef}
         position={[0, TILE_HEIGHT / 2, 0]}
@@ -82,132 +95,82 @@ export function Tile({
       >
         <boxGeometry args={[TILE_SIZE, TILE_HEIGHT, TILE_SIZE]} />
         <meshStandardMaterial
-          color={
-            isWall
-              ? COLOR_WALL_FOUNDATION
-              : isStart
-              ? COLOR_START
-              : isGoal
-              ? COLOR_GOAL
-              : isHighCost
-              ? COLOR_ROUGH_TERRAIN_BED
-              : COLOR_TILE_BASE
-          }
-          roughness={isHighCost ? 0.95 : 0.65}
+          color={tileColor}
+          roughness={isHighCost ? 0.7 : 0.35}
           metalness={0.05}
         />
       </mesh>
 
-      {/* Surface Inset / Desert Sand Dune Slabs */}
-      {!isWall && !isHighCost && !isStart && !isGoal && (
-        <mesh position={[0, TILE_HEIGHT + 0.005, 0]} receiveShadow={receiveShadow}>
-          <boxGeometry args={[0.88, 0.01, 0.88]} />
-          <meshStandardMaterial color={COLOR_TILE_TOP} roughness={0.7} metalness={0.02} />
+      {/* Central Raised LEGO Stud (hidden under walls) */}
+      {!isWall && (
+        <mesh
+          position={[0, TILE_HEIGHT + STUD_HEIGHT / 2, 0]}
+          receiveShadow={receiveShadow}
+          castShadow={!isHighCost}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClick();
+          }}
+        >
+          <cylinderGeometry args={[STUD_RADIUS, STUD_RADIUS, STUD_HEIGHT, 16]} />
+          <meshStandardMaterial
+            color={studColor}
+            roughness={0.3}
+            metalness={0.08}
+          />
         </mesh>
       )}
 
-      {/* Start Pad: Desert Oasis Spring Pool */}
+      {/* Start Tile: Gold Brick Perimeter Rim */}
       {isStart && (
-        <group position={[0, TILE_HEIGHT + 0.01, 0]}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.22, 0.38, 24]} />
-            <meshStandardMaterial
-              color="#bae6fd"
-              roughness={0.4}
-            />
-          </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[0.2, 24]} />
-            <meshStandardMaterial
-              color={COLOR_START_GLOW}
-              emissive="#0284c7"
-              emissiveIntensity={0.8}
-              roughness={0.1}
-            />
-          </mesh>
-        </group>
+        <mesh position={[0, TILE_HEIGHT + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.32, 0.44, 24]} />
+          <meshStandardMaterial
+            color="#ffe066"
+            emissive="#AA7F2E"
+            emissiveIntensity={0.6}
+            roughness={0.2}
+          />
+        </mesh>
       )}
 
-      {/* Goal Pad: Ancient Desert Sun Altar Disc */}
+      {/* Goal Tile: Bright Yellow Radiant Halo */}
       {isGoal && (
+        <mesh position={[0, TILE_HEIGHT + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.34, 0.45, 24]} />
+          <meshStandardMaterial
+            color="#F2CD37"
+            emissive="#F2CD37"
+            emissiveIntensity={0.8}
+            roughness={0.2}
+          />
+        </mesh>
+      )}
+
+      {/* High-Cost Tile: Inscribed Cost Number */}
+      {isHighCost && (
         <group position={[0, TILE_HEIGHT + 0.01, 0]}>
+          {/* Border accent for rough terrain */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.24, 0.4, 24]} />
-            <meshStandardMaterial
-              color={COLOR_GOAL_GLOW}
-              emissive={COLOR_GOAL_GLOW}
-              emissiveIntensity={1.0}
-              roughness={0.2}
-            />
+            <ringGeometry args={[0.3, 0.44, 4]} />
+            <meshStandardMaterial color="#FE8A18" roughness={0.6} />
           </mesh>
+
+          {showCostLabels && !showResults && (
+            <Text
+              position={[0, 0.08, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              fontSize={0.28}
+              color="#F2CD37"
+              anchorX="center"
+              anchorY="middle"
+              fontWeight="bold"
+            >
+              +{cost}
+            </Text>
+          )}
         </group>
       )}
-
-      {/* High Cost: Rough Desert Terrain with Desert Scrub */}
-      {isHighCost && (
-        <RoughTerrainModel
-          cost={cost}
-          showCostLabels={showCostLabels}
-          showResults={showResults}
-          receiveShadow={receiveShadow}
-        />
-      )}
     </group>
   );
 }
-
-function RoughTerrainModel({
-  cost,
-  showCostLabels,
-  showResults,
-  receiveShadow,
-}: {
-  cost: number;
-  showCostLabels: boolean;
-  showResults: boolean;
-  receiveShadow: boolean;
-}) {
-  const { scene } = useGLTF(SCRUB_URL, DRACO_URL);
-
-  return (
-    <group position={[0, TILE_HEIGHT, 0]}>
-      {/* Cracked badlands stone bed */}
-      <mesh position={[0, 0.005, 0]} receiveShadow={receiveShadow}>
-        <boxGeometry args={[0.88, 0.012, 0.88]} />
-        <meshStandardMaterial
-          color={COLOR_ROUGH_TERRAIN_SURFACE}
-          roughness={0.95}
-          metalness={0.05}
-        />
-      </mesh>
-
-      {/* 3D Desert Scrub Asset */}
-      <group position={[0, 0.01, -0.05]}>
-        <Clone
-          object={scene}
-          scale={[0.75, 0.75, 0.75]}
-          castShadow={receiveShadow}
-          receiveShadow={receiveShadow}
-        />
-      </group>
-
-      {/* Softly written cost value directly on the terrain surface (toggleable) */}
-      {showCostLabels && !showResults && (
-        <Text
-          position={[0, 0.025, 0.22]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          fontSize={0.24}
-          color="#fef3c7"
-          fillOpacity={0.85}
-          anchorX="center"
-          anchorY="middle"
-          fontWeight="bold"
-        >
-          {cost}
-        </Text>
-      )}
-    </group>
-  );
-}
-
-useGLTF.preload(SCRUB_URL, DRACO_URL);

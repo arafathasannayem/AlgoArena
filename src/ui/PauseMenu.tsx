@@ -1,12 +1,12 @@
 /**
- * PauseMenu — Authentic indie-game tactical in-game pause menu.
+ * PauseMenu — Brick Racer In-Game Tactical Pause Menu.
  *
- * Appears when pressing [Esc], clicking Pause in the top bar, or opening [M].
- * Freezes the active race simulation and provides:
- * - Match telemetry (map name, dimensions, registered agents, goals)
- * - Tactile keyboard navigation (Up/Down + Enter, Esc)
- * - Quick match reset, map switching, layout saving, and title return
- * - Collapsible Audio & Settings drawer (master volume, 3D/2D view, cost labels)
+ * Implements Section 4.3 of the UI/UX Guidelines:
+ * - Brick White (#F4F4F4) card on dark scrim (rgba(5,19,29,0.6)).
+ * - 20px corner radius, 3px black outline (#05131D), hard offset shadow 0 8px 0 rgba(5,19,29,0.35).
+ * - Row of 4 raised LEGO studs at the top edge.
+ * - Circular Reddish-Brown (#582A12) 1x1 round close button in top right.
+ * - Tactile brick buttons with 2px/3px press depth.
  *
  * @module ui/PauseMenu
  */
@@ -21,6 +21,7 @@ import { useSoundStore } from '../state/soundStore';
 import {
   playClick,
   playMenuHover,
+  playSnap,
 } from '../utils/sound';
 import {
   Play,
@@ -80,16 +81,17 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
     () => [
       {
         id: 'resume',
-        label: 'Resume Expedition',
+        label: 'Resume Race',
         shortcut: 'ESC',
-        icon: <Play size={16} className="text-emerald-400" />,
+        icon: <Play size={16} className="fill-current text-[#F4F4F4]" />,
+        isPrimary: true,
         action: () => closePauseMenu(),
       },
       {
         id: 'restart',
         label: 'Restart Run',
         shortcut: 'R',
-        icon: <RotateCcw size={16} className="text-blue-400" />,
+        icon: <RotateCcw size={16} />,
         action: () => {
           resetRace();
           closePauseMenu();
@@ -97,9 +99,9 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
       },
       {
         id: 'presets',
-        label: 'Map Archive',
+        label: 'Map Presets',
         shortcut: 'P',
-        icon: <Map size={16} className="text-blue-400" />,
+        icon: <Map size={16} className="text-[#0055BF]" />,
         action: () => {
           closePauseMenu();
           openPresetChooser();
@@ -107,9 +109,9 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
       },
       {
         id: 'save',
-        label: 'Save Arena Layout',
+        label: 'Save Board Map',
         shortcut: 'S',
-        icon: <Save size={16} className="text-cyan-400" />,
+        icon: <Save size={16} className="text-[#0055BF]" />,
         action: () => {
           closePauseMenu();
           openSavePreset();
@@ -118,14 +120,14 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
       {
         id: 'settings',
         label: 'Audio & Settings',
-        icon: <Sliders size={16} className="text-purple-400" />,
+        icon: <Sliders size={16} className="text-[#923978]" />,
         action: () => setShowSettings((prev) => !prev),
       },
       {
         id: 'manual',
-        label: 'Field Manual & Rules',
+        label: 'How it Works & Rules',
         shortcut: '?',
-        icon: <BookOpen size={16} className="text-emerald-400" />,
+        icon: <BookOpen size={16} className="text-[#237841]" />,
         action: () => {
           closePauseMenu();
           onOpenHelp?.();
@@ -133,8 +135,8 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
       },
       {
         id: 'title',
-        label: 'Abandon to Title',
-        icon: <LogOut size={16} className="text-red-400" />,
+        label: 'Exit to Title',
+        icon: <LogOut size={16} className="text-[#C91A09]" />,
         action: () => {
           resetRace();
           openTitleScreen();
@@ -144,7 +146,6 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
     [closePauseMenu, resetRace, openPresetChooser, openSavePreset, onOpenHelp, openTitleScreen],
   );
 
-  // Keyboard navigation when Pause Menu is active
   useEffect(() => {
     if (!isOpen) return;
 
@@ -180,61 +181,67 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 select-none">
-      <div className="bg-slate-900/95 border border-white/10 rounded-2xl p-6 max-w-md w-full text-slate-200 shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150">
-        {/* Telemetry Header */}
-        <div className="flex flex-col gap-2 border-b border-white/10 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-mono font-bold tracking-widest uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              Tactical Pause
-            </div>
+    <div className="fixed inset-0 bg-[#05131D]/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 select-none animate-in fade-in duration-150">
+      <div className="bg-[#F4F4F4] border-[3px] border-[#05131D] rounded-3xl p-6 max-w-md w-full text-[#05131D] shadow-[0_8px_0_rgba(5,19,29,0.35)] flex flex-col gap-4 relative">
+        {/* 4 Raised Studs Header Affordance (§4.3) */}
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+        </div>
 
-            <button
-              onClick={() => {
-                closePauseMenu();
-                playClick();
-              }}
-              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
-              title="Resume [ESC]"
-            >
-              <X size={16} />
-            </button>
+        {/* Circular Reddish-Brown 1x1 Round Close Button (§4.3) */}
+        <button
+          onClick={() => {
+            closePauseMenu();
+            playClick();
+          }}
+          className="absolute right-4 top-4 w-7 h-7 rounded-full bg-[#582A12] hover:bg-[#6e3618] border-2 border-[#05131D] text-[#F4F4F4] flex items-center justify-center shadow-[0_2px_0_#05131D] active:translate-y-0.5 cursor-pointer"
+          title="Close [ESC]"
+        >
+          <X size={14} />
+        </button>
+
+        {/* Header Telemetry */}
+        <div className="flex flex-col gap-1 border-b-2 border-[#05131D]/15 pb-3">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#05131D]/10 border border-[#05131D]/20 text-[#05131D] text-[10px] font-mono font-bold tracking-widest uppercase w-fit">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0055BF] animate-pulse" />
+            RACE PAUSED
           </div>
 
-          <div className="flex flex-col">
-            <h2 className="text-xl font-black tracking-tight text-white uppercase font-sans">
-              {currentMapTitle}
-            </h2>
+          <h2 className="text-xl font-black tracking-tight text-[#05131D] uppercase font-display">
+            {currentMapTitle}
+          </h2>
 
-            {/* Board Telemetry Pills */}
-            <div className="flex items-center gap-2 mt-1.5 text-[10px] font-mono font-semibold text-slate-400">
-              <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">
-                {width}×{height} GRID
-              </span>
-              <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">
-                {agentsCount} {agentsCount === 1 ? 'RACER' : 'RACERS'}
-              </span>
-              <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">
-                {goalsCount} {goalsCount === 1 ? 'GOAL' : 'GOALS'}
-              </span>
-              <span
-                className={`px-2 py-0.5 rounded border ${
-                  wasRunning || raceStatus === 'running'
-                    ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
-                    : 'bg-white/5 text-slate-300 border-white/10'
-                }`}
-              >
-                {wasRunning ? 'PAUSED MID-RACE' : 'STANDBY'}
-              </span>
-            </div>
+          {/* Telemetry badges */}
+          <div className="flex items-center gap-2 mt-1 text-[10px] font-mono font-bold text-[#595D60]">
+            <span className="px-2 py-0.5 rounded-md bg-white border border-[#05131D]/30">
+              {width}×{height} GRID
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-white border border-[#05131D]/30">
+              {agentsCount} {agentsCount === 1 ? 'RACER' : 'RACERS'}
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-white border border-[#05131D]/30">
+              {goalsCount} {goalsCount === 1 ? 'GOAL' : 'GOALS'}
+            </span>
+            <span
+              className={`px-2 py-0.5 rounded-md border ${
+                wasRunning || raceStatus === 'running'
+                  ? 'bg-[#0055BF]/15 text-[#0055BF] border-[#0055BF]/40'
+                  : 'bg-white text-[#595D60] border-[#05131D]/30'
+              }`}
+            >
+              {wasRunning ? 'MID-RACE' : 'STANDBY'}
+            </span>
           </div>
         </div>
 
-        {/* Primary Tactical Actions Menu */}
+        {/* Menu Options List */}
         <div className="flex flex-col gap-1.5">
           {menuOptions.map((opt, idx) => {
             const isSelected = selectedIdx === idx;
+            const isPrimary = opt.isPrimary;
             const isSettingsOpt = opt.id === 'settings';
 
             return (
@@ -250,16 +257,16 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
                     playClick();
                     opt.action();
                   }}
-                  className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    isSelected
-                      ? opt.id === 'resume'
-                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/40 translate-x-0.5'
-                        : 'bg-white/15 text-white border border-white/20 translate-x-0.5'
-                      : 'bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300'
+                  className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-bold brick-btn cursor-pointer transition-all ${
+                    isPrimary
+                      ? 'bg-[#C91A09] text-[#F4F4F4]'
+                      : isSelected
+                        ? 'bg-white text-[#05131D] ring-2 ring-[#0055BF]'
+                        : 'bg-white/80 hover:bg-white text-[#05131D]'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-1 rounded-lg bg-white/5 shrink-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1 rounded-lg shrink-0">
                       {opt.icon}
                     </div>
                     <span>{opt.label}</span>
@@ -269,13 +276,19 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
                     {isSettingsOpt && (
                       <ChevronDown
                         size={14}
-                        className={`text-slate-400 transition-transform duration-200 ${
-                          showSettings ? 'rotate-180 text-purple-400' : ''
+                        className={`transition-transform duration-200 ${
+                          showSettings ? 'rotate-180 text-[#923978]' : ''
                         }`}
                       />
                     )}
                     {opt.shortcut && (
-                      <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-400">
+                      <kbd
+                        className={`font-mono text-[10px] px-1.5 py-0.5 rounded border ${
+                          isPrimary
+                            ? 'bg-[#05131D]/30 text-white border-transparent'
+                            : 'bg-[#05131D]/10 text-[#05131D] border-[#05131D]/20'
+                        }`}
+                      >
                         {opt.shortcut}
                       </kbd>
                     )}
@@ -284,15 +297,15 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
 
                 {/* Collapsible Audio & Settings Drawer */}
                 {isSettingsOpt && showSettings && (
-                  <div className="mt-1.5 mb-1 p-3 rounded-xl bg-slate-950/60 border border-purple-500/30 flex flex-col gap-3 animate-in fade-in duration-150">
-                    {/* Master Volume Slider */}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-medium text-slate-300 flex items-center gap-1.5">
-                          <Volume2 size={13} className="text-amber-400" />
+                  <div className="mt-1.5 mb-1 p-3 rounded-2xl bg-white border-2 border-[#05131D] flex flex-col gap-3 shadow-[0_2px_0_#05131D]">
+                    {/* Volume Slider */}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold flex items-center gap-1.5">
+                          <Volume2 size={13} className="text-[#AA7F2E]" />
                           Master Volume
                         </span>
-                        <span className="font-mono text-amber-300 font-bold text-[10px]">
+                        <span className="font-mono font-bold text-[10px]">
                           {Math.round(volume * 100)}%
                         </span>
                       </div>
@@ -303,78 +316,75 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
                         step={0.05}
                         value={volume}
                         onChange={(e) => {
-                          const v = parseFloat(e.target.value);
-                          setVolume(v);
+                          setVolume(parseFloat(e.target.value));
                           playClick();
                         }}
-                        className="w-full accent-amber-400 cursor-pointer h-1.5 bg-white/10 rounded-lg"
+                        className="w-full accent-[#C91A09] cursor-pointer h-2 bg-[#A3A2A4]/40 rounded-lg"
                       />
                     </div>
 
-                    {/* Mute and Toggles Row */}
-                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10">
-                      {/* Audio Mute */}
+                    {/* SFX and Tile Numbers Row */}
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#05131D]/10">
                       <button
                         onClick={() => {
                           toggleSound();
-                          playClick();
+                          playSnap();
                         }}
-                        className={`p-2 rounded-lg flex items-center justify-between text-[11px] border transition-colors ${
+                        className={`p-2 rounded-xl flex items-center justify-between text-xs font-bold border-2 border-[#05131D] cursor-pointer ${
                           soundEnabled
-                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                            : 'bg-white/5 border-white/10 text-slate-400'
+                            ? 'bg-[#F2CD37] text-[#05131D]'
+                            : 'bg-[#A3A2A4] text-[#05131D]'
                         }`}
                       >
-                        <span className="font-medium">Audio SFX</span>
+                        <span>Audio FX</span>
                         {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
                       </button>
 
-                      {/* Tile Cost Numbers */}
                       <button
                         onClick={() => {
                           toggleCostLabels();
-                          playClick();
+                          playSnap();
                         }}
-                        className={`p-2 rounded-lg flex items-center justify-between text-[11px] border transition-colors ${
+                        className={`p-2 rounded-xl flex items-center justify-between text-xs font-bold border-2 border-[#05131D] cursor-pointer ${
                           showCostLabels
-                            ? 'bg-blue-500/10 border-blue-500/30 text-blue-300'
-                            : 'bg-white/5 border-white/10 text-slate-400'
+                            ? 'bg-[#F2CD37] text-[#05131D]'
+                            : 'bg-[#A3A2A4] text-[#05131D]'
                         }`}
                       >
-                        <span className="font-medium">Cost Badges</span>
+                        <span>Cost Badges</span>
                         {showCostLabels ? <Eye size={13} /> : <EyeOff size={13} />}
                       </button>
                     </div>
 
-                    {/* Camera Perspective Toggle */}
-                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px]">
-                      <span className="font-medium text-slate-300 pl-1">Camera Mode</span>
+                    {/* Camera Perspective Mode */}
+                    <div className="flex items-center justify-between p-1.5 rounded-xl bg-[#e8e8e8] border border-[#05131D]/20 text-xs">
+                      <span className="font-bold pl-1">Camera Mode</span>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => {
                             triggerResetCamera();
                             playClick();
                           }}
-                          className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors flex items-center gap-1 ${
+                          className={`px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                             !isTopDown
-                              ? 'bg-white/20 text-white'
-                              : 'text-slate-400 hover:text-white'
+                              ? 'bg-white border-[#05131D] text-[#05131D] shadow-sm'
+                              : 'text-[#595D60] border-transparent hover:text-[#05131D]'
                           }`}
                         >
-                          <Compass size={11} /> 3D Iso
+                          <Compass size={12} className="inline mr-1" /> 3D Iso
                         </button>
                         <button
                           onClick={() => {
                             triggerTopDown('top');
                             playClick();
                           }}
-                          className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors flex items-center gap-1 ${
+                          className={`px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                             isTopDown
-                              ? 'bg-white/20 text-white'
-                              : 'text-slate-400 hover:text-white'
+                              ? 'bg-white border-[#05131D] text-[#05131D] shadow-sm'
+                              : 'text-[#595D60] border-transparent hover:text-[#05131D]'
                           }`}
                         >
-                          <Grid size={11} /> 2D Top
+                          <Grid size={12} className="inline mr-1" /> 2D Top
                         </button>
                       </div>
                     </div>
@@ -385,16 +395,22 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
           })}
         </div>
 
-        {/* Footer: Keyboard Nav Guide */}
-        <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] font-mono text-slate-500">
+        {/* Footer Nav Guide */}
+        <div className="flex items-center justify-between pt-2 border-t-2 border-[#05131D]/15 text-[10px] font-mono text-[#595D60]">
           <div className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-white/10 text-slate-400">↑/↓</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-white border border-[#05131D]/20 text-[#05131D] font-bold">
+              ↑/↓
+            </kbd>
             <span>Navigate</span>
-            <kbd className="px-1 py-0.5 rounded bg-white/10 text-slate-400 ml-1">Enter</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-white border border-[#05131D]/20 text-[#05131D] font-bold ml-1">
+              Enter
+            </kbd>
             <span>Select</span>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-white/10 text-slate-400">Esc</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-white border border-[#05131D]/20 text-[#05131D] font-bold">
+              Esc
+            </kbd>
             <span>Resume</span>
           </div>
         </div>

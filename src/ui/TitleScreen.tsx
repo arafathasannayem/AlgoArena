@@ -1,33 +1,32 @@
 /**
- * TitleScreen — Cinematic indie game title launcher.
+ * TitleScreen — Main Launcher & Board Theme Selector.
  *
- * Provides a tactile, game-like onboarding interface before entering the arena:
- * - Quick Match (Instant A* vs BFS race)
- * - Map Preset Archives (7 curated challenges + custom maps)
- * - Arena Sandbox (Freeform tool palette to paint walls & place agents)
- * - Field Manual & Hotkey Legend
- * - Audio volume and settings directly accessible
+ * Implements Section 4.1 & 4.2 of the UI/UX Guidelines:
+ * - Center-aligned layout inspired by LEGO Party! board selection screen.
+ * - Horizontal row of 4 theme cards (Classic, Castle, Space, City) with 4 raised studs.
+ * - Primary CTA: Large Brick Red (#C91A09) [ 🔨 SANDBOX MODE ] button.
+ * - Secondary controls: Start Race (instant all 7 race), Map Presets, and How it Works.
  *
  * @module ui/TitleScreen
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useGameMenuStore } from '../state/gameMenuStore';
 import { useAgentStore } from '../state/agentStore';
 import { useGridStore } from '../state/gridStore';
 import { useRaceStore } from '../state/raceStore';
 import { useSoundStore } from '../state/soundStore';
+import { useThemeStore, type BoardThemeId, THEMES } from '../state/themeStore';
 import { ALGORITHMS } from '../algorithms';
-import { playClick, playMenuHover, playStartFanfare } from '../utils/sound';
+import { playClick, playSnap, playStartFanfare } from '../utils/sound';
 import {
+  Play,
   Map,
-  Hammer,
   BookOpen,
   Volume2,
   VolumeX,
-  Swords,
-  ChevronRight,
   Sliders,
+  Hammer,
 } from 'lucide-react';
 
 interface TitleScreenProps {
@@ -39,10 +38,12 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
   const closeTitleScreen = useGameMenuStore((s) => s.closeTitleScreen);
   const openPresetChooser = useGameMenuStore((s) => s.openPresetChooser);
 
+  const currentThemeId = useThemeStore((s) => s.currentThemeId);
+  const setTheme = useThemeStore((s) => s.setTheme);
+
   const start = useGridStore((s) => s.start);
-  const addAgent = useAgentStore((s) => s.addAgent);
-  const removeAgent = useAgentStore((s) => s.removeAgent);
   const agents = useAgentStore((s) => s.agents);
+  const addAgent = useAgentStore((s) => s.addAgent);
   const startRace = useRaceStore((s) => s.startRace);
 
   const soundEnabled = useSoundStore((s) => s.enabled);
@@ -50,198 +51,203 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
   const volume = useSoundStore((s) => s.volume);
   const setVolume = useSoundStore((s) => s.setVolume);
 
-  const [selectedIdx, setSelectedIdx] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-
-  const handleQuickMatch = useCallback(() => {
-    agents.forEach((a) => removeAgent(a.id));
-    if (ALGORITHMS.astar) {
-      addAgent('astar', ALGORITHMS.astar.color, start);
-    }
-    if (ALGORITHMS.bfs) {
-      addAgent('bfs', ALGORITHMS.bfs.color, start);
-    }
-    closeTitleScreen();
-    startRace();
-    playStartFanfare();
-  }, [agents, removeAgent, addAgent, start, closeTitleScreen, startRace]);
 
   const handleEnterSandbox = useCallback(() => {
     closeTitleScreen();
     playClick();
   }, [closeTitleScreen]);
 
-  const handleOpenPresets = useCallback(() => {
+  const handleStartRace = () => {
+    // If no agents placed, place all 7 algorithms
+    if (agents.length === 0) {
+      Object.entries(ALGORITHMS).forEach(([key, entry]) => {
+        addAgent(key, entry.color, start);
+      });
+    }
+    closeTitleScreen();
+    startRace();
+    playStartFanfare();
+  };
+
+  const handleOpenPresets = () => {
     openPresetChooser();
     playClick();
-  }, [openPresetChooser]);
+  };
 
-  const handleOpenManual = useCallback(() => {
+  const handleOpenHelp = () => {
     onOpenHelp?.();
     playClick();
-  }, [onOpenHelp]);
+  };
 
-  const options = useMemo(() => [
-    {
-      id: 'quickmatch',
-      title: 'Quick Match',
-      desc: 'A* vs BFS two-agent race',
-      badge: 'BATTLE',
-      badgeColor: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
-      icon: <Swords size={18} className="text-amber-400" />,
-      action: handleQuickMatch,
-    },
-    {
-      id: 'presets',
-      title: 'Map Preset Archives',
-      desc: '7 curated arenas + user saved maps',
-      badge: 'ARCHIVE',
-      badgeColor: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-      icon: <Map size={18} className="text-blue-400" />,
-      action: handleOpenPresets,
-    },
-    {
-      id: 'sandbox',
-      title: 'Arena Sandbox Mode',
-      desc: 'Freeform editor to design mazes & place agents',
-      badge: 'BUILDER',
-      badgeColor: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-      icon: <Hammer size={18} className="text-emerald-400" />,
-      action: handleEnterSandbox,
-    },
-    {
-      id: 'manual',
-      title: 'Field Manual & Controls',
-      desc: 'Algorithm mechanics, tile costs & hotkeys',
-      badge: 'GUIDE',
-      badgeColor: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
-      icon: <BookOpen size={18} className="text-purple-400" />,
-      action: handleOpenManual,
-    },
-  ], [handleQuickMatch, handleOpenPresets, handleEnterSandbox, handleOpenManual]);
+  const handleThemeSelect = (themeId: BoardThemeId) => {
+    setTheme(themeId);
+    playSnap();
+  };
 
-  // Keyboard navigation
+  // Keyboard shortcut to launch primary CTA
   useEffect(() => {
     if (!isOpen) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        setSelectedIdx((prev) => {
-          const next = (prev + 1) % options.length;
-          playMenuHover();
-          return next;
-        });
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIdx((prev) => {
-          const next = (prev - 1 + options.length) % options.length;
-          playMenuHover();
-          return next;
-        });
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        const opt = options[selectedIdx];
-        if (opt) {
-          opt.action();
-        }
+        handleEnterSandbox();
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIdx, options]);
+  }, [isOpen, handleEnterSandbox]);
 
   if (!isOpen) return null;
 
+  const themeList: BoardThemeId[] = ['classic', 'castle', 'space', 'city'];
+
   return (
-    <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-[100] flex items-center justify-center p-4 select-none">
-      <div className="bg-slate-900/95 border border-white/10 rounded-2xl p-7 max-w-md w-full text-slate-200 shadow-2xl flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-[#05131D]/75 backdrop-blur-sm z-[100] flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+      <div className="bg-[#F4F4F4] border-[3px] border-[#05131D] rounded-3xl p-6 sm:p-8 max-w-xl w-full text-[#05131D] shadow-[0_12px_0_rgba(5,19,29,0.4)] flex flex-col gap-6 relative">
+        {/* 4 Raised LEGO Studs Header Affordance */}
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+          <div className="w-4 h-2.5 rounded-t-full bg-[#A3A2A4] border-2 border-b-0 border-[#05131D]" />
+        </div>
+
         {/* Title Header */}
-        <div className="flex flex-col items-center text-center gap-1.5 border-b border-white/10 pb-5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-mono font-bold tracking-widest uppercase mb-1">
-            Tactical Search Expedition
+        <div className="flex flex-col items-center text-center gap-1">
+          <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-[#F2CD37] border-2 border-[#05131D] text-[#05131D] text-[10px] font-mono font-bold tracking-widest uppercase mb-1 shadow-[0_2px_0_#05131D]">
+            BRICK RACER CHAMPIONSHIP
           </div>
 
-          <h1 className="text-3xl font-black tracking-tight text-white uppercase font-sans">
-            AlgoArena
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#05131D] uppercase font-display">
+            Algorithm Arena
           </h1>
 
-          <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-            Race search algorithms in real-time across desert terrain, boulders, high-cost scrub, and traps.
+          <p className="text-xs sm:text-sm text-[#595D60] font-semibold max-w-md">
+            Pick a board theme, paint walls, and race 7 search algorithms in real-time.
           </p>
         </div>
 
-        {/* Action Cards */}
+        {/* Board Theme Select Cards (Section 4.1 & 4.2) */}
         <div className="flex flex-col gap-2">
-          {options.map((opt, idx) => {
-            const isSelected = selectedIdx === idx;
-            return (
-              <button
-                key={opt.id}
-                onMouseEnter={() => {
-                  if (selectedIdx !== idx) {
-                    setSelectedIdx(idx);
-                    playMenuHover();
-                  }
-                }}
-                onClick={opt.action}
-                className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
-                  isSelected
-                    ? 'bg-white/15 border-white/25 text-white translate-x-1 shadow-lg'
-                    : 'bg-white/5 hover:bg-white/10 border-white/5 text-slate-300'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-lg bg-white/5 shrink-0">
-                    {opt.icon}
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs truncate">{opt.title}</span>
-                      <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${opt.badgeColor}`}>
-                        {opt.badge}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate">{opt.desc}</span>
-                  </div>
-                </div>
+          <div className="text-[11px] font-bold text-[#595D60] uppercase tracking-wider text-center">
+            Select Board Theme
+          </div>
 
-                <ChevronRight
-                  size={16}
-                  className={`shrink-0 transition-transform ${
-                    isSelected ? 'translate-x-0.5 text-white' : 'text-slate-500'
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {themeList.map((id) => {
+              const theme = THEMES[id];
+              const isSelected = currentThemeId === id;
+
+              return (
+                <button
+                  key={id}
+                  onClick={() => handleThemeSelect(id)}
+                  className={`flex flex-col items-center text-center p-2.5 rounded-2xl border-[3px] transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#F2CD37]/20 border-[#05131D] shadow-[0_4px_0_#05131D] -translate-y-1 ring-2 ring-[#F2CD37]'
+                      : 'bg-white border-[#05131D]/40 hover:border-[#05131D] shadow-[0_2px_0_#05131D]/30 hover:-translate-y-0.5'
                   }`}
-                />
-              </button>
-            );
-          })}
+                >
+                  {/* Theme Preview Swatch Tile */}
+                  <div
+                    className="w-full h-12 rounded-xl border-2 border-[#05131D] mb-2 relative overflow-hidden flex items-center justify-center"
+                    style={{ backgroundColor: theme.baseplateColor }}
+                  >
+                    {/* Simulated studs */}
+                    <div className="grid grid-cols-3 gap-1.5 opacity-60">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-2 h-2 rounded-full border border-[#05131D]/40"
+                          style={{ backgroundColor: theme.studColor }}
+                        />
+                      ))}
+                    </div>
+                    {/* Wall brick accent */}
+                    <div
+                      className="absolute bottom-1 right-1 w-5 h-4 rounded border border-[#05131D] shadow-sm"
+                      style={{ backgroundColor: theme.wallColor }}
+                    />
+                  </div>
+
+                  <span className="font-display font-black text-xs text-[#05131D] uppercase">
+                    {theme.label.split(' ')[0]}
+                  </span>
+                  <span className="text-[9px] text-[#595D60] truncate max-w-full">
+                    {theme.label.split(' ')[1] ?? 'Board'}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Quick Audio & Settings Drawer Toggle */}
-        <div className="flex flex-col gap-2 pt-1 border-t border-white/10">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
+        {/* Primary CTA: Sandbox Mode */}
+        <div className="flex flex-col gap-2 pt-1">
+          <button
+            onClick={handleEnterSandbox}
+            className="w-full py-3.5 px-6 rounded-2xl bg-[#C91A09] hover:bg-[#b01607] text-[#F4F4F4] text-base font-black uppercase tracking-wider brick-btn flex items-center justify-center gap-2.5 shadow-[0_5px_0_#05131D] cursor-pointer"
+          >
+            <Hammer size={20} className="stroke-[2.5]" />
+            <span>SANDBOX MODE</span>
+          </button>
+
+          {/* Secondary Actions */}
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={handleStartRace}
+              className="py-2 px-2.5 rounded-xl bg-white hover:bg-[#e8e8e8] border-2 border-[#05131D] text-[#05131D] text-xs font-bold brick-btn flex items-center justify-center gap-1.5 shadow-[0_3px_0_#05131D] cursor-pointer"
+              title="Launch instant race with all 7 algorithms"
+            >
+              <Play size={13} className="text-[#0055BF] fill-current" />
+              <span>Start Race</span>
+            </button>
+
+            <button
+              onClick={handleOpenPresets}
+              className="py-2 px-2.5 rounded-xl bg-white hover:bg-[#e8e8e8] border-2 border-[#05131D] text-[#05131D] text-xs font-bold brick-btn flex items-center justify-center gap-1.5 shadow-[0_3px_0_#05131D] cursor-pointer"
+              title="Browse curated map presets"
+            >
+              <Map size={13} className="text-[#0055BF]" />
+              <span>Map Presets</span>
+            </button>
+
+            <button
+              onClick={handleOpenHelp}
+              className="py-2 px-2.5 rounded-xl bg-white hover:bg-[#e8e8e8] border-2 border-[#05131D] text-[#05131D] text-xs font-bold brick-btn flex items-center justify-center gap-1.5 shadow-[0_3px_0_#05131D] cursor-pointer"
+              title="Field manual and controls"
+            >
+              <BookOpen size={13} className="text-[#923978]" />
+              <span>Rules</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Audio & Settings Drawer */}
+        <div className="flex flex-col gap-2 pt-2 border-t-2 border-[#05131D]/15">
+          <div className="flex items-center justify-between text-xs text-[#595D60]">
             <button
               onClick={() => {
                 setShowSettings((s) => !s);
                 playClick();
               }}
-              className="flex items-center gap-1.5 hover:text-slate-200 transition-colors"
+              className="flex items-center gap-1.5 font-bold hover:text-[#05131D] transition-colors cursor-pointer"
             >
-              <Sliders size={13} className="text-slate-400" />
-              <span>Audio & Controls</span>
+              <Sliders size={13} />
+              <span>Audio Settings</span>
             </button>
 
-            <span className="font-mono text-[10px]">
-              Press <kbd className="text-slate-300 font-bold bg-white/10 px-1 py-0.5 rounded">Enter</kbd> to Launch
+            <span className="font-mono text-[10px] text-[#A3A2A4]">
+              Press <kbd className="text-[#05131D] font-bold bg-[#05131D]/10 px-1 py-0.5 rounded border border-[#05131D]/20">Enter</kbd> to Launch
             </span>
           </div>
 
           {showSettings && (
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-white/10 flex flex-col gap-2.5 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-medium text-slate-300 flex items-center gap-1.5">
-                  <Volume2 size={13} className="text-amber-400" />
+            <div className="p-3 rounded-xl bg-white border-2 border-[#05131D] flex flex-col gap-2 shadow-[0_2px_0_#05131D]">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold flex items-center gap-1.5">
+                  <Volume2 size={13} className="text-[#AA7F2E]" />
                   Volume: {Math.round(volume * 100)}%
                 </span>
                 <button
@@ -249,14 +255,14 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
                     toggleSound();
                     playClick();
                   }}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-colors flex items-center gap-1 ${
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border-2 border-[#05131D] transition-colors cursor-pointer flex items-center gap-1 ${
                     soundEnabled
-                      ? 'bg-amber-500/20 border-amber-500/30 text-amber-300'
-                      : 'bg-white/5 border-white/10 text-slate-400'
+                      ? 'bg-[#F2CD37] text-[#05131D]'
+                      : 'bg-[#A3A2A4] text-[#05131D]'
                   }`}
                 >
                   {soundEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
-                  <span>{soundEnabled ? 'AUDIO ON' : 'MUTED'}</span>
+                  <span>{soundEnabled ? 'SOUND ON' : 'MUTED'}</span>
                 </button>
               </div>
 
@@ -270,7 +276,7 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
                   setVolume(parseFloat(e.target.value));
                   playClick();
                 }}
-                className="w-full accent-amber-400 cursor-pointer h-1.5 bg-white/10 rounded-lg"
+                className="w-full accent-[#C91A09] cursor-pointer h-2 bg-[#A3A2A4]/40 rounded-lg"
               />
             </div>
           )}

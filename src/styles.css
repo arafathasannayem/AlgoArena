@@ -1,23 +1,116 @@
 @import "tailwindcss";
 
+:root {
+  /* Core brick palette */
+  --brick-red: #C91A09;
+  --brick-yellow: #F2CD37;
+  --brick-blue: #0055BF;
+  --baseplate-green: #237841;
+  --dark-bluish-grey: #595D60;
+  --light-bluish-grey: #A3A2A4;
+  --brick-black: #05131D;
+  --brick-white: #F4F4F4;
+
+  /* Racer colors */
+  --racer-astar: #C91A09;
+  --racer-dijkstra: #0055BF;
+  --racer-bfs: #F2CD37;
+  --racer-dfs: #4B9F4A;
+  --racer-greedy: #FE8A18;
+  --racer-hillclimb: #923978;
+  --racer-simanneal: #36AEBF;
+
+  /* Semantic board states */
+  --state-wall: #582A12;
+  --state-start: #AA7F2E;
+  --state-goal: #F2CD37;
+  --state-path-gold: #F2CD37;
+
+  /* Surfaces & text */
+  --surface-panel: #595D60;
+  --surface-panel-raised: #6C6E68;
+  --surface-card: #F4F4F4;
+  --surface-overlay: rgba(5, 19, 29, 0.65);
+  --text-primary: #05131D;
+  --text-inverse: #F4F4F4;
+  --text-muted: #A3A2A4;
+  --border-strong: #05131D;
+  --border-soft: #A3A2A4;
+}
+
 @theme {
-  /* ── Board palette ─────────────────────────────────────── */
-  --color-board-base: #d6cfc7;
-  --color-board-tile: #e8e2da;
-  --color-board-wall: #8b8178;
-  --color-board-border: #b5ada5;
+  --color-brick-red: #C91A09;
+  --color-brick-yellow: #F2CD37;
+  --color-brick-blue: #0055BF;
+  --color-baseplate-green: #237841;
+  --color-dark-bluish-grey: #595D60;
+  --color-light-bluish-grey: #A3A2A4;
+  --color-brick-black: #05131D;
+  --color-brick-white: #F4F4F4;
 
-  /* ── Goal accent ───────────────────────────────────────── */
-  --color-accent-goal: #f59e0b;
+  --color-surface-panel: #595D60;
+  --color-surface-panel-raised: #6C6E68;
+  --color-surface-card: #F4F4F4;
+  --color-board-base: #3E4348;
 
-  /* ── Glass HUD ─────────────────────────────────────────── */
-  --color-glass-bg: rgba(15, 23, 42, 0.65);
-  --color-glass-border: rgba(255, 255, 255, 0.12);
-  --color-glass-text: #f8fafc;
+  --color-racer-astar: #C91A09;
+  --color-racer-dijkstra: #0055BF;
+  --color-racer-bfs: #F2CD37;
+  --color-racer-dfs: #4B9F4A;
+  --color-racer-greedy: #FE8A18;
+  --color-racer-hillclimb: #923978;
+  --color-racer-simanneal: #36AEBF;
 
-  /* ── Typography ────────────────────────────────────────── */
-  --font-sans: "Inter", "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Nunito", "Quicksand", system-ui, sans-serif;
+  --font-sans: "Nunito", "Quicksand", system-ui, sans-serif;
+}
 
-  /* ── Radius ────────────────────────────────────────────── */
-  --radius-panel: 1rem;
+/* Tactile Brick Buttons with Hard Press Depth */
+.brick-btn {
+  border: 2px solid #05131D;
+  box-shadow: 0 4px 0 #05131D;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+  font-weight: 700;
+}
+
+.brick-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 #05131D;
+}
+
+.brick-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #05131D;
+}
+
+.brick-btn:disabled {
+  opacity: 0.45;
+  box-shadow: 0 2px 0 #05131D;
+  cursor: not-allowed;
+}
+
+/* Brick Card Dialogs with 3px Black Outlines & Hard Drop Shadows */
+.brick-card {
+  background-color: #F4F4F4;
+  color: #05131D;
+  border: 3px solid #05131D;
+  box-shadow: 0 8px 0 rgba(5, 19, 29, 0.4);
+  border-radius: 20px;
+}
+
+/* Raised LEGO Stud Header Indicator */
+.brick-studs-4 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.brick-stud {
+  width: 14px;
+  height: 6px;
+  border-radius: 3px 3px 0 0;
+  background-color: #A3A2A4;
+  border: 2px solid #05131D;
+  border-bottom: none;
 }
