@@ -29,17 +29,13 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
+import { isGoal, nearestGoal, nearestGoalDist } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Encode a Point as a string key for Set/Map lookups. */
 function key(p: Point): string {
   return `${p.x},${p.y}`;
-}
-
-/** Manhattan distance — admissible heuristic for 4-directional grids. */
-function manhattan(a: Point, b: Point): number {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
 /** Cardinal neighbor offsets (no diagonals). */
@@ -172,7 +168,7 @@ export function* aStarSearch(
 
   const startKey = key(grid.start);
   gScore.set(startKey, 0);
-  openSet.push({ point: grid.start, f: manhattan(grid.start, grid.goal) });
+  openSet.push({ point: grid.start, f: nearestGoalDist(grid, grid.start) });
 
   while (openSet.size > 0) {
     const entry = openSet.pop()!;
@@ -185,15 +181,15 @@ export function* aStarSearch(
     }
 
     // Yield consider event — shows where the heuristic is pointing
-    yield { kind: 'consider', node: current, heuristicTarget: grid.goal };
+    yield { kind: 'consider', node: current, heuristicTarget: nearestGoal(grid, current) };
 
     // Mark as visited
     closedSet.add(currentKey);
     nodesExplored++;
     yield { kind: 'visit', node: current };
 
-    // Goal check
-    if (current.x === grid.goal.x && current.y === grid.goal.y) {
+    // Goal check — reaching ANY goal counts as success
+    if (isGoal(grid, current)) {
       const path = reconstructPath(cameFrom, current);
       yield { kind: 'path', path };
 
@@ -224,7 +220,7 @@ export function* aStarSearch(
       if (tentativeG < bestG) {
         cameFrom.set(nbrKey, current);
         gScore.set(nbrKey, tentativeG);
-        const f = tentativeG + manhattan(nbr, grid.goal);
+        const f = tentativeG + nearestGoalDist(grid, nbr);
         openSet.push({ point: nbr, f });
         frontierNodes.push(nbr);
       }

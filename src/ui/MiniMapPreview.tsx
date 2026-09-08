@@ -16,7 +16,8 @@ interface MiniMapPreviewProps {
 }
 
 export function MiniMapPreview({ preset, className = '', size = 120 }: MiniMapPreviewProps) {
-  const { width, height, walls, costs, start, goal } = preset;
+  const { width, height, walls, costs, start } = preset;
+  const goals = preset.goals && preset.goals.length > 0 ? preset.goals : [preset.goal];
   const cellSize = size / Math.max(width, height);
   const totalWidth = width * cellSize;
   const totalHeight = height * cellSize;
@@ -67,13 +68,16 @@ export function MiniMapPreview({ preset, className = '', size = 120 }: MiniMapPr
         fill="#38bdf8"
       />
 
-      {/* Goal Point (Amber Aura) */}
-      <circle
-        cx={(goal.x + 0.5) * cellSize}
-        cy={(goal.y + 0.5) * cellSize}
-        r={Math.max(2, cellSize * 0.45)}
-        fill="#fbbf24"
-      />
+      {/* Goal Points (Amber Auras) — one per goal node */}
+      {goals.map((g, i) => (
+        <circle
+          key={`goal-${i}-${g.x}-${g.y}`}
+          cx={(g.x + 0.5) * cellSize}
+          cy={(g.y + 0.5) * cellSize}
+          r={Math.max(2, cellSize * 0.45)}
+          fill="#fbbf24"
+        />
+      ))}
     </svg>
   );
 }

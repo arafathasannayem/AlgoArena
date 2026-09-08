@@ -32,8 +32,10 @@ export interface MapPreset {
   costs?: [number, number, number][];
   /** Recommended start point. */
   start: Point;
-  /** Recommended goal point. */
+  /** Recommended primary goal point (always `goals[0]`). */
   goal: Point;
+  /** All recommended goal points. Reaching any one counts as success (optional). */
+  goals?: Point[];
   /** Category tag: 'official' or 'custom'. */
   category?: 'official' | 'custom';
   /** Creation timestamp for custom presets. */
@@ -228,6 +230,45 @@ export const ISLANDS_AND_STONES: MapPreset = {
 };
 
 /**
+ * "The Three Shrines" — multi-goal desert pilgrimage map.
+ * Three ancient beacons scattered across ruins, badlands, and clear corridors.
+ * Tests how algorithms navigate when multiple distinct goals are available.
+ */
+export const THREE_SHRINES: MapPreset = {
+  id: 'three_shrines',
+  name: 'The Three Shrines',
+  description: 'Three sacred desert shrines — algorithms choose which destination to seek.',
+  width: 20,
+  height: 20,
+  walls: [
+    // Center divider ruins with open arches
+    ...[5, 6, 7, 8, 12, 13, 14, 15].map((y): [number, number] => [9, y]),
+    ...[5, 6, 7, 8, 12, 13, 14, 15].map((y): [number, number] => [10, y]),
+    // North shrine defensive bastion
+    ...[8, 9, 11, 12].map((x): [number, number] => [x, 4]),
+    // South shrine defensive bastion
+    ...[8, 9, 11, 12].map((x): [number, number] => [x, 16]),
+    // East barrier
+    ...[7, 8, 12, 13].map((y): [number, number] => [15, y]),
+  ],
+  costs: [
+    // Rough badlands surrounding the North Shrine
+    ...[8, 9, 10, 11, 12].map((x): [number, number, number] => [x, 1, 8]),
+    ...[8, 9, 10, 11, 12].map((x): [number, number, number] => [x, 3, 8]),
+    // Heavy sand drifts across the East passage
+    ...[16, 17].flatMap((x): [number, number, number][] => [9, 10, 11].map((y) => [x, y, 6])),
+  ],
+  start: { x: 2, y: 10 },
+  goal: { x: 18, y: 10 },
+  goals: [
+    { x: 18, y: 10 },
+    { x: 10, y: 2 },
+    { x: 10, y: 18 },
+  ],
+  category: 'official',
+};
+
+/**
  * All official curated presets, indexed by stable key.
  */
 export const PRESETS: Record<string, MapPreset> = {
@@ -238,4 +279,5 @@ export const PRESETS: Record<string, MapPreset> = {
   labyrinth: THE_LABYRINTH,
   twin_chambers: TWIN_CHAMBERS,
   islands: ISLANDS_AND_STONES,
+  three_shrines: THREE_SHRINES,
 };

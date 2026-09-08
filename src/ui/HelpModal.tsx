@@ -117,7 +117,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               </kbd>
             </div>
             <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-              <span className="text-white/70">Set Goal</span>
+              <span className="text-white/70">Toggle Goal</span>
               <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px] font-bold">
                 G
               </kbd>
@@ -182,9 +182,10 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 flex gap-2.5">
               <MapPin size={18} className="text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-white">Goal Beacon</span>
+                <span className="font-semibold text-white">Goal Beacons</span>
                 <p className="text-[11px] text-white/60">
-                  The target destination. Emits golden particle aura.
+                  Target destinations. Agents win by reaching ANY beacon. Toggle tiles
+                  with the Goal tool to place multiple goals.
                 </p>
               </div>
             </div>

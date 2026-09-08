@@ -31,7 +31,7 @@ function SavePresetContent() {
   const walls = useGridStore((s) => s.walls);
   const costs = useGridStore((s) => s.costs);
   const start = useGridStore((s) => s.start);
-  const goal = useGridStore((s) => s.goal);
+  const goals = useGridStore((s) => s.goals);
 
   const [name, setName] = useState(() => `Custom Map ${new Date().toLocaleDateString()}`);
   const [description, setDescription] = useState('');
@@ -67,10 +67,11 @@ function SavePresetContent() {
       walls: wallArr,
       costs: costArr.length > 0 ? costArr : undefined,
       start,
-      goal,
+      goal: goals[0]!,
+      goals: goals.length > 1 ? goals.map((g) => ({ ...g })) : undefined,
       category: 'custom',
     };
-  }, [width, height, walls, costs, start, goal, name, description]);
+  }, [width, height, walls, costs, start, goals, name, description]);
 
 
   const handleSave = (e: React.FormEvent) => {
@@ -121,7 +122,8 @@ function SavePresetContent() {
             <span className="text-slate-400">{walls.size} obstacle walls</span>
             <span className="text-slate-400">{costs.size} rough terrain tiles</span>
             <span className="text-slate-500 font-mono text-[10px]">
-              Start: ({start.x}, {start.y}) • Goal: ({goal.x}, {goal.y})
+              Start: ({start.x}, {start.y}) • Goal: ({goals[0]!.x}, {goals[0]!.y})
+              {goals.length > 1 && <span> (+{goals.length - 1} more)</span>}
             </span>
           </div>
         </div>

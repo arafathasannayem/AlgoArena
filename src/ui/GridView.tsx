@@ -16,7 +16,7 @@ export function GridView() {
   const height = useGridStore((s) => s.height);
   const walls = useGridStore((s) => s.walls);
   const start = useGridStore((s) => s.start);
-  const goal = useGridStore((s) => s.goal);
+  const goals = useGridStore((s) => s.goals);
   const applyTool = useGridStore((s) => s.applyTool);
   const isPainting = useRef(false);
 
@@ -48,7 +48,8 @@ export function GridView() {
       const k = `${x},${y}`;
       const isWall = walls.has(k);
       const isStart = x === start.x && y === start.y;
-      const isGoal = x === goal.x && y === goal.y;
+      const isGoal = goals.some((g) => g.x === x && g.y === y);
+      const goalIndex = goals.findIndex((g) => g.x === x && g.y === y);
 
       let bg: string;
       let label = '';
@@ -57,7 +58,7 @@ export function GridView() {
         label = 'S';
       } else if (isGoal) {
         bg = 'bg-amber-500';
-        label = 'G';
+        label = goals.length > 1 && goalIndex > 0 ? `G${goalIndex + 1}` : 'G';
       } else if (isWall) {
         bg = 'bg-board-wall';
       } else {

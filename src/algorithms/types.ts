@@ -30,7 +30,13 @@ export interface GridSnapshot {
   /** Optional map of "x,y" keys to traversal costs (default cost is 1). */
   costs?: Map<string, number>;
   start: Point;
+  /** Primary goal — must still be provided; always a member of `goals`. */
   goal: Point;
+  /**
+   * Optional set of goal nodes. Reaching ANY of them counts as success.
+   * Defaults to `[goal]` when omitted (single-goal behaviour).
+   */
+  goals?: Point[];
 }
 
 // ── Step events (yielded by generators) ─────────────────────────────────────
@@ -51,7 +57,15 @@ export interface GridSnapshot {
 export type StepEvent =
   | { kind: 'visit'; node: Point }
   | { kind: 'frontier'; nodes: Point[] }
-  | { kind: 'consider'; node: Point; heuristicTarget?: Point }
+  | {
+      kind: 'consider';
+      node: Point;
+      heuristicTarget?: Point;
+      /** Live temperature for Simulated Annealing (undefined for others). */
+      temperature?: number;
+      /** Search direction for bidirectional algorithms ('forward' from start, 'backward' from goal). */
+      direction?: 'forward' | 'backward';
+    }
   | { kind: 'path'; path: Point[] }
   | { kind: 'done'; result: AlgorithmResult };
 
@@ -87,10 +101,11 @@ export type AlgorithmGenerator = Generator<StepEvent, AlgorithmResult, void>;
 
 /**
  * Per-algorithm configuration knobs (e.g. temperature schedule for Simulated
- * Annealing). Values are always numeric; undefined means "use default".
+ * Annealing). Values are numeric or flag-like booleans; undefined means "use
+ * default".
  */
 export interface AlgorithmConfig {
-  [key: string]: number | undefined;
+  [key: string]: number | boolean | undefined;
 }
 
 /**

@@ -15,9 +15,10 @@ import { useAgentStore } from '../state/agentStore';
 interface GoalGlowProps {
   x: number;
   y: number;
+  onClick?: () => void;
 }
 
-export function GoalGlow({ x, y }: GoalGlowProps) {
+export function GoalGlow({ x, y, onClick }: GoalGlowProps) {
   const groupRef = useRef<Group>(null);
   const crystalRef = useRef<Mesh>(null);
   const ringRef = useRef<Mesh>(null);
@@ -57,7 +58,14 @@ export function GoalGlow({ x, y }: GoalGlowProps) {
   });
 
   return (
-    <group ref={groupRef} position={[x, 0, y]}>
+    <group
+      ref={groupRef}
+      position={[x, 0, y]}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
+    >
       {/* Outer pulsing ground beacon ring */}
       <mesh ref={ringRef} position={[0, 0.11, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.32, 0.44, 32]} />

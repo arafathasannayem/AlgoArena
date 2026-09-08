@@ -29,6 +29,7 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
+import { isGoal } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -109,8 +110,8 @@ export function* breadthFirstSearch(
     nodesExplored++;
     yield { kind: 'visit', node: current };
 
-    // Goal check
-    if (current.x === grid.goal.x && current.y === grid.goal.y) {
+    // Goal check — reaching ANY goal counts as success
+    if (isGoal(grid, current)) {
       const path = reconstructPath(cameFrom, current);
       yield { kind: 'path', path };
 

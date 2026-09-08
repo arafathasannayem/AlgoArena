@@ -21,6 +21,8 @@ import { dfsFactory } from './dfs';
 import { greedyBestFirstFactory } from './greedyBestFirst';
 import { hillClimbingFactory } from './hillClimbing';
 import { simulatedAnnealingFactory } from './simulatedAnnealing';
+import { bidirectionalBfsFactory } from './bidirectionalBfs';
+import { bidirectionalAStarFactory } from './bidirectionalAstar';
 
 // Re-export types for convenience
 export type { AlgorithmFactory, AlgorithmGenerator, AlgorithmConfig } from './types';
@@ -48,9 +50,11 @@ export const ALGORITHMS: Record<string, AlgorithmEntry> = {
   bfs:       { label: 'BFS',                 color: '#eab308', factory: breadthFirstSearch,       implemented: true },
   dijkstra:  { label: "Dijkstra's",          color: '#22c55e', factory: dijkstraFactory,          implemented: false },
   dfs:       { label: 'DFS',                 color: '#a855f7', factory: dfsFactory,               implemented: false },
-  greedy:    { label: 'Greedy Best-First',   color: '#f97316', factory: greedyBestFirstFactory,   implemented: false },
-  hillclimb: { label: 'Hill Climbing',       color: '#ef4444', factory: hillClimbingFactory,      implemented: false },
-  annealing: { label: 'Simulated Annealing', color: '#14b8a6', factory: simulatedAnnealingFactory, implemented: false },
+  greedy:    { label: 'Greedy Best-First',   color: '#f97316', factory: greedyBestFirstFactory,   implemented: true },
+  hillclimb: { label: 'Hill Climbing',       color: '#ef4444', factory: hillClimbingFactory,      implemented: true },
+  annealing: { label: 'Simulated Annealing', color: '#14b8a6', factory: simulatedAnnealingFactory, implemented: true },
+  'bidir-bfs': { label: 'Bidirectional BFS', color: '#ec4899', factory: bidirectionalBfsFactory, implemented: true },
+  'bidir-astar': { label: 'Bidirectional A*', color: '#d946ef', factory: bidirectionalAStarFactory, implemented: true },
 } as const;
 
 /**

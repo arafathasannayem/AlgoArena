@@ -10,9 +10,9 @@ import { describe, it, expect } from 'vitest';
 import { PRESETS } from '../presets';
 
 describe('Map Presets', () => {
-  it('should contain at least 7 distinct presets', () => {
+  it('should contain at least 8 distinct presets', () => {
     const keys = Object.keys(PRESETS);
-    expect(keys.length).toBeGreaterThanOrEqual(7);
+    expect(keys.length).toBeGreaterThanOrEqual(8);
     expect(keys).toContain('spiral');
     expect(keys).toContain('trap');
     expect(keys).toContain('chokepoints');
@@ -20,6 +20,7 @@ describe('Map Presets', () => {
     expect(keys).toContain('labyrinth');
     expect(keys).toContain('twin_chambers');
     expect(keys).toContain('islands');
+    expect(keys).toContain('three_shrines');
   });
 
   it.each(Object.entries(PRESETS))('preset %s should have valid geometry and walkable endpoints', (_key, preset) => {
@@ -44,7 +45,18 @@ describe('Map Presets', () => {
     expect(preset.goal.y).toBeLessThan(preset.height);
     expect(wallSet.has(`${preset.goal.x},${preset.goal.y}`)).toBe(false);
 
-    // Start and goal cannot be identical
+    // If goals are specified, all must be within bounds and walkable
+    if (preset.goals) {
+      for (const g of preset.goals) {
+        expect(g.x).toBeGreaterThanOrEqual(0);
+        expect(g.x).toBeLessThan(preset.width);
+        expect(g.y).toBeGreaterThanOrEqual(0);
+        expect(g.y).toBeLessThan(preset.height);
+        expect(wallSet.has(`${g.x},${g.y}`)).toBe(false);
+      }
+    }
+
+    // Start and primary goal cannot be identical
     expect(preset.start).not.toEqual(preset.goal);
 
     // All walls must be within bounds

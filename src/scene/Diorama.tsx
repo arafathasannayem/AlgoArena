@@ -38,7 +38,7 @@ function DioramaScene() {
   const walls = useGridStore((s) => s.walls);
   const costs = useGridStore((s) => s.costs);
   const start = useGridStore((s) => s.start);
-  const goal = useGridStore((s) => s.goal);
+  const goals = useGridStore((s) => s.goals);
   const applyTool = useGridStore((s) => s.applyTool);
 
   const agents = useAgentStore((s) => s.agents);
@@ -116,7 +116,7 @@ function DioramaScene() {
         const k = `${x},${y}`;
         const isWall = walls.has(k);
         const isStart = x === start.x && y === start.y;
-        const isGoal = x === goal.x && y === goal.y;
+        const isGoal = goals.some((g) => g.x === x && g.y === y);
 
         ts.push(
           <Tile
@@ -147,7 +147,7 @@ function DioramaScene() {
       }
     }
     return { tiles: ts, wallBlocks: ws };
-  }, [width, height, walls, costs, start, goal, isTopDown, applyTool]);
+  }, [width, height, walls, costs, start, goals, isTopDown, applyTool]);
 
   return (
     <>
@@ -221,7 +221,14 @@ function DioramaScene() {
 
         {tiles}
         {wallBlocks}
-        <GoalGlow x={goal.x} y={goal.y} />
+        {goals.map((g) => (
+          <GoalGlow
+            key={`goal-${g.x}-${g.y}`}
+            x={g.x}
+            y={g.y}
+            onClick={() => applyTool(g.x, g.y)}
+          />
+        ))}
 
         {/* Agents & their overlays */}
         {agents.map((agent) => {
@@ -249,11 +256,23 @@ function DioramaScene() {
 
               {agent.showOverlay && (
                 <>
-                  {/* Active scout scanner reticle exploring nodes */}
+                  {/* Forward active scout scanner plate */}
                   {agent.scanPosition && agent.status === 'running' && (
                     <ScanReticle
+                      key={`scan-fwd-${agent.id}`}
                       position={agent.scanPosition}
                       color={agent.color}
+                      variant="forward"
+                    />
+                  )}
+
+                  {/* Backward active scout scanner plate (bidirectional search) */}
+                  {agent.scanPositionBackward && agent.status === 'running' && (
+                    <ScanReticle
+                      key={`scan-bwd-${agent.id}`}
+                      position={agent.scanPositionBackward}
+                      color={agent.color}
+                      variant="backward"
                     />
                   )}
 
@@ -263,10 +282,21 @@ function DioramaScene() {
                     color={agent.color}
                   />
                   <PathTrail path={agent.currentPath} color={agent.color} />
+
+                  {/* Forward heuristic ray */}
                   {agent.heuristicTarget && (
                     <HeuristicRay
                       from={agent.scanPosition ?? agent.position}
                       to={agent.heuristicTarget}
+                      color={agent.color}
+                    />
+                  )}
+
+                  {/* Backward heuristic ray (bidirectional search) */}
+                  {agent.heuristicTargetBackward && (
+                    <HeuristicRay
+                      from={agent.scanPositionBackward ?? agent.position}
+                      to={agent.heuristicTargetBackward}
                       color={agent.color}
                     />
                   )}
