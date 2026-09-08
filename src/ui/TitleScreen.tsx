@@ -4,13 +4,13 @@
  * Implements Section 4.1 & 4.2 of the UI/UX Guidelines:
  * - Center-aligned layout inspired by LEGO Party! board selection screen.
  * - Horizontal row of 4 theme cards (Classic, Castle, Space, City) with 4 raised studs.
- * - Primary CTA: Large Brick Red (#C91A09) [ ▶ START RACE ] button.
- * - Secondary controls: Map Presets, How it Works, and Audio Settings.
+ * - Primary CTA: Large Brick Red (#C91A09) [ 🔨 SANDBOX MODE ] button.
+ * - Secondary controls: Start Race (instant all 7 race), Map Presets, and How it Works.
  *
  * @module ui/TitleScreen
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useGameMenuStore } from '../state/gameMenuStore';
 import { useAgentStore } from '../state/agentStore';
 import { useGridStore } from '../state/gridStore';
@@ -26,6 +26,7 @@ import {
   Volume2,
   VolumeX,
   Sliders,
+  Hammer,
 } from 'lucide-react';
 
 interface TitleScreenProps {
@@ -43,7 +44,6 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
   const start = useGridStore((s) => s.start);
   const agents = useAgentStore((s) => s.agents);
   const addAgent = useAgentStore((s) => s.addAgent);
-  const removeAgent = useAgentStore((s) => s.removeAgent);
   const startRace = useRaceStore((s) => s.startRace);
 
   const soundEnabled = useSoundStore((s) => s.enabled);
@@ -53,7 +53,10 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
 
   const [showSettings, setShowSettings] = useState(false);
 
-  if (!isOpen) return null;
+  const handleEnterSandbox = useCallback(() => {
+    closeTitleScreen();
+    playClick();
+  }, [closeTitleScreen]);
 
   const handleStartRace = () => {
     // If no agents placed, place all 7 algorithms
@@ -82,6 +85,21 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
     playSnap();
   };
 
+  // Keyboard shortcut to launch primary CTA
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleEnterSandbox();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleEnterSandbox]);
+
+  if (!isOpen) return null;
+
   const themeList: BoardThemeId[] = ['classic', 'castle', 'space', 'city'];
 
   return (
@@ -106,7 +124,7 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
           </h1>
 
           <p className="text-xs sm:text-sm text-[#595D60] font-semibold max-w-md">
-            Pick a board theme, race 7 pathfinding algorithms in real-time.
+            Pick a board theme, paint walls, and race 7 search algorithms in real-time.
           </p>
         </div>
 
@@ -165,32 +183,43 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
           </div>
         </div>
 
-        {/* Primary CTA: Start Race */}
+        {/* Primary CTA: Sandbox Mode */}
         <div className="flex flex-col gap-2 pt-1">
           <button
-            onClick={handleStartRace}
-            className="w-full py-3.5 px-6 rounded-2xl bg-[#C91A09] hover:bg-[#b01607] text-[#F4F4F4] text-base font-black uppercase tracking-wider brick-btn flex items-center justify-center gap-2 shadow-[0_5px_0_#05131D] cursor-pointer"
+            onClick={handleEnterSandbox}
+            className="w-full py-3.5 px-6 rounded-2xl bg-[#C91A09] hover:bg-[#b01607] text-[#F4F4F4] text-base font-black uppercase tracking-wider brick-btn flex items-center justify-center gap-2.5 shadow-[0_5px_0_#05131D] cursor-pointer"
           >
-            <Play size={20} className="fill-current" />
-            <span>START RACE</span>
+            <Hammer size={20} className="stroke-[2.5]" />
+            <span>SANDBOX MODE</span>
           </button>
 
           {/* Secondary Actions */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={handleStartRace}
+              className="py-2 px-2.5 rounded-xl bg-white hover:bg-[#e8e8e8] border-2 border-[#05131D] text-[#05131D] text-xs font-bold brick-btn flex items-center justify-center gap-1.5 shadow-[0_3px_0_#05131D] cursor-pointer"
+              title="Launch instant race with all 7 algorithms"
+            >
+              <Play size={13} className="text-[#0055BF] fill-current" />
+              <span>Start Race</span>
+            </button>
+
             <button
               onClick={handleOpenPresets}
-              className="py-2 px-3 rounded-xl bg-white hover:bg-[#e8e8e8] border-2 border-[#05131D] text-[#05131D] text-xs font-bold brick-btn flex items-center justify-center gap-1.5 shadow-[0_3px_0_#05131D] cursor-pointer"
+              className="py-2 px-2.5 rounded-xl bg-white hover:bg-[#e8e8e8] border-2 border-[#05131D] text-[#05131D] text-xs font-bold brick-btn flex items-center justify-center gap-1.5 shadow-[0_3px_0_#05131D] cursor-pointer"
+              title="Browse curated map presets"
             >
-              <Map size={14} className="text-[#0055BF]" />
+              <Map size={13} className="text-[#0055BF]" />
               <span>Map Presets</span>
             </button>
 
             <button
               onClick={handleOpenHelp}
-              className="py-2 px-3 rounded-xl bg-white hover:bg-[#e8e8e8] border-2 border-[#05131D] text-[#05131D] text-xs font-bold brick-btn flex items-center justify-center gap-1.5 shadow-[0_3px_0_#05131D] cursor-pointer"
+              className="py-2 px-2.5 rounded-xl bg-white hover:bg-[#e8e8e8] border-2 border-[#05131D] text-[#05131D] text-xs font-bold brick-btn flex items-center justify-center gap-1.5 shadow-[0_3px_0_#05131D] cursor-pointer"
+              title="Field manual and controls"
             >
-              <BookOpen size={14} className="text-[#923978]" />
-              <span>How it Works</span>
+              <BookOpen size={13} className="text-[#923978]" />
+              <span>Rules</span>
             </button>
           </div>
         </div>
@@ -209,17 +238,9 @@ export function TitleScreen({ onOpenHelp }: TitleScreenProps = {}) {
               <span>Audio Settings</span>
             </button>
 
-            <button
-              onClick={() => {
-                // Clear and go directly to empty board editor
-                agents.forEach((a) => removeAgent(a.id));
-                closeTitleScreen();
-                playClick();
-              }}
-              className="text-[11px] font-bold text-[#0055BF] hover:underline cursor-pointer"
-            >
-              Sandbox Builder Mode →
-            </button>
+            <span className="font-mono text-[10px] text-[#A3A2A4]">
+              Press <kbd className="text-[#05131D] font-bold bg-[#05131D]/10 px-1 py-0.5 rounded border border-[#05131D]/20">Enter</kbd> to Launch
+            </span>
           </div>
 
           {showSettings && (
