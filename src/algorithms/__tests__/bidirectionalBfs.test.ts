@@ -245,4 +245,37 @@ describe('Bidirectional BFS', () => {
       expect(result.path).toHaveLength(2);
     });
   });
+
+  // ── Multi-goal simultaneous execution ──────────────────────────────────
+
+  describe('multi-goal simultaneous execution', () => {
+    it('runs start and all goal frontiers simultaneously without start taking a turn after each goal', () => {
+      // Grid with 3 goals positioned symmetrically far from start
+      const grid = {
+        width: 15,
+        height: 15,
+        walls: new Set<string>(),
+        start: { x: 7, y: 7 },
+        goal: { x: 0, y: 0 },
+        goals: [
+          { x: 0, y: 0 },
+          { x: 14, y: 0 },
+          { x: 14, y: 14 },
+        ],
+      };
+
+      const { events } = run(grid);
+      const considerDirections = events
+        .filter((e): e is StepEvent & { kind: 'consider' } => e.kind === 'consider')
+        .map((e) => e.direction);
+
+      // In the first round, Start expands (forward), then all 3 goals expand (backward, backward, backward)
+      expect(considerDirections.slice(0, 4)).toEqual(['forward', 'backward', 'backward', 'backward']);
+      // In the second round, Start expands (forward), then all 3 goals expand (backward, backward, backward)
+      expect(considerDirections.slice(4, 8)).toEqual(['forward', 'backward', 'backward', 'backward']);
+
+      // Verify Start does NOT interleave after each individual goal
+      expect(considerDirections.slice(1, 4)).toEqual(['backward', 'backward', 'backward']);
+    });
+  });
 });

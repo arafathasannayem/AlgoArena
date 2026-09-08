@@ -9,6 +9,7 @@
  * - Use a min-heap ordered by g(n) (actual cost from start).
  * - The MinHeap class from astar.ts can be extracted to a shared util if needed.
  * - Yield the same event sequence as A* but omit `heuristicTarget`.
+ * - Multi-goal support: check goal completion using `isGoal(grid, current)` so reaching ANY goal counts as success.
  * - See init.md Phase 1 for the full spec.
  * - Must pass the shared fixture grids: open field, wall detour, U-trap, blocked.
  *

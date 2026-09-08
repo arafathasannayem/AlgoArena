@@ -122,6 +122,11 @@ class MinHeap {
     return this.data.length;
   }
 
+  /** Read-only view of the heap entries for cut-boundary inspection. */
+  get entries(): readonly HeapEntry[] {
+    return this.data;
+  }
+
   push(entry: HeapEntry): void {
     this.data.push(entry);
     this.bubbleUp(this.data.length - 1);
@@ -135,6 +140,11 @@ class MinHeap {
       this.sinkDown(0);
     }
     return top;
+  }
+
+  /** Peek at the top entry in the heap without popping. */
+  peek(): HeapEntry | undefined {
+    return this.data[0];
   }
 
   /** Peek at the smallest f-value in the heap without popping. */
@@ -174,6 +184,36 @@ class MinHeap {
       }
     }
   }
+}
+
+/**
+ * Purge entries from the top of the heap that have already been closed.
+ * Ensures heap.peekF() and heap.peek() always reflect true unclosed frontier nodes.
+ */
+function cleanHeap(heap: MinHeap, closed: Set<string>): void {
+  while (heap.size > 0 && closed.has(key(heap.peek()!.point))) {
+    heap.pop();
+  }
+}
+
+/**
+ * Compute the exact total traversal cost for a path.
+ */
+function computePathCost(path: Point[], grid: GridSnapshot): number {
+  let cost = 0;
+  for (let i = 1; i < path.length; i++) {
+    const p = path[i]!;
+    cost += grid.costs?.get(`${p.x},${p.y}`) ?? 1;
+  }
+  return cost;
+}
+
+interface GoalSearcher {
+  goal: Point;
+  heap: MinHeap;
+  gScore: Map<string, number>;
+  cameFrom: Map<string, Point>;
+  closed: Set<string>;
 }
 
 // ── Bidirectional A* generator ──────────────────────────────────────────────
@@ -220,26 +260,25 @@ export function* bidirectionalAStar(
   gA.set(key(start), 0);
   openA.push({ point: start, f: nearestGoalDist(grid, start) });
 
-  // ── Goal side (B) — independent frontier queue per goal node ────────────
-  // Each goal gets its own MinHeap so that all goals run backward checks
-  // concurrently towards start, rather than letting a single geometrically
-  // closer goal starve the others.
-  const openBs: MinHeap[] = goals.map(() => new MinHeap());
-  const gB = new Map<string, number>();
-  const cameFromB = new Map<string, Point>();
-  const closedB = new Set<string>();
+  // ── Goal side (B) — independent encapsulated searcher per goal node ─────
+  // Each goal gets its own MinHeap, gScore, cameFrom, and closedSet so that
+  // neither search branches nor predecessor paths collide between goals.
+  const goalSearchers: GoalSearcher[] = goals.map((g) => {
+    const heap = new MinHeap();
+    const gScore = new Map<string, number>();
+    const cameFrom = new Map<string, Point>();
+    const closed = new Set<string>();
+    gScore.set(key(g), 0);
+    heap.push({ point: g, f: manhattan(g, start) });
+    return { goal: g, heap, gScore, cameFrom, closed };
+  });
 
-  for (let i = 0; i < goals.length; i++) {
-    const g = goals[i]!;
-    const gKey = key(g);
-    gB.set(gKey, 0);
-    openBs[i]!.push({ point: g, f: manhattan(g, start) });
-  }
-
-  /** Whether any goal frontier still has nodes to expand. */
+  /** Whether any goal frontier still has unclosed nodes that could beat bestCost. */
   function hasOpenB(): boolean {
-    for (let i = 0; i < openBs.length; i++) {
-      if (openBs[i]!.size > 0) return true;
+    for (let i = 0; i < goalSearchers.length; i++) {
+      const s = goalSearchers[i]!;
+      cleanHeap(s.heap, s.closed);
+      if (s.heap.size > 0 && s.heap.peekF() < bestCost) return true;
     }
     return false;
   }
@@ -247,63 +286,133 @@ export function* bidirectionalAStar(
   /** Lowest f-score across all active goal frontiers. */
   function minOpenBF(): number {
     let minF = Infinity;
-    for (let i = 0; i < openBs.length; i++) {
-      if (openBs[i]!.size > 0) {
-        const f = openBs[i]!.peekF();
+    for (let i = 0; i < goalSearchers.length; i++) {
+      const s = goalSearchers[i]!;
+      cleanHeap(s.heap, s.closed);
+      if (s.heap.size > 0) {
+        const f = s.heap.peekF();
         if (f < minF) minF = f;
       }
     }
     return minF;
   }
 
-  // Best meeting point found so far (for optimal stopping).
-  let bestMeet: Point | null = null;
+  // Best complete path found so far and its true cost
+  let bestPath: Point[] | null = null;
   let bestCost = Infinity;
 
-  /** Try to register a meeting at `meet` with combined cost `cost`. */
-  function considerMeeting(meet: Point, cost: number): void {
-    if (cost < bestCost) {
-      bestCost = cost;
-      bestMeet = meet;
-    }
-  }
-
-  /** Join the two half-paths at a meeting node into one full path. */
-  function joinAt(meet: Point): Point[] {
-    const fromStart = reconstructFrom(cameFromA, meet); // [start, ..., meet]
-    const toGoal = reconstructToward(cameFromB, meet); // [meet, ..., goal]
+  /** Join two half-paths at a meeting node into one full path for a given goal searcher. */
+  function joinPath(meet: Point, searcher: GoalSearcher): Point[] {
+    const fromStart = reconstructFrom(cameFromA, meet);
+    const toGoal = reconstructToward(searcher.cameFrom, meet);
     return [...fromStart, ...toGoal.slice(1)];
   }
 
-  // Alternate which side expands next.
-  let turnA = true;
-  let goalIndex = 0;
+  /** Evaluate a complete path between frontiers and update the best candidate. */
+  function considerCandidate(path: Point[]): void {
+    const cost = computePathCost(path, grid);
+    if (cost < bestCost) {
+      bestCost = cost;
+      bestPath = path;
+    }
+  }
 
-  while (openA.size > 0 && hasOpenB()) {
-    // ── Expand one node from the start side ────────────────────────────────
-    if (turnA && openA.size > 0) {
+  /**
+   * Determine whether the current best path is provably optimal.
+   *
+   * Any undiscovered path from Start to Goal must pass through some u in openA
+   * and some v in openB. Its cost is strictly bounded from below by:
+   *   1. Pohl's bound: max(f_min^A, f_min^B)
+   *   2. Pairwise cut-distance bound: min_{u in openA, v in openB} (gA(u) + manhattan(u, v) + gB(v))
+   *
+   * If either condition indicates no unexamined path can beat bestCost,
+   * the search terminates immediately.
+   */
+  function isOptimal(): boolean {
+    if (bestPath === null) return false;
+    cleanHeap(openA, closedA);
+
+    // Fast Path 1: Pohl's bound
+    const fA = openA.peekF();
+    const fB = minOpenBF();
+    if (Math.max(fA, fB) >= bestCost) return true;
+
+    // Fast Path 2: If openA has no unclosed nodes left, no path can advance from Start
+    const nodesA = openA.entries.filter((e) => !closedA.has(key(e.point)));
+    if (nodesA.length === 0) return true;
+
+    // Condition 2: Pairwise cut-distance lower bound across all active goal frontiers
+    for (let i = 0; i < goalSearchers.length; i++) {
+      const s = goalSearchers[i]!;
+      cleanHeap(s.heap, s.closed);
+      const nodesB = s.heap.entries.filter((e) => !s.closed.has(key(e.point)));
+      if (nodesB.length === 0) continue;
+
+      let minPair = Infinity;
+      for (let a = 0; a < nodesA.length; a++) {
+        const ea = nodesA[a]!;
+        const ga = gA.get(key(ea.point))!;
+        if (ga >= bestCost) continue;
+
+        for (let b = 0; b < nodesB.length; b++) {
+          const eb = nodesB[b]!;
+          const gb = s.gScore.get(key(eb.point))!;
+          const d = ga + manhattan(ea.point, eb.point) + gb;
+          if (d < minPair) {
+            minPair = d;
+            if (minPair < bestCost) break;
+          }
+        }
+        if (minPair < bestCost) break;
+      }
+
+      // If this goal frontier could still produce a path cheaper than bestCost, not yet optimal
+      if (minPair < bestCost) return false;
+    }
+
+    return true;
+  }
+
+  // Synchronous multi-head search: in each round, the Start side expands 1 node
+  // and EACH active Goal side expands 1 node so all frontiers advance simultaneously.
+  while (openA.size > 0 || hasOpenB()) {
+    cleanHeap(openA, closedA);
+    let advancedThisRound = false;
+
+    // ── 1. Expand one node from the start side ─────────────────────────────
+    let currentA: Point | null = null;
+    while (openA.size > 0) {
       const entry = openA.pop()!;
-      const current = entry.point;
-      const currentKey = key(current);
+      if (closedA.has(key(entry.point))) continue;
+      // Since min-heap, if this entry cannot beat bestCost, no remaining entry in openA can
+      if (entry.f >= bestCost) {
+        break;
+      }
+      currentA = entry.point;
+      break;
+    }
 
-      if (closedA.has(currentKey)) continue;
+    if (currentA !== null) {
+      advancedThisRound = true;
+      const currentKey = key(currentA);
 
-      yield { kind: 'consider', node: current, heuristicTarget: nearestGoal(grid, current), direction: 'forward' };
+      yield { kind: 'consider', node: currentA, heuristicTarget: nearestGoal(grid, currentA), direction: 'forward' };
       closedA.add(currentKey);
       nodesExplored++;
-      yield { kind: 'visit', node: current };
+      yield { kind: 'visit', node: currentA };
 
-      // If the goal side already reached this node → meeting point.
-      const gBhere = gB.get(currentKey);
-      if (gBhere !== undefined) {
-        considerMeeting(current, (gA.get(currentKey) ?? 0) + gBhere);
-        if (openA.peekF() + minOpenBF() >= bestCost) break;
+      // If any goal side already reached this node → candidate meeting.
+      for (let i = 0; i < goalSearchers.length; i++) {
+        const s = goalSearchers[i]!;
+        if (s.gScore.has(currentKey)) {
+          considerCandidate(joinPath(currentA, s));
+        }
       }
 
       const currentG = gA.get(currentKey) ?? Infinity;
       const frontierNodes: Point[] = [];
 
-      for (const nbr of neighbors(current, grid)) {
+      for (const nbr of neighbors(currentA, grid)) {
         const nbrKey = key(nbr);
         if (closedA.has(nbrKey)) continue;
 
@@ -312,15 +421,20 @@ export function* bidirectionalAStar(
         const bestG = gA.get(nbrKey) ?? Infinity;
 
         if (tentativeG < bestG) {
-          cameFromA.set(nbrKey, current);
+          cameFromA.set(nbrKey, currentA);
           gA.set(nbrKey, tentativeG);
-          openA.push({ point: nbr, f: tentativeG + nearestGoalDist(grid, nbr) });
-          frontierNodes.push(nbr);
+          const f = tentativeG + nearestGoalDist(grid, nbr);
+          if (f < bestCost) {
+            openA.push({ point: nbr, f });
+            frontierNodes.push(nbr);
+          }
 
-          // Neighbor reached by both frontiers → meeting point.
-          const gBnb = gB.get(nbrKey);
-          if (gBnb !== undefined) {
-            considerMeeting(nbr, tentativeG + gBnb);
+          // Neighbor already reached by any goal frontier → candidate meeting.
+          for (let i = 0; i < goalSearchers.length; i++) {
+            const s = goalSearchers[i]!;
+            if (s.gScore.has(nbrKey)) {
+              considerCandidate(joinPath(nbr, s));
+            }
           }
         }
       }
@@ -328,60 +442,70 @@ export function* bidirectionalAStar(
       if (frontierNodes.length > 0) {
         yield { kind: 'frontier', nodes: frontierNodes };
       }
-      yield { kind: 'path', path: bestMeet ? joinAt(bestMeet) : reconstructFrom(cameFromA, current) };
+      yield { kind: 'path', path: bestPath ? [...bestPath] : reconstructFrom(cameFromA, currentA) };
+
+      // Check optimal stop after Start expansion
+      if (isOptimal()) {
+        break;
+      }
     }
 
-    // ── Expand one node from the goal side (round-robin among goals) ────────
-    if (!turnA && hasOpenB()) {
-      let attempts = 0;
-      while (openBs[goalIndex]!.size === 0 && attempts < goals.length) {
-        goalIndex = (goalIndex + 1) % goals.length;
-        attempts++;
+    // ── 2. Expand one node from EACH active goal side simultaneously ───────
+    for (let i = 0; i < goalSearchers.length; i++) {
+      const activeSearcher = goalSearchers[i]!;
+      cleanHeap(activeSearcher.heap, activeSearcher.closed);
+
+      let currentB: Point | null = null;
+      while (activeSearcher.heap.size > 0) {
+        const entry = activeSearcher.heap.pop()!;
+        if (activeSearcher.closed.has(key(entry.point))) continue;
+        // Since min-heap, if this entry cannot beat bestCost, this goal searcher is finished
+        if (entry.f >= bestCost) {
+          break;
+        }
+        currentB = entry.point;
+        break;
       }
 
-      const currentGoalIdx = goalIndex;
-      const activeHeap = openBs[currentGoalIdx]!;
-      goalIndex = (goalIndex + 1) % goals.length;
+      if (currentB === null) continue;
 
-      const entry = activeHeap.pop()!;
-      const current = entry.point;
-      const currentKey = key(current);
+      advancedThisRound = true;
+      const currentKey = key(currentB);
 
-      if (closedB.has(currentKey)) continue;
-
-      yield { kind: 'consider', node: current, heuristicTarget: start, direction: 'backward' };
-      closedB.add(currentKey);
+      yield { kind: 'consider', node: currentB, heuristicTarget: start, direction: 'backward' };
+      activeSearcher.closed.add(currentKey);
       nodesExplored++;
-      yield { kind: 'visit', node: current };
+      yield { kind: 'visit', node: currentB };
 
-      // If the start side already reached this node → meeting point.
-      const gAhere = gA.get(currentKey);
-      if (gAhere !== undefined) {
-        considerMeeting(current, gAhere + (gB.get(currentKey) ?? 0));
-        if (openA.peekF() + minOpenBF() >= bestCost) break;
+      // If the start side already reached this node → candidate meeting.
+      if (gA.has(currentKey)) {
+        considerCandidate(joinPath(currentB, activeSearcher));
       }
 
-      const currentG = gB.get(currentKey) ?? Infinity;
+      const currentG = activeSearcher.gScore.get(currentKey) ?? Infinity;
       const frontierNodes: Point[] = [];
 
-      for (const nbr of neighbors(current, grid)) {
+      for (const nbr of neighbors(currentB, grid)) {
         const nbrKey = key(nbr);
-        if (closedB.has(nbrKey)) continue;
+        if (activeSearcher.closed.has(nbrKey)) continue;
 
-        const stepCost = grid.costs?.get(nbrKey) ?? 1;
+        // In reverse graph from current to nbr, forward edge is nbr -> current
+        const stepCost = grid.costs?.get(currentKey) ?? 1;
         const tentativeG = currentG + stepCost;
-        const bestG = gB.get(nbrKey) ?? Infinity;
+        const bestG = activeSearcher.gScore.get(nbrKey) ?? Infinity;
 
         if (tentativeG < bestG) {
-          cameFromB.set(nbrKey, current);
-          gB.set(nbrKey, tentativeG);
-          openBs[currentGoalIdx]!.push({ point: nbr, f: tentativeG + manhattan(nbr, start) });
-          frontierNodes.push(nbr);
+          activeSearcher.cameFrom.set(nbrKey, currentB);
+          activeSearcher.gScore.set(nbrKey, tentativeG);
+          const f = tentativeG + manhattan(nbr, start);
+          if (f < bestCost) {
+            activeSearcher.heap.push({ point: nbr, f });
+            frontierNodes.push(nbr);
+          }
 
-          // Neighbor reached by both frontiers → meeting point.
-          const gAnb = gA.get(nbrKey);
-          if (gAnb !== undefined) {
-            considerMeeting(nbr, gAnb + tentativeG);
+          // Neighbor reached by the start side → candidate meeting.
+          if (gA.has(nbrKey)) {
+            considerCandidate(joinPath(nbr, activeSearcher));
           }
         }
       }
@@ -389,27 +513,36 @@ export function* bidirectionalAStar(
       if (frontierNodes.length > 0) {
         yield { kind: 'frontier', nodes: frontierNodes };
       }
-      yield { kind: 'path', path: bestMeet ? joinAt(bestMeet) : reconstructToward(cameFromB, current) };
+      yield { kind: 'path', path: bestPath ? [...bestPath] : reconstructToward(activeSearcher.cameFrom, currentB) };
+
+      // Check optimal stop after each Goal expansion
+      if (isOptimal()) {
+        break;
+      }
     }
 
-    // Optional stop: no remaining candidate can beat the best path found.
-    if (bestMeet !== null && openA.peekF() + minOpenBF() >= bestCost) {
+    // Optimal stop check at round boundary
+    if (isOptimal()) {
       break;
     }
 
-    // Symmetric alternation (skip if the other side emptied this round).
-    if (turnA && openA.size === 0) turnA = false;
-    else if (!turnA && !hasOpenB()) turnA = true;
-    else turnA = !turnA;
+    // If no searcher was able to advance, stop
+    if (!advancedThisRound) {
+      break;
+    }
+
+    // If Start is exhausted or all Goals are exhausted and no path exists, stop
+    if (bestPath === null && (openA.size === 0 || !hasOpenB())) {
+      break;
+    }
   }
 
   // ── Outcome ─────────────────────────────────────────────────────────────
-  if (bestMeet !== null) {
-    const path = joinAt(bestMeet);
-    yield { kind: 'path', path };
+  if (bestPath !== null) {
+    yield { kind: 'path', path: bestPath };
     const result: AlgorithmResult = {
       status: 'success',
-      path,
+      path: bestPath,
       nodesExplored,
       timeMs: performance.now() - t0,
       cost: bestCost,

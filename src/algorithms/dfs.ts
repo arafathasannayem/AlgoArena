@@ -9,6 +9,7 @@
  * - Use an explicit stack (array with push/pop), not recursion (avoids stack
  *   overflow on large grids).
  * - Do NOT set `heuristicTarget` — DFS has no heuristic.
+ * - Multi-goal support: check goal completion using `isGoal(grid, current)` so reaching ANY goal counts as success.
  * - The result may report a longer-than-necessary path; this is correct.
  * - Yield the same event categories as BFS: consider, visit, frontier, path.
  * - Must pass the shared fixture grids: open field, wall detour, U-trap, blocked.

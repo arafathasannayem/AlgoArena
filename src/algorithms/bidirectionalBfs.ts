@@ -97,6 +97,16 @@ function reconstructToward(cameFrom: Map<string, Point>, current: Point): Point[
   return path;
 }
 
+/** Total traversal cost of `path` (default cost per step is 1). */
+function pathCost(path: Point[], grid: GridSnapshot): number {
+  let cost = 0;
+  for (let i = 1; i < path.length; i++) {
+    const p = path[i]!;
+    cost += grid.costs?.get(`${p.x},${p.y}`) ?? 1;
+  }
+  return cost;
+}
+
 // ── Bidirectional BFS generator ─────────────────────────────────────────────
 
 /**
@@ -113,14 +123,16 @@ export function* bidirectionalBfs(
   const t0 = performance.now();
   let nodesExplored = 0;
 
-  // Frontier queues for each direction. The goal side starts from EVERY goal
-  // node so the search converges on the closest reachable one.
+  // Frontier queues for each direction.
+  // Goal frontiers are partitioned so each active goal state advances concurrently
+  // with the start state in each round.
   const queueFromStart: Point[] = [grid.start];
-  const queueFromGoal: Point[] = goalPoints(grid);
+  const goals = goalPoints(grid);
+  const goalQueues: Point[][] = goals.map((g) => [g]);
 
   // Visited sets — also used for meeting-point detection.
   const visitedA = new Set<string>([key(grid.start)]);
-  const visitedB = new Set<string>(queueFromGoal.map(key));
+  const visitedB = new Set<string>(goals.map(key));
 
   // Predecessor maps for path reconstruction.
   const parentA = new Map<string, Point>(); // start side
@@ -154,8 +166,17 @@ export function* bidirectionalBfs(
 
   let fullPath: Point[] | null = null;
 
-  while (queueFromStart.length > 0 && queueFromGoal.length > 0) {
-    // ── Expand one node from the start side ──────────────────────────────
+  function hasAnyGoalQueue(): boolean {
+    for (let i = 0; i < goalQueues.length; i++) {
+      if (goalQueues[i]!.length > 0) return true;
+    }
+    return false;
+  }
+
+  // Synchronous multi-head search: in each round, the Start side expands 1 node
+  // and EACH active Goal side expands 1 node so all frontiers advance simultaneously.
+  while (queueFromStart.length > 0 && hasAnyGoalQueue()) {
+    // ── 1. Expand one node from the start side ─────────────────────────────
     if (queueFromStart.length > 0) {
       const current = queueFromStart.shift()!;
       const currentKey = key(current);
@@ -194,9 +215,12 @@ export function* bidirectionalBfs(
       if (fullPath) break;
     }
 
-    // ── Expand one node from the goal side ───────────────────────────────
-    if (queueFromGoal.length > 0) {
-      const current = queueFromGoal.shift()!;
+    // ── 2. Expand one node from EACH active goal side simultaneously ───────
+    for (let i = 0; i < goalQueues.length; i++) {
+      const q = goalQueues[i]!;
+      if (q.length === 0) continue;
+
+      const current = q.shift()!;
       const currentKey = key(current);
 
       // Meeting point: this node was already reached from the start side.
@@ -215,7 +239,7 @@ export function* bidirectionalBfs(
         if (visitedB.has(nbrKey)) continue;
         visitedB.add(nbrKey);
         parentB.set(nbrKey, current);
-        queueFromGoal.push(nbr);
+        q.push(nbr);
         frontierNodes.push(nbr);
 
         // Found a node already reached from the start side → meeting point.
@@ -232,6 +256,8 @@ export function* bidirectionalBfs(
 
       if (fullPath) break;
     }
+
+    if (fullPath) break;
   }
 
   // ── Outcome ─────────────────────────────────────────────────────────────
@@ -242,6 +268,7 @@ export function* bidirectionalBfs(
       path: fullPath,
       nodesExplored,
       timeMs: performance.now() - t0,
+      cost: pathCost(fullPath, grid),
     };
     yield { kind: 'done', result };
     return result;

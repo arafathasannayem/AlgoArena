@@ -222,7 +222,7 @@ export function* simulatedAnnealingSearch(
     nodesExplored++;
 
     // Evaluate the candidate move visually.
-    yield { kind: 'consider', node: candidate, heuristicTarget: nearestGoal(grid, current), temperature };
+    yield { kind: 'consider', node: candidate, heuristicTarget: nearestGoal(grid, candidate), temperature };
 
     if (accepted) {
       path.push(candidate);

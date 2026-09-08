@@ -82,6 +82,20 @@ describe('multi-goal support', () => {
       expect(result.path).not.toBeNull();
       expect(pathEndsAt(result.path!, { x: 1, y: 0 })).toBe(true);
     });
+
+    it('Bidirectional BFS ends at the NEAREST goal (1, 0)', () => {
+      const { result } = run(bidirectionalBfsFactory, MULTI_GOAL_NEAREST);
+      expect(result.status).toBe('success');
+      expect(result.path).not.toBeNull();
+      expect(pathEndsAt(result.path!, { x: 1, y: 0 })).toBe(true);
+    });
+
+    it('Bidirectional A* ends at the NEAREST goal (1, 0)', () => {
+      const { result } = run(bidirectionalAStarFactory, MULTI_GOAL_NEAREST);
+      expect(result.status).toBe('success');
+      expect(result.path).not.toBeNull();
+      expect(pathEndsAt(result.path!, { x: 1, y: 0 })).toBe(true);
+    });
   });
 
   describe('MULTI_GOAL_WALLED_GOAL (nearest goal reachable, one goal unreachable)', () => {
@@ -103,9 +117,58 @@ describe('multi-goal support', () => {
     });
   });
 
+  describe('AlgorithmResult cost consistency', () => {
+    for (const { name, factory } of IMPLEMENTED_FACTORIES) {
+      it(`${name} populates a non-negative cost in AlgorithmResult`, () => {
+        const { result } = run(factory, MULTI_GOAL_OPEN);
+        expect(result.status).toBe('success');
+        expect(result.cost).toBeDefined();
+        expect(typeof result.cost).toBe('number');
+        expect(result.cost).toBeGreaterThanOrEqual(0);
+      });
+    }
+  });
+
+  describe('start positioned directly on a secondary goal', () => {
+    const startOnSecondaryGoal = {
+      width: 5,
+      height: 5,
+      walls: new Set<string>(),
+      start: { x: 0, y: 0 },
+      goal: { x: 4, y: 4 },
+      goals: [
+        { x: 4, y: 4 },
+        { x: 0, y: 0 }, // start is this secondary goal
+      ],
+    };
+
+    for (const { name, factory } of IMPLEMENTED_FACTORIES) {
+      it(`${name} immediately succeeds when start is a secondary goal`, () => {
+        const { result } = run(factory, startOnSecondaryGoal);
+        expect(result.status).toBe('success');
+        expect(result.path).not.toBeNull();
+        expect(result.path).toHaveLength(1);
+        expect(result.path![0]).toEqual({ x: 0, y: 0 });
+      });
+    }
+  });
+
   describe('generator events', () => {
     it('A* yields consider events whose heuristicTarget is one of the goals', () => {
       const { events } = run(aStarSearch, MULTI_GOAL_OPEN);
+      const considers = events.filter(
+        (e): e is StepEvent & { kind: 'consider' } => e.kind === 'consider' && e.heuristicTarget !== undefined,
+      );
+      expect(considers.length).toBeGreaterThan(0);
+      for (const c of considers) {
+        const target = c.heuristicTarget!;
+        const onAnyGoal = MULTI_GOAL_OPEN.goals!.some((g) => g.x === target.x && g.y === target.y);
+        expect(onAnyGoal).toBe(true);
+      }
+    });
+
+    it('Simulated Annealing yields consider events targeting nearest goal of candidate', () => {
+      const { events } = run(simulatedAnnealingSearch, MULTI_GOAL_OPEN);
       const considers = events.filter(
         (e): e is StepEvent & { kind: 'consider' } => e.kind === 'consider' && e.heuristicTarget !== undefined,
       );

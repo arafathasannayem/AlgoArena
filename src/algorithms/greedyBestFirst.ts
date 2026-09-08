@@ -77,6 +77,16 @@ function reconstructPath(cameFrom: Map<string, Point>, current: Point): Point[] 
   return path;
 }
 
+/** Total traversal cost of `path` (default cost per step is 1). */
+function pathCost(path: Point[], grid: GridSnapshot): number {
+  let cost = 0;
+  for (let i = 1; i < path.length; i++) {
+    const p = path[i]!;
+    cost += grid.costs?.get(`${p.x},${p.y}`) ?? 1;
+  }
+  return cost;
+}
+
 // ── Min-heap (binary heap) for the frontier ─────────────────────────────────
 
 interface HeapEntry {
@@ -197,6 +207,7 @@ export function* greedyBestFirstSearch(
         path,
         nodesExplored,
         timeMs: performance.now() - t0,
+        cost: pathCost(path, grid),
       };
       yield { kind: 'done', result };
       return result;

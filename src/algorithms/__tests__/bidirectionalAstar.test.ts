@@ -330,5 +330,238 @@ describe('Bidirectional A*', () => {
       expect(result.path).not.toBeNull();
       expect(pathEndsAtAnyGoal(result.path!, MULTI_GOAL_WALLED_GOAL.start, MULTI_GOAL_WALLED_GOAL.goals!)).toBe(true);
     });
+
+    it('should deduce the optimal path to a farther cheap goal when a closer goal has high-cost obstacles', () => {
+      // Start at (0, 0)
+      // Goal 1 at (2, 0) is closer (dist 2), but blocked by high cost (25) tiles
+      // Goal 2 at (6, 0) is farther (dist 6), but reachable via clear terrain (cost 1)
+      const costs = new Map<string, number>();
+      costs.set('1,0', 25);
+      costs.set('2,0', 25);
+      costs.set('1,1', 25);
+      costs.set('2,1', 25);
+      costs.set('3,0', 25);
+      costs.set('3,1', 25);
+
+      const grid = {
+        width: 8,
+        height: 5,
+        walls: new Set<string>(),
+        costs,
+        start: { x: 0, y: 0 },
+        goal: { x: 6, y: 0 },
+        goals: [
+          { x: 2, y: 0 }, // Closer expensive goal
+          { x: 6, y: 0 }, // Farther cheap goal
+        ],
+      };
+
+      const { result } = run(grid);
+      expect(result.status).toBe('success');
+      expect(result.path).not.toBeNull();
+      const last = result.path![result.path!.length - 1]!;
+      expect(last).toEqual({ x: 6, y: 0 });
+      expect(result.cost).toBeDefined();
+      expect(result.cost).toBeLessThan(25);
+    });
+
+    it('runs start and all goal frontiers simultaneously without start taking a turn after each goal', () => {
+      // Grid with 3 goals positioned symmetrically far from start
+      const grid = {
+        width: 15,
+        height: 15,
+        walls: new Set<string>(),
+        start: { x: 7, y: 7 },
+        goal: { x: 0, y: 0 },
+        goals: [
+          { x: 0, y: 0 },
+          { x: 14, y: 0 },
+          { x: 14, y: 14 },
+        ],
+      };
+
+      const { events } = run(grid);
+      const considerDirections = events
+        .filter((e): e is StepEvent & { kind: 'consider' } => e.kind === 'consider')
+        .map((e) => e.direction);
+
+      // In the first round, Start expands (forward), then all 3 goals expand (backward, backward, backward)
+      expect(considerDirections.slice(0, 4)).toEqual(['forward', 'backward', 'backward', 'backward']);
+      // In the second round, Start expands (forward), then all 3 goals expand (backward, backward, backward)
+      expect(considerDirections.slice(4, 8)).toEqual(['forward', 'backward', 'backward', 'backward']);
+
+      // Verify Start does NOT interleave after each individual goal
+      expect(considerDirections.slice(1, 4)).toEqual(['backward', 'backward', 'backward']);
+    });
+
+    it('prunes unoptimal goal searchers immediately once the optimal solution is found', () => {
+      // Start at (0, 0).
+      // Goal 1 at (2, 0) is close but behind cost 25 terrain (min path cost 50).
+      // Goal 2 at (6, 0) is far but clear terrain cost 1 (min path cost 10).
+      // Goal 3 at (7, 4) is far away (min path cost > 10).
+      const costs = new Map<string, number>();
+      costs.set('1,0', 25);
+      costs.set('2,0', 25);
+      costs.set('1,1', 25);
+      costs.set('2,1', 25);
+      costs.set('3,0', 25);
+      costs.set('3,1', 25);
+
+      const grid = {
+        width: 8,
+        height: 5,
+        walls: new Set<string>(),
+        costs,
+        start: { x: 0, y: 0 },
+        goal: { x: 6, y: 0 },
+        goals: [
+          { x: 2, y: 0 }, // Unoptimal closer goal
+          { x: 6, y: 0 }, // Optimal farther goal
+          { x: 7, y: 4 }, // 3rd goal
+        ],
+      };
+
+      const { events, result } = run(grid);
+      expect(result.status).toBe('success');
+      expect(result.cost).toBe(10);
+      expect(result.path![result.path!.length - 1]).toEqual({ x: 6, y: 0 });
+
+      // Find the index of the event where the path to (6, 0) with cost <= 10 was first yielded
+      const optimalPathIndex = events.findIndex(
+        (e) => e.kind === 'path' && e.path.length > 0 && e.path[e.path.length - 1]?.x === 6 && e.path[e.path.length - 1]?.y === 0,
+      );
+      expect(optimalPathIndex).toBeGreaterThan(-1);
+
+      // After this point, Goal 1 (at 2, 0, which only has nodes with f >= 26) must NEVER be considered or visited
+      const eventsAfterOptimal = events.slice(optimalPathIndex);
+      const goal1ConsideredAfter = eventsAfterOptimal.some(
+        (e) =>
+          e.kind === 'consider' &&
+          e.direction === 'backward' &&
+          ((e.node.x === 2 && e.node.y === 0) ||
+            (e.node.x === 0 && e.node.y === 2) ||
+            (e.node.x === 1 && e.node.y === 0)),
+      );
+      expect(goal1ConsideredAfter).toBe(false);
+    });
+  });
+
+  // ── Termination responsiveness upon optimal path matching ──────────────
+
+  describe('termination responsiveness upon optimal path matching', () => {
+    it('terminates promptly on The Chokepoints without trailing expansions', async () => {
+      const { THE_CHOKEPOINTS } = await import('../../maps/presets');
+      const walls = new Set<string>(THE_CHOKEPOINTS.walls.map(([x, y]) => `${x},${y}`));
+      const grid = {
+        width: THE_CHOKEPOINTS.width,
+        height: THE_CHOKEPOINTS.height,
+        walls,
+        start: THE_CHOKEPOINTS.start,
+        goal: THE_CHOKEPOINTS.goal,
+      };
+
+      const gen = bidirectionalAStar(grid);
+      let step = gen.next();
+      let considerCount = 0;
+      let matchStep = -1;
+
+      while (!step.done) {
+        const ev = step.value;
+        if (ev.kind === 'consider') {
+          considerCount++;
+        } else if (ev.kind === 'path' && ev.path.length === 60 && matchStep === -1) {
+          matchStep = considerCount;
+        }
+        step = gen.next();
+      }
+
+      const result = step.value as AlgorithmResult;
+      expect(result.status).toBe('success');
+      expect(result.cost).toBe(59);
+      expect(matchStep).toBeGreaterThan(0);
+      // The search must terminate immediately upon optimal path matching (0 extra steps)
+      expect(considerCount - matchStep).toBeLessThanOrEqual(1);
+    });
+
+    it('terminates promptly on Local Maxima Trap and The Labyrinth without trailing expansions', async () => {
+      const { LOCAL_MAXIMA_TRAP, THE_LABYRINTH } = await import('../../maps/presets');
+
+      for (const preset of [LOCAL_MAXIMA_TRAP, THE_LABYRINTH]) {
+        const walls = new Set<string>(preset.walls.map(([x, y]) => `${x},${y}`));
+        const grid = {
+          width: preset.width,
+          height: preset.height,
+          walls,
+          start: preset.start,
+          goal: preset.goal,
+        };
+
+        const gen = bidirectionalAStar(grid);
+        let step = gen.next();
+        let considerCount = 0;
+        let matchStep = -1;
+        let optCost = -1;
+
+        while (!step.done) {
+          const ev = step.value;
+          if (ev.kind === 'consider') {
+            considerCount++;
+          } else if (ev.kind === 'done') {
+            optCost = ev.result.cost ?? -1;
+          }
+          step = gen.next();
+        }
+
+        // Trace match step
+        const gen2 = bidirectionalAStar(grid);
+        let s2 = gen2.next();
+        let count2 = 0;
+        while (!s2.done) {
+          const ev = s2.value;
+          if (ev.kind === 'consider') {
+            count2++;
+          } else if (ev.kind === 'path' && matchStep === -1) {
+            const cost = ev.path.length - 1;
+            const last = ev.path[ev.path.length - 1];
+            if (cost === optCost && last?.x === preset.goal.x && last?.y === preset.goal.y) {
+              matchStep = count2;
+            }
+          }
+          s2 = gen2.next();
+        }
+
+        expect(matchStep).toBeGreaterThan(0);
+        expect(considerCount - matchStep).toBeLessThanOrEqual(1);
+      }
+    });
+
+    it('preserves optimality on tricky multi-goal grid with expensive closer goal and terminates cleanly', () => {
+      const costs = new Map<string, number>();
+      // Swamp surrounding Goal 1
+      for (let x = 1; x <= 5; x++) {
+        for (let y = 5; y <= 9; y++) {
+          costs.set(`${x},${y}`, 20);
+        }
+      }
+
+      const grid = {
+        width: 15,
+        height: 15,
+        walls: new Set<string>(),
+        costs,
+        start: { x: 0, y: 7 },
+        goal: { x: 14, y: 7 },
+        goals: [{ x: 4, y: 7 }, { x: 14, y: 7 }],
+      };
+
+      const { events, result } = run(grid);
+      expect(result.status).toBe('success');
+      expect(result.cost).toBe(20);
+      expect(result.path![result.path!.length - 1]).toEqual({ x: 14, y: 7 });
+
+      // Ensure no consider events occur after optimal done
+      const doneIndex = events.findIndex((e) => e.kind === 'done');
+      expect(doneIndex).toBe(events.length - 1);
+    });
   });
 });
