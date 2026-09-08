@@ -89,7 +89,7 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
         id: 'restart',
         label: 'Restart Run',
         shortcut: 'R',
-        icon: <RotateCcw size={16} className="text-amber-400" />,
+        icon: <RotateCcw size={16} className="text-blue-400" />,
         action: () => {
           resetRace();
           closePauseMenu();
@@ -185,8 +185,8 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
         {/* Telemetry Header */}
         <div className="flex flex-col gap-2 border-b border-white/10 pb-4">
           <div className="flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-mono font-bold tracking-widest uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-mono font-bold tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               Tactical Pause
             </div>
 
@@ -221,8 +221,8 @@ export function PauseMenu({ onOpenHelp }: PauseMenuProps = {}) {
               <span
                 className={`px-2 py-0.5 rounded border ${
                   wasRunning || raceStatus === 'running'
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                    : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                    ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                    : 'bg-white/5 text-slate-300 border-white/10'
                 }`}
               >
                 {wasRunning ? 'PAUSED MID-RACE' : 'STANDBY'}

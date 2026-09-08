@@ -94,7 +94,7 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
           onClick={openPauseMenu}
           className={`group backdrop-blur-md border rounded-xl px-3.5 py-1.5 flex items-center gap-2 shadow-xl transition-all active:scale-95 ${
             isRunning
-              ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
+              ? 'bg-slate-900/90 border-emerald-500/30 text-white hover:bg-slate-800 hover:border-emerald-500/50'
               : 'bg-slate-900/80 border-white/10 text-slate-200 hover:text-white hover:bg-white/10'
           }`}
           title="Pause Game [ESC]"
@@ -104,12 +104,12 @@ export function TopBar({ onOpenHelp }: TopBarProps = {}) {
             className={`w-2 h-2 rounded-full ${
               isRunning
                 ? 'bg-emerald-400 animate-pulse'
-                : 'bg-amber-400'
+                : 'bg-slate-400'
             }`}
           />
 
           <div className="flex items-center gap-1.5 font-bold text-xs tracking-wider uppercase font-mono">
-            {isRunning ? <Pause size={12} /> : <Play size={12} className="opacity-80" />}
+            {isRunning ? <Pause size={12} className="text-emerald-400" /> : <Play size={12} className="opacity-80" />}
             <span>Pause</span>
           </div>
 

@@ -37,6 +37,30 @@ describe('Agent Store', () => {
     expect(useAgentStore.getState().agents[0]!.showOverlay).toBe(true);
   });
 
+  it('should toggle all agent overlays and explicitly set all overlays', () => {
+    const store = useAgentStore.getState();
+    store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });
+    store.addAgent('bfs', '#eab308', { x: 0, y: 0 });
+
+    expect(useAgentStore.getState().agents[0]!.showOverlay).toBe(true);
+    expect(useAgentStore.getState().agents[1]!.showOverlay).toBe(true);
+
+    // Toggle all off
+    store.toggleAllOverlays();
+    expect(useAgentStore.getState().agents[0]!.showOverlay).toBe(false);
+    expect(useAgentStore.getState().agents[1]!.showOverlay).toBe(false);
+
+    // Toggle all on
+    store.toggleAllOverlays();
+    expect(useAgentStore.getState().agents[0]!.showOverlay).toBe(true);
+    expect(useAgentStore.getState().agents[1]!.showOverlay).toBe(true);
+
+    // Explicitly set all to false
+    store.setAllOverlays(false);
+    expect(useAgentStore.getState().agents[0]!.showOverlay).toBe(false);
+    expect(useAgentStore.getState().agents[1]!.showOverlay).toBe(false);
+  });
+
   it('should change an agent color with setColor', () => {
     const store = useAgentStore.getState();
     store.addAgent('astar', '#3b82f6', { x: 0, y: 0 });

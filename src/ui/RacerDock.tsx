@@ -16,7 +16,7 @@ import { useAgentStore, type Agent } from '../state/agentStore';
 import { useGridStore } from '../state/gridStore';
 import { useRaceStore } from '../state/raceStore';
 import { ALGORITHMS, getImplementedAlgorithms } from '../algorithms';
-import { playClick } from '../utils/sound';
+import { playClick, playStartFanfare } from '../utils/sound';
 import {
   Bot,
   UserPlus,
@@ -32,6 +32,10 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Mountain,
+  Play,
+  Pause,
+  RotateCcw,
 } from 'lucide-react';
 
 const PRESET_COLORS = [
@@ -271,14 +275,23 @@ export function RacerDock() {
   const addAgent = useAgentStore((s) => s.addAgent);
   const removeAgent = useAgentStore((s) => s.removeAgent);
   const toggleOverlay = useAgentStore((s) => s.toggleOverlay);
+  const toggleAllOverlays = useAgentStore((s) => s.toggleAllOverlays);
   const setColor = useAgentStore((s) => s.setColor);
 
   const start = useGridStore((s) => s.start);
   const goals = useGridStore((s) => s.goals);
   const costs = useGridStore((s) => s.costs);
+  const showCostLabels = useGridStore((s) => s.showCostLabels);
+  const toggleCostLabels = useGridStore((s) => s.toggleCostLabels);
 
   const raceStatus = useRaceStore((s) => s.status);
+  const startRace = useRaceStore((s) => s.startRace);
+  const pauseRace = useRaceStore((s) => s.pauseRace);
+  const resetRace = useRaceStore((s) => s.resetRace);
   const isRacing = raceStatus === 'running';
+
+  const allOverlaysVisible = agents.length > 0 && agents.every((a) => a.showOverlay);
+  const someOverlaysVisible = agents.some((a) => a.showOverlay);
 
   const [selectedKey, setSelectedKey] = useState<string>('astar');
   const [selectedColor, setSelectedColor] = useState<string>(
@@ -453,6 +466,57 @@ export function RacerDock() {
         </div>
       )}
 
+      {/* Visual Toggles Toolbar */}
+      {agents.length > 0 && (
+        <div className="flex items-center justify-between gap-1 py-1 px-2 rounded-xl bg-slate-950/40 border border-white/5 text-[10px] font-mono mt-1 shrink-0">
+          <span className="text-slate-500 uppercase tracking-wider text-[9px] font-bold">
+            Visuals
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            {/* Toggle All Overlays Button */}
+            <button
+              onClick={() => {
+                toggleAllOverlays();
+                playClick();
+              }}
+              className={`px-2 py-0.5 rounded-lg flex items-center gap-1 font-semibold transition-colors ${
+                allOverlaysVisible
+                  ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                  : someOverlaysVisible
+                  ? 'bg-white/10 text-white border border-white/20'
+                  : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
+              }`}
+              title={allOverlaysVisible ? 'Hide all scout overlays' : 'Show all scout overlays'}
+            >
+              {allOverlaysVisible || someOverlaysVisible ? (
+                <Eye size={11} className="text-cyan-400" />
+              ) : (
+                <EyeOff size={11} className="text-slate-500" />
+              )}
+              <span>Overlays</span>
+            </button>
+
+            {/* Toggle Terrain Cost Labels Button */}
+            <button
+              onClick={() => {
+                toggleCostLabels();
+                playClick();
+              }}
+              className={`px-2 py-0.5 rounded-lg flex items-center gap-1 font-semibold transition-colors ${
+                showCostLabels
+                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                  : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
+              }`}
+              title={showCostLabels ? 'Hide tile cost numbers' : 'Show tile cost numbers'}
+            >
+              <Mountain size={11} className={showCostLabels ? 'text-amber-400' : 'text-slate-500'} />
+              <span>Costs</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Racers List / Live Standings */}
       <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 pt-2 pr-1">
         {agents.length === 0 ? (
@@ -522,6 +586,22 @@ export function RacerDock() {
 
                   {/* Explored count */}
                   <span className="text-slate-500 text-[9px]">{nodesExplored}n</span>
+
+                  {/* Individual Overlay Toggle in Standings */}
+                  <button
+                    onClick={() => {
+                      toggleOverlay(agent.id);
+                      playClick();
+                    }}
+                    className={`p-1 rounded transition-colors ${
+                      agent.showOverlay
+                        ? 'text-cyan-400 hover:bg-white/10'
+                        : 'text-slate-600 hover:bg-white/10'
+                    }`}
+                    title={agent.showOverlay ? 'Hide scout overlay' : 'Show scout overlay'}
+                  >
+                    {agent.showOverlay ? <Eye size={12} /> : <EyeOff size={12} />}
+                  </button>
                 </div>
               </div>
             );
@@ -558,7 +638,7 @@ export function RacerDock() {
                     }}
                     className={`p-1 rounded transition-colors ${
                       agent.showOverlay
-                        ? 'text-blue-400 hover:bg-white/10'
+                        ? 'text-cyan-400 hover:bg-white/10'
                         : 'text-slate-600 hover:bg-white/10'
                     }`}
                     title={agent.showOverlay ? 'Hide scout overlay' : 'Show scout overlay'}
@@ -582,6 +662,47 @@ export function RacerDock() {
             );
           })
         )}
+      </div>
+
+      {/* Dock Action Bar: Reset & Start */}
+      <div className="pt-2 mt-auto border-t border-white/10 flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => {
+            resetRace();
+            playClick();
+          }}
+          disabled={agents.length === 0}
+          className="flex-1 py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          title="Reset Race [R]"
+        >
+          <RotateCcw size={13} />
+          <span>Reset</span>
+        </button>
+
+        <button
+          onClick={() => {
+            if (isRacing) {
+              pauseRace();
+              playClick();
+            } else {
+              if (agents.length === 0) return;
+              startRace();
+              playStartFanfare();
+            }
+          }}
+          disabled={agents.length === 0}
+          className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
+            agents.length > 0
+              ? isRacing
+                ? 'bg-slate-800 hover:bg-slate-700 border border-white/20 text-white cursor-pointer'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40 cursor-pointer'
+              : 'bg-white/5 border border-white/10 text-slate-500 cursor-not-allowed'
+          }`}
+          title={agents.length > 0 ? (isRacing ? 'Pause [Space]' : 'Start [Space]') : 'Add racers first'}
+        >
+          {isRacing ? <Pause size={13} /> : <Play size={13} />}
+          <span>{isRacing ? 'Pause' : 'Start'}</span>
+        </button>
       </div>
     </aside>
   );
