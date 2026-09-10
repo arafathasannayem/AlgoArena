@@ -31,14 +31,9 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
-import { isGoal } from './utils';
+import { isGoal, key } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Encode a Point as a string key for Set/Map lookups. */
-function key(p: Point): string {
-  return `${p.x},${p.y}`;
-}
 
 /** Cardinal neighbor offsets (no diagonals). */
 const DIRS: readonly Point[] = [
