@@ -34,42 +34,9 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
-import { goalPoints, isGoal, nearestGoal, nearestGoalDist } from './utils';
+import { goalPoints, isGoal, key, manhattan, nearestGoal, nearestGoalDist, neighbors } from './utils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Encode a Point as a string key for Set/Map lookups. */
-function key(p: Point): string {
-  return `${p.x},${p.y}`;
-}
-
-/** Manhattan distance — consistent heuristic for 4-directional grids. */
-function manhattan(a: Point, b: Point): number {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-}
-
-/** Cardinal neighbor offsets (no diagonals). */
-const DIRS: readonly Point[] = [
-  { x: 0, y: -1 },
-  { x: 1, y: 0 },
-  { x: 0, y: 1 },
-  { x: -1, y: 0 },
-];
-
-/** Return walkable cardinal neighbors of `p` within `grid`. */
-function neighbors(p: Point, grid: GridSnapshot): Point[] {
-  const result: Point[] = [];
-  for (const d of DIRS) {
-    const nx = p.x + d.x;
-    const ny = p.y + d.y;
-    if (nx >= 0 && nx < grid.width && ny >= 0 && ny < grid.height) {
-      if (!grid.walls.has(`${nx},${ny}`)) {
-        result.push({ x: nx, y: ny });
-      }
-    }
-  }
-  return result;
-}
 
 /**
  * Reconstruct the path from the origin of `cameFrom` to `current`.

@@ -31,46 +31,7 @@ import type {
   GridSnapshot,
   Point,
 } from './types';
-import { isGoal, key } from './utils';
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Cardinal neighbor offsets (no diagonals). */
-const DIRS: readonly Point[] = [
-  { x: 0, y: -1 },
-  { x: 1, y: 0 },
-  { x: 0, y: 1 },
-  { x: -1, y: 0 },
-];
-
-/** Return walkable cardinal neighbors of `p` within `grid`. */
-function neighbors(p: Point, grid: GridSnapshot): Point[] {
-  const result: Point[] = [];
-  for (const d of DIRS) {
-    const nx = p.x + d.x;
-    const ny = p.y + d.y;
-    if (nx >= 0 && nx < grid.width && ny >= 0 && ny < grid.height) {
-      if (!grid.walls.has(`${nx},${ny}`)) {
-        result.push({ x: nx, y: ny });
-      }
-    }
-  }
-  return result;
-}
-
-/**
- * Reconstruct the path from start to `current` by walking the came-from map.
- */
-function reconstructPath(cameFrom: Map<string, Point>, current: Point): Point[] {
-  const path: Point[] = [current];
-  let k = key(current);
-  while (cameFrom.has(k)) {
-    const prev = cameFrom.get(k)!;
-    path.unshift(prev);
-    k = key(prev);
-  }
-  return path;
-}
+import { isGoal, key, neighbors, reconstructPath } from './utils';
 
 // ── DFS generator ───────────────────────────────────────────────────────────
 
