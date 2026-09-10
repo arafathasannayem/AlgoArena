@@ -30,75 +30,13 @@ import type {
   Point,
 } from './types';
 import { isGoal, key, nearestGoal, nearestGoalDist, neighbors, reconstructPath } from './utils';
+import { MinHeap } from './heap';
 
-// ── Min-heap (binary heap) for the open set ─────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────────────
 
 interface HeapEntry {
   point: Point;
   f: number;
-}
-
-/**
- * Minimal binary min-heap ordered by `f` score.
- *
- * We roll our own rather than pulling in a library to keep the algorithms/
- * directory dependency-free (init.md §5: "smallest dependency that does the
- * job").
- */
-class MinHeap {
-  private data: HeapEntry[] = [];
-
-  get size(): number {
-    return this.data.length;
-  }
-
-  push(entry: HeapEntry): void {
-    this.data.push(entry);
-    this.bubbleUp(this.data.length - 1);
-  }
-
-  pop(): HeapEntry | undefined {
-    const top = this.data[0];
-    const last = this.data.pop();
-    if (this.data.length > 0 && last !== undefined) {
-      this.data[0] = last;
-      this.sinkDown(0);
-    }
-    return top;
-  }
-
-  private bubbleUp(i: number): void {
-    while (i > 0) {
-      const parent = (i - 1) >> 1;
-      if (this.data[i]!.f < this.data[parent]!.f) {
-        [this.data[i], this.data[parent]] = [this.data[parent]!, this.data[i]!];
-        i = parent;
-      } else {
-        break;
-      }
-    }
-  }
-
-  private sinkDown(i: number): void {
-    const n = this.data.length;
-    while (true) {
-      let smallest = i;
-      const left = 2 * i + 1;
-      const right = 2 * i + 2;
-      if (left < n && this.data[left]!.f < this.data[smallest]!.f) {
-        smallest = left;
-      }
-      if (right < n && this.data[right]!.f < this.data[smallest]!.f) {
-        smallest = right;
-      }
-      if (smallest !== i) {
-        [this.data[i], this.data[smallest]] = [this.data[smallest]!, this.data[i]!];
-        i = smallest;
-      } else {
-        break;
-      }
-    }
-  }
 }
 
 // ── A* generator ────────────────────────────────────────────────────────────
@@ -117,7 +55,7 @@ export function* aStarSearch(
   const t0 = performance.now();
   let nodesExplored = 0;
 
-  const openSet = new MinHeap();
+  const openSet = new MinHeap<HeapEntry>((e) => e.f);
   const cameFrom = new Map<string, Point>();
   const gScore = new Map<string, number>();
   const closedSet = new Set<string>();
