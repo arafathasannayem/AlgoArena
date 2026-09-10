@@ -51,13 +51,18 @@ export function* depthFirstSearch(
 
   const visited = new Set<string>();
   const cameFrom = new Map<string, Point>();
+  const dist = new Map<string, number>();
+
+  const startKey = key(grid.start);
+  dist.set(startKey, 0);
 
   // Explicit LIFO stack (pop from end, push to end)
   const stack: Point[] = [grid.start];
-  visited.add(key(grid.start));
+  visited.add(startKey);
 
   while (stack.length > 0) {
     const current = stack.pop()!;
+    const currentKey = key(current);
 
     // Yield consider event (no heuristic for DFS)
     yield { kind: 'consider', node: current };
@@ -71,12 +76,7 @@ export function* depthFirstSearch(
       const path = reconstructPath(cameFrom, current);
       yield { kind: 'path', path };
 
-      let cost = 0;
-      for (let i = 1; i < path.length; i++) {
-        const p = path[i]!;
-        cost += grid.costs?.get(`${p.x},${p.y}`) ?? 1;
-      }
-
+      const cost = dist.get(currentKey) ?? 0;
       const result: AlgorithmResult = {
         status: 'success',
         path,
@@ -89,6 +89,7 @@ export function* depthFirstSearch(
     }
 
     // Expand neighbors
+    const currentDist = dist.get(currentKey) ?? 0;
     const frontierNodes: Point[] = [];
 
     for (const nbr of neighbors(current, grid)) {
@@ -96,6 +97,8 @@ export function* depthFirstSearch(
       if (!visited.has(nbrKey)) {
         visited.add(nbrKey);
         cameFrom.set(nbrKey, current);
+        const stepCost = grid.costs?.get(nbrKey) ?? 1;
+        dist.set(nbrKey, currentDist + stepCost);
         stack.push(nbr);
         frontierNodes.push(nbr);
       }
