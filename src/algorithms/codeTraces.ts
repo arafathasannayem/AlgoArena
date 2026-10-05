@@ -784,6 +784,73 @@ const floydWarshallTrace: AlgorithmCodeTrace = {
   }),
 };
 
+// ── Algorithm 12: Beam Search ───────────────────────────────────────────────
+
+const BEAM_CODE = [
+  'function* beamSearch(grid: GridSnapshot, beamWidth = 3) {',
+  '  let beam = [grid.start];',
+  '',
+  '  while (beam.length > 0) {',
+  '    const candidates = [];',
+  '    for (const current of beam) {',
+  '      if (isGoal(current)) return reconstructPath(cameFrom, current);',
+  '      closedSet.add(current);',
+  '      for (const nbr of getWalkableNeighbors(current)) {',
+  '        if (!closedSet.has(nbr)) candidates.push(nbr);',
+  '      }',
+  '    }',
+  '    candidates.sort(by f = g + h);',
+  '    beam = candidates.slice(0, beamWidth); // truncate to top-W',
+  '  }',
+  '  return null; // goal fell outside the beam',
+  '}',
+];
+
+const beamTrace: AlgorithmCodeTrace = {
+  algorithmKey: 'beam',
+  name: 'Beam Search',
+  code: BEAM_CODE,
+  mapStep: (event) => {
+    switch (event.kind) {
+      case 'consider':
+        return {
+          lineNumber: 7,
+          explanation: `Expanding beam candidate (${event.node.x}, ${event.node.y}) toward heuristic target`,
+        };
+      case 'visit':
+        return {
+          lineNumber: 8,
+          explanation: `Added (${event.node.x}, ${event.node.y}) to closed set`,
+        };
+      case 'frontier':
+        return {
+          lineNumber: 10,
+          explanation: `Generated ${event.nodes.length} candidate(s); frontier pruned to top-W`,
+        };
+      case 'path':
+        return {
+          lineNumber: 12,
+          explanation: `Updated beam trail (current length: ${event.path.length})`,
+        };
+      case 'done':
+        if (event.result.status === 'success') {
+          return {
+            lineNumber: 7,
+            explanation: `Goal reached! Path reconstructed (${event.result.path?.length ?? 0} steps, cost: ${event.result.cost ?? event.result.path?.length ?? 0})`,
+          };
+        }
+        return {
+          lineNumber: 16,
+          explanation: 'Beam exhausted: goal fell outside the beam width',
+        };
+    }
+  },
+  mapRunner: (_context, nextPoint) => ({
+    lineNumber: 7,
+    explanation: `Sprinting along beam search path to cell (${nextPoint.x}, ${nextPoint.y})`,
+  }),
+};
+
 // ── Registry Map ────────────────────────────────────────────────────────────
 
 export const CODE_TRACES: Record<string, AlgorithmCodeTrace> = {
@@ -798,6 +865,7 @@ export const CODE_TRACES: Record<string, AlgorithmCodeTrace> = {
   'bidir-astar': bidirAstarTrace,
   'bellman-ford': bellmanFordTrace,
   'floyd-warshall': floydWarshallTrace,
+  beam: beamTrace,
 };
 
 /**

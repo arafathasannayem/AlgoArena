@@ -19,6 +19,7 @@ import { bidirectionalBfsFactory } from '../bidirectionalBfs';
 import { bidirectionalAStarFactory } from '../bidirectionalAstar';
 import { bellmanFordFactory } from '../bellman_ford';
 import { floydWarshallFactory } from '../floyd_warshall';
+import { beamFactory } from '../beam';
 import type { AlgorithmResult, StepEvent } from '../types';
 import {
   MULTI_GOAL_OPEN,
@@ -43,6 +44,7 @@ const IMPLEMENTED_FACTORIES = [
   { name: 'Bidirectional A*', factory: bidirectionalAStarFactory },
   { name: 'Bellman-Ford', factory: bellmanFordFactory },
   { name: 'Floyd-Warshall', factory: floydWarshallFactory },
+  { name: 'Beam Search', factory: beamFactory },
 ] as const;
 
 function run(factory: (typeof IMPLEMENTED_FACTORIES)[number]['factory'], grid: Parameters<typeof aStarSearch>[0]) {
